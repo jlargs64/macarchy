@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>macarchy</title>
-<meta name="description" content="An Omarchy-style desktop layer for macOS: one command restyles Ghostty, Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper together, plus yabai tiling over native Spaces with SIP left on.">
-<meta name="color-scheme" content="dark">
+<meta name="description" content="One person’s macOS desktop config, published: an Omarchy-style theme switcher for Ghostty, Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper, plus yabai tiling over native Spaces with SIP left on.">
+<meta name="color-scheme" content="dark light">
 <script>
   // Apply the saved theme before first paint. Silent if storage is unavailable.
   (function(){try{var t=localStorage.getItem("macarchy-site-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
@@ -47,7 +47,7 @@
 |_| |_| |_|\__,_|\___\__,_|_|  \___|_| |_|\__, |
                                           |___/<!-- banner:end --></pre><span class="sr-only">macarchy</span></h1>
         <p class="byline" data-rise style="--i:1">by <a href="https://github.com/jlargs64">Justin Largo</a></p>
-        <p class="lede" data-rise style="--i:2">Omarchy’s desktop, ported to the Mac. A theme system that restyles the terminal, editor, status bar and window borders together, and a tiling window manager over native macOS Spaces. System Integrity Protection stays on.</p>
+        <p class="lede" data-rise style="--i:2">Omarchy’s desktop, ported to the Mac. One person’s opinionated config, published: a theme switcher that restyles the terminal, editor, status bar and window borders together, and tiling over native macOS Spaces. System Integrity Protection stays on.</p>
         <div class="hero__actions" data-rise style="--i:3">
           <a class="btn btn--brand" href="#install">Install macarchy</a>
           <a class="btn" href="#hotkeys">See the hotkeys</a>
@@ -67,15 +67,17 @@
   <section class="band" id="about" data-jump="What macarchy is" aria-labelledby="about-title">
     <div class="wrap about">
       <div class="prose">
-        <h2 id="about-title">What macarchy owns, and what it leaves to you</h2>
-        <p style="margin-top: var(--space-lg)">macarchy is the desktop layer only. Six themes ship with it. <code>theme-set &lt;name&gt;</code> repoints one symlink and pokes each app to re-read its config, so SketchyBar, JankyBorders, Zellij, Neovim and the wallpaper repaint together. yabai tiles windows inside each Space, skhd binds the keys, and <kbd>alt</kbd>+<kbd>/</kbd> pops up a searchable list of every binding.</p>
-        <p>The terminal emulator, multiplexer and editor stay yours. macarchy hooks into Ghostty, Zellij and Neovim with one line each, and the mechanism is <a href="https://omarchy.org">Omarchy</a>’s, ported to macOS.</p>
+        <h2 id="about-title">What macarchy is, and what it is not</h2>
+        <p style="margin-top: var(--space-lg)">macarchy is the author’s own Mac desktop config, published as is. It themes the apps in that setup and no others: Ghostty, Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper. <code>theme-set &lt;name&gt;</code> repoints one symlink and pokes each of them to re-read its config, so they repaint together. yabai tiles windows inside each Space, skhd binds the keys, and <kbd>alt</kbd>+<kbd>/</kbd> pops up a searchable list of every binding.</p>
+        <p>If your terminal is Kitty or your editor is VS Code, nothing here restyles it today. A theme directory has no file for those apps, so a switch leaves them alone. The mechanism is <a href="https://omarchy.org">Omarchy</a>’s and could drive more apps; that is the plan below. Your Ghostty, Zellij and Neovim configs stay yours, since macarchy hooks in with one line each.</p>
       </div>
       <dl class="facts">
-        <div><dt>Theming</dt><dd><code>theme-set</code>, <code>theme-next</code>, <code>theme-bg</code>, <code>theme-port</code>. <a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">docs/theme-system.md</a></dd></div>
+        <div><dt>Theming</dt><dd>22 themes, 5 of them light. <code>theme-set</code>, <code>theme-pick</code>, <code>theme-next</code>, <code>theme-bg</code>, <code>theme-port</code>. <a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">docs/theme-system.md</a></dd></div>
         <div><dt>Windows</dt><dd>yabai + skhd + SketchyBar + JankyBorders over native Spaces. No scripting addition, no <code>csrutil</code>. <a href="https://github.com/jlargs64/macarchy/blob/main/docs/window-management.md">docs/window-management.md</a></dd></div>
         <div><dt>Hotkey discovery</dt><dd><code>macarchy-keys</code>: a which-key style popup on <kbd>alt</kbd>+<kbd>/</kbd>. Descriptions come from the <code># comments</code> in skhdrc.</dd></div>
         <div><dt>Raycast</dt><dd>A generated “Set Theme” script command. <code>theme-raycast-sync</code> regenerates it.</dd></div>
+        <div><dt>Workspace agent</dt><dd><code>ws</code>: plain English or voice control of windows, Spaces, theme and Zellij tabs, on device. <a href="#agent">Talk to your desktop</a>.</dd></div>
+        <div><dt>Planned</dt><dd>Theme files for other terminals (Alacritty, Kitty, WezTerm, iTerm2), editors (VS Code, Zed) and browsers, a pick-your-apps install, and light themes without hand fix-ups. None of it exists yet; the <a href="https://github.com/jlargs64/macarchy#plans">README</a> keeps the list.</dd></div>
         <div><dt>Requirements</dt><dd>macOS with Homebrew. Scripts run on the bash 3.2 that ships with the system.</dd></div>
         <div><dt>Licence</dt><dd>MIT.</dd></div>
       </dl>
@@ -107,7 +109,7 @@
 <pre><code><span class="ln"><span class="p">$ </span>curl -fsSL https://raw.githubusercontent.com/jlargs64/macarchy/main/install-agent.sh <span class="c">\</span></span>
 <span class="ln">    | sh -s -- claude   <span class="c"># or codex, pi, opencode, gemini, copilot, cursor, amp</span></span></code></pre>
           </figure>
-          <p class="muted">Launches that agent CLI interactively, seeded with <a href="https://github.com/jlargs64/macarchy/blob/main/AGENT-INSTALL.md">AGENT-INSTALL.md</a>, which walks through the same steps — it still asks before it runs anything. No agent installed? <code>install-agent.sh --print</code> dumps the prompt to paste into any chat agent instead.</p>
+          <p class="muted">Launches that agent CLI interactively, seeded with <a href="https://github.com/jlargs64/macarchy/blob/main/AGENT-INSTALL.md">AGENT-INSTALL.md</a>, which walks through the same steps. It still asks before it runs anything. No agent installed? <code>install-agent.sh --print</code> dumps the prompt to paste into any chat agent instead.</p>
         </div>
         <div class="install__col">
           <h3>Or pull it into chezmoi</h3>
@@ -140,18 +142,36 @@
     <div class="wrap">
       <div class="sec-head">
         <h2 id="themes-title"><a href="#themes">Pick a theme, change everything</a></h2>
-        <p>Every app reads its colours from <code>~/.config/theme/current</code>, a symlink. Switching repoints it and nudges each app; no app knows a theme’s name. Pick one here and this page repaints the same way.</p>
+        <p>Every app reads its colours from <code>~/.config/theme/current</code>, a symlink. Switching repoints it and nudges each app; no app knows a theme’s name. 22 ship, 5 of them light. Pick one here and this page repaints the same way.</p>
         <a class="btn sec-head__cta" href="https://github.com/jlargs64/macarchy/blob/main/docs/omarchy-port.md">Port another</a>
       </div>
       <ul class="themes" aria-label="Themes that ship with macarchy">
-        <li><button class="theme-card" type="button" data-set-theme="retro-82" aria-pressed="true"><span class="theme-card__swatch" data-pal="retro-82" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">retro-82</span><span class="theme-card__src">custom · 1982 arcade CRT</span></span></button></li>
-        <li><button class="theme-card" type="button" data-set-theme="kanagawa-wave" aria-pressed="false"><span class="theme-card__swatch" data-pal="kanagawa-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">kanagawa-wave</span><span class="theme-card__src">upstream</span></span></button></li>
-        <li><button class="theme-card" type="button" data-set-theme="catppuccin-mocha" aria-pressed="false"><span class="theme-card__swatch" data-pal="catppuccin-mocha" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">catppuccin-mocha</span><span class="theme-card__src">upstream</span></span></button></li>
-        <li><button class="theme-card" type="button" data-set-theme="tokyo-night" aria-pressed="false"><span class="theme-card__swatch" data-pal="tokyo-night" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">tokyo-night</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
-        <li><button class="theme-card" type="button" data-set-theme="gruvbox" aria-pressed="false"><span class="theme-card__swatch" data-pal="gruvbox" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">gruvbox</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
-        <li><button class="theme-card" type="button" data-set-theme="nord" aria-pressed="false"><span class="theme-card__swatch" data-pal="nord" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">nord</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <!-- themes:start -->
+        <li><button class="theme-card" type="button" data-set-theme="retro-82" data-mode="dark" aria-pressed="true"><span class="theme-card__swatch" data-pal="retro-82" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">retro-82</span><span class="theme-card__src">custom · 1982 arcade CRT</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="kanagawa-wave" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="kanagawa-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">kanagawa-wave</span><span class="theme-card__src">upstream</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="catppuccin-mocha" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="catppuccin-mocha" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">catppuccin-mocha</span><span class="theme-card__src">upstream</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="ethereal" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="ethereal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">ethereal</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="everforest" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="everforest" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">everforest</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="gruvbox" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="gruvbox" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">gruvbox</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="hackerman" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="hackerman" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">hackerman</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="last-horizon" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="last-horizon" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">last-horizon</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="lumon" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="lumon" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">lumon</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="matte-black" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="matte-black" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">matte-black</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="miasma" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="miasma" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">miasma</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="nord" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="nord" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">nord</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="osaka-jade" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="osaka-jade" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">osaka-jade</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="ristretto" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="ristretto" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">ristretto</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="solitude" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="solitude" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">solitude</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="tokyo-night" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="tokyo-night" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">tokyo-night</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="vantablack" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="vantablack" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">vantablack</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="catppuccin-latte" data-mode="light" aria-pressed="false"><span class="theme-card__swatch" data-pal="catppuccin-latte" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">catppuccin-latte</span><span class="theme-card__src">ported from Omarchy · light</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="flexoki-light" data-mode="light" aria-pressed="false"><span class="theme-card__swatch" data-pal="flexoki-light" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">flexoki-light</span><span class="theme-card__src">ported from Omarchy · light</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="lupine" data-mode="light" aria-pressed="false"><span class="theme-card__swatch" data-pal="lupine" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">lupine</span><span class="theme-card__src">ported from Omarchy · light</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="rose-pine" data-mode="light" aria-pressed="false"><span class="theme-card__swatch" data-pal="rose-pine" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">rose-pine</span><span class="theme-card__src">ported from Omarchy · light</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="white" data-mode="light" aria-pressed="false"><span class="theme-card__swatch" data-pal="white" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">white</span><span class="theme-card__src">ported from Omarchy · light</span></span></button></li>
+<!-- themes:end -->
       </ul>
-      <p class="muted" style="margin-top: var(--space-lg); max-width: var(--measure)"><kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>t</kbd> cycles themes on your desktop; <kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>b</kbd> cycles the wallpaper within one. <code>theme-port &lt;name&gt;</code> brings in any other dark Omarchy theme; light themes are refused because the dim-versus-bright split and the wallpaper assumptions are dark-only.</p>
+      <p class="muted" style="margin-top: var(--space-lg); max-width: var(--measure)"><kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>/</kbd> opens <code>theme-pick</code>, an fzf picker with a swatch strip per theme; <kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>t</kbd> cycles themes and <kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>b</kbd> cycles the wallpaper within one. <code>theme-port &lt;name&gt;</code> brings in anything else from Omarchy’s catalogue. Light themes need <code>--allow-light</code> and a look afterwards: the SketchyBar and border colour maths were written for dark backgrounds.</p>
     </div>
   </section>
 
@@ -175,6 +195,7 @@
           <dl class="keys">
             <div><dt>shift + alt - t</dt><dd>cycle the desktop theme</dd></div>
             <div><dt>shift + alt - b</dt><dd>cycle the wallpaper within the current theme</dd></div>
+            <div><dt>shift + alt - /</dt><dd>pop up theme-pick, an fzf theme picker with swatches</dd></div>
             <div><dt>shift + alt - r</dt><dd>restart yabai and reload SketchyBar</dd></div>
             <div><dt>alt - /</dt><dd>pop up macarchy-keys</dd></div>
             <div><dt>ctrl - number</dt><dd>switch Space (native macOS, enable it under Keyboard Shortcuts › Mission Control)</dd></div>
@@ -221,7 +242,33 @@
     </div>
   </section>
 
-  <section class="band" id="symlink" data-jump="How theme-set works" aria-labelledby="mech-title">
+  <section class="band" id="agent" data-jump="Talk to your desktop" aria-labelledby="agent-title">
+    <div class="wrap mech">
+      <div class="mech__col">
+        <h2 id="agent-title"><a href="#agent">Talk to your desktop</a></h2>
+        <p class="sec">Say what you want done to the desktop in plain words, and a 14 MB on-device model turns it into yabai, Zellij and theme commands. Nothing leaves the machine.</p>
+        <p class="muted">Dry run is the default. <code>ws</code> prints what it would do until <code>MACARCHY_AGENT_EXECUTE=true</code> is set in <code>~/.config/macarchy/config</code>. The pipeline, the tool list and how to add a tool are in <a href="https://github.com/jlargs64/macarchy/blob/main/docs/agent.md">docs/agent.md</a>.</p>
+      </div>
+      <div class="mech__col">
+        <figure class="code">
+          <figcaption class="code__bar"><span>sh</span><button class="btn btn--sm" type="button" data-copy><span class="btn__label">Copy</span></button></figcaption>
+<pre><code><span class="ln"><span class="c"># prints what it would run</span></span>
+<span class="ln"><span class="p">$ </span>ws "put slack on space 2 and switch to the kanagawa theme"</span>
+<span class="ln"><span class="c"># runs it</span></span>
+<span class="ln"><span class="p">$ </span>ws -x "focus helium"</span>
+<span class="ln"><span class="c"># alt - w: press to listen, press again to run</span></span>
+<span class="ln"><span class="p">$ </span>ws --voice</span></code></pre>
+        </figure>
+        <h3>By voice</h3>
+        <dl class="keys">
+          <div><dt>alt - w</dt><dd>press once to start listening, again to stop. Handy transcribes offline and <code>ws</code> prints or runs the result</dd></div>
+          <div><dt>alt - space</dt><dd>Handy’s own dictation hotkey for typing anywhere: hold to talk, tap to toggle. Set inside Handy, not skhd</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--deep" id="symlink" data-jump="How theme-set works" aria-labelledby="mech-title">
     <div class="wrap mech">
       <div class="mech__col">
         <h2 id="mech-title"><a href="#symlink">One symlink, every app</a></h2>
@@ -230,7 +277,7 @@
         <dl class="facts">
           <div><dt>Ghostty</dt><dd><code>config-file = ?~/.config/theme/current/ghostty</code> in <code>~/.config/ghostty/config</code>. The <code>?</code> makes the include optional.</dd></div>
           <div><dt>Zellij</dt><dd><code>theme "current"</code> in <code>config.kdl</code>.</dd></div>
-          <div><dt>Neovim</dt><dd>Declare the shipped themes’ colorscheme plugins with <code>lazy = true</code>: <code>nvim-mini/mini.base16</code>, <code>rebelot/kanagawa.nvim</code>, <code>catppuccin/nvim</code>, <code>folke/tokyonight.nvim</code>, <code>ellisonleao/gruvbox.nvim</code>, <code>EdenEast/nightfox.nvim</code>.</dd></div>
+          <div><dt>Neovim</dt><dd>Declare every shipped theme’s colorscheme plugin with <code>lazy = true</code>, so lazy.nvim knows them before a switch. Fifteen entries; the list is in <a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md#per-app-wiring">docs/theme-system.md</a>. Seven themes drive <code>mini.base16</code> from their own palette and need no plugin of their own.</dd></div>
         </dl>
         <p class="muted"><code>install.sh</code> also symlinks <code>~/.config/zellij/themes/current.kdl</code> and <code>~/.config/nvim/lua/plugins/theme.lua</code> for you, if those config directories already exist.</p>
       </div>
@@ -238,7 +285,7 @@
         <figure class="code">
           <figcaption class="code__bar"><span>~/.config/theme</span></figcaption>
 <pre><code><span class="ln">bin/</span>
-<span class="ln">  theme-set  theme-list  theme-next  theme-bg  theme-port  theme-maintain</span>
+<span class="ln">  theme-set  theme-pick  theme-list  theme-next  theme-bg  theme-port  theme-maintain</span>
 <span class="ln">current -> themes/<span data-theme-name>retro-82</span>     <span class="c"># THE symlink. Everything reads through it.</span></span>
 <span class="ln">themes/&lt;name&gt;/</span>
 <span class="ln">  colors.sh      <span class="c"># the palette, as shell exports</span></span>
@@ -263,11 +310,11 @@
     </div>
   </section>
 
-  <section class="band band--deep" id="yours" data-jump="Make it yours" aria-labelledby="yours-title">
+  <section class="band" id="yours" data-jump="Make it yours" aria-labelledby="yours-title">
     <div class="wrap">
       <div class="sec-head">
         <h2 id="yours-title"><a href="#yours">Make it yours</a></h2>
-        <p>A five-line config, a six-file theme contract, and a porter for the rest of Omarchy’s catalogue.</p>
+        <p>A config file, a six-file theme contract, and a porter for anything in Omarchy’s catalogue that is not here yet.</p>
       </div>
       <dl class="yours">
         <div>
@@ -302,7 +349,7 @@
         <div>
           <dt>Port one from Omarchy</dt>
           <dd>
-            <p><code>theme-port &lt;name&gt;</code> fetches an Omarchy theme’s <code>colors.toml</code> and writes the macarchy files from it. Two outputs deserve a human look afterwards: <code>ACCENT2</code> is a heuristic, and <code>neovim.lua</code>’s plugin parsing has only been exercised on entries without an <code>opts</code> block.</p>
+            <p><code>theme-port &lt;name&gt;</code> fetches an Omarchy theme’s <code>colors.toml</code> and <code>neovim.lua</code> and writes the macarchy files from them. <code>--src DIR</code> reads a local Omarchy checkout instead. Light themes need <code>--allow-light</code>. Two outputs deserve a human look afterwards: <code>ACCENT2</code> is a heuristic, and a theme with no upstream Neovim plugin gets a placeholder to fill in.</p>
             <figure class="code">
               <figcaption class="code__bar"><span>sh</span><button class="btn btn--sm" type="button" data-copy><span class="btn__label">Copy</span></button></figcaption>
 <pre><code><span class="ln"><span class="p">$ </span>theme-port everforest</span>
@@ -314,7 +361,7 @@
     </div>
   </section>
 
-  <section class="band" id="trouble" data-jump="Troubleshooting" aria-labelledby="trouble-title">
+  <section class="band band--deep" id="trouble" data-jump="Troubleshooting" aria-labelledby="trouble-title">
     <div class="wrap trouble">
       <div>
         <h2 id="trouble-title"><a href="#trouble">When something looks wrong</a></h2>
