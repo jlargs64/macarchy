@@ -10,6 +10,7 @@ together, plus a tiling window manager over native macOS Spaces.
 | Window management | yabai (tiling) + skhd (hotkeys) + SketchyBar (status bar) + JankyBorders (focus border), layered over native macOS Spaces, no SIP changes. [docs/window-management.md](docs/window-management.md) |
 | Hotkey discovery | `alt - /` pops up a searchable which-key style list of every skhd binding; Enter runs it. Also lists Ghostty and Zellij keybinds when those configs exist |
 | Raycast | a generated "Set Theme" script command |
+| Workspace agent | `ws`: plain-English (or voice, `alt - space`) control of windows, Spaces, theme and terminal tabs via an on-device 14 MB model. [docs/agent.md](docs/agent.md) |
 
 Six themes ship: `retro-82` (custom, 1982 arcade CRT), `kanagawa-wave`,
 `catppuccin-mocha`, and three ported from Omarchy with `theme-port`:

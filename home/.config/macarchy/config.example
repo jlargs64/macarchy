@@ -32,3 +32,9 @@ MACARCHY_WIFI_IFACE=en0
 # `macarchy-keys --source <name>`. A listed source whose config file doesn't
 # exist (e.g. no Ghostty installed) is skipped silently.
 MACARCHY_KEYS_SOURCES="skhd ghostty zellij"
+
+# --- workspace agent (ws) ---
+MACARCHY_AGENT_MODEL="$HOME/.local/share/macarchy/models/workspace-agent.cact"   # fine-tuned Needle 3
+MACARCHY_AGENT_EXECUTE=false      # true: `ws` and `ws --voice` act instead of printing what they would do
+MACARCHY_MIC=":0"                 # ffmpeg avfoundation audio device (ffmpeg -f avfoundation -list_devices true -i "")
+MACARCHY_HANDY="/Applications/Handy.app/Contents/MacOS/handy"

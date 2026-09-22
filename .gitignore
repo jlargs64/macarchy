@@ -1,0 +1,5 @@
+*.cact
+*.safetensors
+finetune/data.jsonl
+finetune/ckpt*/
+__pycache__/

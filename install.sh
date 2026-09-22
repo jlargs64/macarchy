@@ -210,6 +210,26 @@ step_config() {
 # -----------------------------------------------------------------------
 # 9. Optional integrations -- only touched if the target app is present
 # -----------------------------------------------------------------------
+step_agent() {
+  # Workspace agent (`ws`): a venv with the Needle runtime and the fine-tuned model.
+  local venv="$HOME/.local/share/macarchy/venv" models="$HOME/.local/share/macarchy/models"
+  local model="${MACARCHY_AGENT_MODEL:-$models/workspace-agent.cact}"
+  echo "==> Workspace agent (ws): venv + model"
+  run mkdir -p "$models"
+  if [ ! -x "$venv/bin/python" ]; then
+    run python3 -m venv "$venv"
+  fi
+  run "$venv/bin/pip" install -q cactus-needle
+  if [ ! -f "$model" ]; then
+    if [ -n "${MACARCHY_AGENT_MODEL_URL:-}" ]; then
+      run curl -fsSL "$MACARCHY_AGENT_MODEL_URL" -o "$model"
+    else
+      echo "  agent: no model at $model; ws falls back to base Needle 3 (weaker)." >&2
+      echo "  agent: train one with home/.config/macarchy/agent/finetune/README.md, or set MACARCHY_AGENT_MODEL_URL." >&2
+    fi
+  fi
+}
+
 step_optional_integrations() {
   echo "==> Optional integrations"
   if [ -d "$HOME/.config/zellij" ]; then
@@ -232,6 +252,7 @@ step_link
 step_seed_current
 step_theme_assets
 step_config
+step_agent
 step_optional_integrations
 
 cat <<NOTICE

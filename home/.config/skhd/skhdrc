@@ -55,6 +55,11 @@ shift + alt - s  : yabai -m window --insert stack        # stack onto this windo
 shift + alt - e  : yabai -m window --insert east         # split to the right
 shift + alt - d  : yabai -m window --insert south        # split below
 
+# ----- workspace agent ------------------------------------------------------
+# Press once to start listening, again to transcribe (Handy) and run. Dry-run
+# unless MACARCHY_AGENT_EXECUTE=true in ~/.config/macarchy/config.
+alt - space      : ~/.local/bin/ws --voice
+
 # ----- theme ----------------------------------------------------------------
 # Cycle Ghostty + Zellij + Neovim + SketchyBar + borders + wallpaper together.
 shift + alt - t : ~/.local/bin/theme-next
