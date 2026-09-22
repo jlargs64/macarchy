@@ -74,7 +74,7 @@ shift + alt - d  : yabai -m window --insert south        # split below
 # Dry-run unless MACARCHY_AGENT_EXECUTE=true in ~/.config/macarchy/config.
 # Not bound to alt-v ("v" for voice) -- that's already toggle-split above.
 # Bound to alt-w ("w" for `ws`, the script this runs) instead.
-alt - w          : ~/.local/bin/ws --voice
+alt - w          : ~/.local/bin/ws --voice   # voice command: press to listen, again to run
 
 # ----- theme ----------------------------------------------------------------
 # Cycle Ghostty + Zellij + Neovim + SketchyBar + borders + wallpaper together.
