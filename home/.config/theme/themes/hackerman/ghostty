@@ -1,0 +1,26 @@
+# hackerman -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 0B0C16
+foreground = ddf7ff
+cursor-color = 82FB9C
+cursor-text = 0B0C16
+selection-background = 2d3450
+selection-foreground = ddf7ff
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#0B0C16
+palette = 1=#44d361
+palette = 2=#43c57a
+palette = 3=#44d2b4
+palette = 4=#6f85b4
+palette = 5=#728ebe
+palette = 6=#69d3d2
+palette = 7=#bcd2d9
+palette = 8=#2d3450
+palette = 9=#50f872
+palette = 10=#4fe88f
+palette = 11=#50f7d4
+palette = 12=#829dd4
+palette = 13=#86a7df
+palette = 14=#7cf8f7
+palette = 15=#ddf7ff

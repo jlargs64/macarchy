@@ -73,6 +73,10 @@ yabai -m rule --add app="^Handy$"                  manage=off
 # centered, instead of letting it tile like a normal terminal window.
 yabai -m rule --add label=macarchy-keys app="^Ghostty$" title="^macarchy-keys$" manage=off grid=6:6:1:1:4:4
 
+# theme-pick pops up in its own Ghostty window (shift + alt - /); float it,
+# centered, the same way macarchy-keys is floated above.
+yabai -m rule --add label=theme-pick app="^Ghostty$" title="^theme-pick$" manage=off grid=6:6:1:1:4:4
+
 # Steam's windows are not AXStandardWindow, so yabai cannot tile them at all.
 # Float it explicitly rather than letting it look like a yabai failure.
 yabai -m rule --add app="^Steam$"                  manage=off

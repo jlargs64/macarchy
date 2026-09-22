@@ -15,9 +15,16 @@ THEMES="$HOME/.config/theme/themes"
 
 # Pinned to a commit, not a branch. These bytes go straight into ImageMagick,
 # so a moving ref would let any upstream commit choose what gets decoded here.
-# Bump deliberately: git ls-remote https://github.com/basecamp/omarchy HEAD
-OMARCHY_REV="45748a2812f42e32f915b053caf4074e150e2048"
-RAW="https://raw.githubusercontent.com/basecamp/omarchy/$OMARCHY_REV/themes"
+# Bump deliberately: git ls-remote https://github.com/omacom/omarchy quattro
+#
+# Omarchy moved from github.com/basecamp/omarchy to github.com/omacom/omarchy
+# (branch `quattro`); this pin was verified against a local clone of that
+# branch at this exact commit.
+OMARCHY_OWNER="omacom/omarchy"
+OMARCHY_REV="947e2fc002d6831c7888b29b5761d59d29e69727"
+OMARCHY_FALLBACK_REF="quattro"
+RAW="https://raw.githubusercontent.com/$OMARCHY_OWNER/$OMARCHY_REV/themes"
+RAW_FALLBACK="https://raw.githubusercontent.com/$OMARCHY_OWNER/$OMARCHY_FALLBACK_REF/themes"
 
 command -v magick >/dev/null 2>&1 || { echo "theme-bg-fetch: needs imagemagick" >&2; exit 1; }
 
@@ -36,6 +43,51 @@ kanagawa-wave|01|kanagawa/1-kanagawa.jpg|great-wave
 catppuccin-mocha|01|catppuccin/2-waves.webp|waves
 catppuccin-mocha|02|catppuccin/1-totoro.webp|totoro
 catppuccin-mocha|03|catppuccin/3-blue-eye.webp|blue-eye
+catppuccin-latte|01|catppuccin-latte/1-color-fade.webp|color-fade
+ethereal|01|ethereal/1-cosmic.webp|cosmic
+ethereal|02|ethereal/2-meadow.webp|meadow
+everforest|01|everforest/1-tree-tops.webp|tree-tops
+flexoki-light|01|flexoki-light/1-orb.webp|orb
+hackerman|01|hackerman/1-synth-scape.jpg|synth-scape
+hackerman|02|hackerman/2-geometric.webp|geometric
+last-horizon|01|last-horizon/1-eyes-wide.webp|eyes-wide
+last-horizon|02|last-horizon/2-blink.webp|blink
+last-horizon|03|last-horizon/3-bokeh.webp|bokeh
+last-horizon|04|last-horizon/4-new-horizons.jpg|new-horizons
+lumon|01|lumon/01-united-in-severance.webp|united-in-severance
+lumon|02|lumon/02-opinions-equally.webp|opinions-equally
+lupine|01|lupine/01-cherry-blossom-bokeh.webp|cherry-blossom-bokeh
+lupine|02|lupine/02-cherry-blossom-white.webp|cherry-blossom-white
+lupine|03|lupine/03-pastel-clouds.webp|pastel-clouds
+lupine|04|lupine/04-elegant-blue-wave.webp|elegant-blue-wave
+lupine|05|lupine/05-abstract-wave.webp|abstract-wave
+matte-black|01|matte-black/0-ship-at-sea.jpg|ship-at-sea
+matte-black|02|matte-black/1-dark-waters.webp|dark-waters
+matte-black|03|matte-black/2-dot-hands.webp|dot-hands
+miasma|01|miasma/01-nature-of-fear.webp|nature-of-fear
+miasma|02|miasma/02-crowned.webp|crowned
+osaka-jade|01|osaka-jade/1-glowing-city.webp|glowing-city
+osaka-jade|02|osaka-jade/2-shaded-entrance.webp|shaded-entrance
+osaka-jade|03|osaka-jade/3-mountain-moon.webp|mountain-moon
+ristretto|01|ristretto/0-launch.webp|launch
+ristretto|02|ristretto/1-color-curves.webp|color-curves
+ristretto|03|ristretto/2-coffee-beans.jpg|coffee-beans
+ristretto|04|ristretto/3-industrial-moon.webp|industrial-moon
+rose-pine|01|rose-pine/1-funky-shapes.webp|funky-shapes
+rose-pine|02|rose-pine/2-dot-map.webp|dot-map
+rose-pine|03|rose-pine/3-omarchy-plants.webp|omarchy-plants
+solitude|01|solitude/1-on-pole.webp|on-pole
+solitude|02|solitude/2-wreakage.webp|wreakage
+solitude|03|solitude/3-climb.jpg|climb
+solitude|04|solitude/4-ether.webp|ether
+solitude|05|solitude/5-eyed.jpg|eyed
+vantablack|01|vantablack/0-dot-hands.webp|dot-hands
+vantablack|02|vantablack/1-twisted-stairs.webp|twisted-stairs
+vantablack|03|vantablack/2-layers-deep.webp|layers-deep
+vantablack|04|vantablack/3-layers-stacked.webp|layers-stacked
+white|01|white/1-white.webp|white
+white|02|white/2-white.webp|white
+white|03|white/3-white.webp|white
 "
 
 # One private scratch dir for every download; mktemp owns the name, we own
@@ -51,8 +103,16 @@ echo "$MAP" | while IFS='|' read -r theme n src label; do
   [ -f "$out" ] && continue
   tmp="$tmpdir/$theme-$n.${src##*.}"
   # $src is "<upstream theme>/<file>"; the real path has /backgrounds/ between them
-  url="$RAW/${src%%/*}/backgrounds/${src#*/}"
-  if curl -fsSL --max-time 120 -o "$tmp" "$url"; then
+  path="${src%%/*}/backgrounds/${src#*/}"
+  url="$RAW/$path"
+  # The pinned commit is the source of truth; only fall back to the moving
+  # `quattro` branch ref if that exact commit's file is unreachable (e.g. a
+  # history rewrite upstream).
+  if ! curl -fsSL --max-time 120 -o "$tmp" "$url"; then
+    url="$RAW_FALLBACK/$path"
+    curl -fsSL --max-time 120 -o "$tmp" "$url" || true
+  fi
+  if [ -s "$tmp" ]; then
     # Omarchy ships these at 5120x2880 already; cover-fit anything that is not.
     magick "$tmp" -resize 5120x2880^ -gravity center -extent 5120x2880 \
       -quality 88 "$out" 2>/dev/null && echo "  $theme/$n-$label.jpg"

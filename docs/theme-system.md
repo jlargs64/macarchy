@@ -37,10 +37,39 @@ at `current/<its file>` forever, and only the symlink moves.
 
 ## Adding a theme
 
+Fast path, for any theme in [Omarchy's catalogue](https://github.com/omacom/omarchy/tree/quattro/themes)
+(dark or light):
+
+```
+theme-port <name> [--src DIR] [--allow-light] --out home/.config/theme/themes
+```
+
+`theme-port` fetches `themes/<name>/{colors.toml,neovim.lua}` from
+`omacom/omarchy` at a pinned rev and emits the five files below in this
+repo's shape (`--src DIR` reads from a local Omarchy checkout instead of
+curling GitHub, useful offline or against a checkout already pinned to the
+rev you want). Light themes (`colors.toml` with `mode = "light"`) are
+refused unless you pass `--allow-light` — the SketchyBar and border colour
+derivations were written assuming a dark background, so a light port needs a
+manual check afterward (see [omarchy-port.md](omarchy-port.md)). Always
+point `--out` at this repo's `home/.config/theme/themes`, not the live
+`~/.config/theme/themes`, so the new theme lands under version control
+directly. `theme-port` cannot always resolve a plugin repo from upstream's
+`neovim.lua` (an unusual spec shape, or a colorscheme with no dedicated
+plugin) — it emits a `TODO/fill-in-colorscheme-plugin` placeholder in that
+case; see below for the fallback.
+
+Manual path, or to finish a `theme-port` output with a `TODO` placeholder:
+
 1. `mkdir ~/.config/theme/themes/<name>`
 2. Copy the six files from an existing theme and edit them. `colors.sh` must
    export `BG FG ACCENT ACCENT2 MUTED RED GREEN YELLOW BLUE MAGENTA CYAN`
    as bare hex (no `#`, no `0x`), plus `THEME_NAME` and `NVIM_COLORSCHEME`.
+   If the theme has no upstream Neovim plugin, follow retro-82's pattern:
+   drive `nvim-mini/mini.base16` directly from the palette instead of a
+   `TODO` plugin entry (several of the 16 quattro-branch themes ported this
+   way have no upstream `nvim` plugin at all and use this local
+   `mini.base16` pattern — see [omarchy-port.md](omarchy-port.md)).
 3. `theme-set <name>` — the wallpaper is generated on first use.
 4. `theme-raycast-sync` to add it to the Raycast dropdown.
 5. Copy the new theme directory into this repo, under `home/.config/theme/themes/<name>/`,
@@ -214,12 +243,35 @@ removed; it survives at `~/.config/nvim/lua/plugins/colorscheme.lua.bak` and in
 this repo's git history.
 
 **Neovim, part two** — `~/.config/nvim/lua/plugins/theme-plugins.lua` is a
-plain tracked file (not a symlink) that declares all three colorschemes with
-`lazy = true`. Without it, lazy.nvim would only ever see the plugins of the
-*active* theme, which means `lazy-lock.json` churns on every switch and the
-first switch to a theme has to clone its plugin. The active theme's spec
-re-declares the same repo with `lazy = false` and a priority; lazy.nvim merges
-the two.
+plain tracked file (not a symlink) that declares every shipped theme's
+colorscheme plugin with `lazy = true`. Without it, lazy.nvim would only ever
+see the plugins of the *active* theme, which means `lazy-lock.json` churns on
+every switch and the first switch to a theme has to clone its plugin. The
+active theme's spec re-declares the same repo with `lazy = false` and a
+priority; lazy.nvim merges the two.
+
+The seven themes that drive `nvim-mini/mini.base16` locally (`ethereal`,
+`last-horizon`, `lupine`, `miasma`, `ristretto`, `vantablack`, `white` — see
+[omarchy-port.md](omarchy-port.md)) only need the one `mini.base16` entry,
+not a per-theme plugin. Current full list:
+
+```lua
+{ "nvim-mini/mini.base16", version = false, lazy = true },
+{ "rebelot/kanagawa.nvim", lazy = true },
+{ "catppuccin/nvim", lazy = true },
+{ "folke/tokyonight.nvim", lazy = true },
+{ "ellisonleao/gruvbox.nvim", lazy = true },
+{ "EdenEast/nightfox.nvim", lazy = true },  -- nord uses nightfox's "nordfox" variant
+{ "neanias/everforest-nvim", lazy = true },
+{ "kepano/flexoki-neovim", lazy = true },
+{ "bjarneo/hackerman.nvim", lazy = true },
+{ "bjarneo/aether.nvim", lazy = true },
+{ "omacom/lumon.nvim", lazy = true },
+{ "tahayvr/matteblack.nvim", lazy = true },
+{ "ribru17/bamboo.nvim", lazy = true },
+{ "rose-pine/neovim", name = "rose-pine", lazy = true },
+{ "ficd0/ashen.nvim", lazy = true },
+```
 
 **SketchyBar** — `sketchybarrc` sources the theme palette on its first line, and
 `~/.config/sketchybar/colors.sh` derives every variable the bar and its plugins
@@ -235,11 +287,32 @@ battery) are actually read; `ACCENT` and the rest go to borders and the apps.
 | Where | Binding | Action |
 |---|---|---|
 | skhd | `shift + alt - t` | `theme-next` |
+| skhd | `shift + alt - /` | `theme-pick --popup` |
 | Raycast | "Set Theme" | dropdown of all themes |
 | Ghostty | `cmd + shift + ,` | reload config |
 
 The Raycast dropdown is generated, not hand-maintained — run
 `theme-raycast-sync` after adding a theme.
+
+## Picking a theme
+
+`shift + alt - /` (or `theme-pick` from a terminal) opens an fzf picker in a
+small floating Ghostty window (the same popup pattern `alt - /` uses for
+`macarchy-keys`). Each row is a truecolor swatch strip for that theme, its
+name, a light/dark tag, and a marker on whichever theme is currently active.
+Enter applies the selected theme via `theme-set`; Esc cancels without
+changing anything.
+
+```sh
+theme-pick             # fzf picker
+theme-pick --list      # aligned "name  mode  BG  FG  ACCENT" table, no fzf
+theme-pick --preview NAME  # print NAME's full palette and nvim colorscheme
+theme-pick --popup     # relaunch the picker in a floating Ghostty window
+theme-pick --rows      # raw fzf input rows, no fzf
+theme-pick --dry-run   # picker mode, print the chosen theme instead of applying it
+```
+
+Requires `fzf`, already installed by `install.sh`.
 
 ## Gotchas worth knowing
 

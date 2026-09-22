@@ -1,0 +1,285 @@
+#!/usr/bin/env bash
+# theme-pick -- fzf theme picker, same UX as macarchy-keys.
+#
+#   (no args)     fzf picker with truecolor swatches; Enter runs
+#                 `theme-set <name>`, Esc cancels with no change
+#   --list        plain aligned table (name, mode, BG, FG, ACCENT) to
+#                 stdout, no fzf
+#   --preview NAME  render NAME's full palette + nvim colorscheme +
+#                 backgrounds; this is what fzf's own --preview window
+#                 shells out to (theme-pick calling itself), but it also
+#                 works standalone
+#   --popup       relaunch the picker in a floating Ghostty window
+#   --dry-run     picker mode, but print the chosen theme name instead of
+#                 calling theme-set (for testing)
+#   --rows        print the raw tab-delimited fzf input rows and exit,
+#                 no fzf (for testing without a TTY)
+#   --help        this message
+#
+# THEMES_DIR resolves the same way theme-list's does (default
+# ~/.config/theme/themes), but honors an env override so this can be
+# exercised against a checkout instead of the live config, e.g.:
+#   THEMES_DIR=./home/.config/theme/themes theme-pick --list
+set -euo pipefail
+
+THEMES_DIR="${THEMES_DIR:-$HOME/.config/theme/themes}"
+# The "current" symlink lives next to themes/ (~/.config/theme/current).
+# Derived from THEMES_DIR's parent so the THEMES_DIR override above still
+# does something sane (no "current" symlink under a repo checkout --
+# current_theme just comes back empty, which is fine for --list/--rows).
+CURRENT_LINK="$(dirname "$THEMES_DIR")/current"
+
+DRY_RUN=0
+
+usage() {
+  cat <<'EOF'
+usage: theme-pick [--list | --preview NAME | --popup | --dry-run | --rows | --help]
+
+  (no args)     fzf picker: truecolor swatches, name, light/dark tag, and
+                a marker on the current theme; Enter applies it (theme-set),
+                Esc cancels
+  --list        print the aligned "name  mode  BG  FG  ACCENT" table, no fzf
+  --preview NAME  print NAME's full palette, nvim colorscheme, and any
+                backgrounds/ filenames (used internally as fzf's preview
+                command)
+  --popup       relaunch the picker in a floating Ghostty window
+  --dry-run     picker mode, but print the chosen theme instead of applying it
+  --rows        print the raw fzf input rows and exit, no fzf
+  --help        this message
+
+THEMES_DIR=<path>   themes directory to use (default: ~/.config/theme/themes)
+EOF
+}
+
+# ---------------------------------------------------------------------------
+# color helpers
+# ---------------------------------------------------------------------------
+
+# Print a two-column-wide truecolor background swatch for a bare hex color.
+swatch() {
+  local hex="$1" r g b
+  r=$((16#${hex:0:2}))
+  g=$((16#${hex:2:2}))
+  b=$((16#${hex:4:2}))
+  printf '\033[48;2;%d;%d;%dm  \033[0m' "$r" "$g" "$b"
+}
+
+# Perceptual-ish luminance (0-255) from a bare hex color, integer-only
+# (bash 3.2 has no floating point): weights approximate ITU-R BT.709
+# (0.2126 R + 0.7152 G + 0.0722 B), scaled by 10000 then divided back down.
+luminance() {
+  local hex="$1" r g b
+  r=$((16#${hex:0:2}))
+  g=$((16#${hex:2:2}))
+  b=$((16#${hex:4:2}))
+  echo $(( (r * 2126 + g * 7152 + b * 722) / 10000 ))
+}
+
+# "light" or "dark" for a bare hex BG color.
+mode_for_bg() {
+  local l
+  l="$(luminance "$1")"
+  if [ "$l" -ge 140 ]; then printf 'light'; else printf 'dark'; fi
+}
+
+# ---------------------------------------------------------------------------
+# theme enumeration
+# ---------------------------------------------------------------------------
+
+theme_names() {
+  [ -d "$THEMES_DIR" ] || { echo "theme-pick: no themes dir: $THEMES_DIR" >&2; exit 1; }
+  find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | LC_ALL=C sort
+}
+
+current_theme() {
+  local link
+  link="$(readlink "$CURRENT_LINK" 2>/dev/null || true)"
+  if [ -n "$link" ]; then basename "$link"; fi
+}
+
+# ---------------------------------------------------------------------------
+# --list
+# ---------------------------------------------------------------------------
+
+print_list() {
+  {
+    printf 'NAME\tMODE\tBG\tFG\tACCENT\n'
+    while IFS= read -r name; do
+      (
+        # shellcheck disable=SC1091
+        . "$THEMES_DIR/$name/colors.sh"
+        printf '%s\t%s\t#%s\t#%s\t#%s\n' "$name" "$(mode_for_bg "$BG")" "$BG" "$FG" "$ACCENT"
+      )
+    done < <(theme_names)
+  } | column -t -s "$(printf '\t')"
+}
+
+# ---------------------------------------------------------------------------
+# --preview NAME
+# ---------------------------------------------------------------------------
+
+print_preview() {
+  local name="${1:-}"
+  [ -n "$name" ] || { echo "theme-pick: --preview requires a theme name" >&2; return 1; }
+  local dir="$THEMES_DIR/$name"
+  [ -d "$dir" ] || { echo "theme-pick: no such theme: $name" >&2; return 1; }
+  (
+    # shellcheck disable=SC1091
+    . "$dir/colors.sh"
+    printf '%s  [%s]\n\n' "$name" "$(mode_for_bg "$BG")"
+    local label
+    for label in BG FG ACCENT ACCENT2 MUTED RED GREEN YELLOW BLUE MAGENTA CYAN; do
+      printf '%s%s %-8s #%s\n' "$(swatch "${!label}")" "$(swatch "${!label}")" "$label" "${!label}"
+    done
+    printf '\nnvim colorscheme: %s\n' "${NVIM_COLORSCHEME:-(none)}"
+    if [ -d "$dir/backgrounds" ] && [ -n "$(ls -A "$dir/backgrounds" 2>/dev/null)" ]; then
+      printf '\nbackgrounds:\n'
+      ls -1 "$dir/backgrounds" | sed 's/^/  /'
+    fi
+  )
+}
+
+# ---------------------------------------------------------------------------
+# fzf rows: "display\tname" -- display carries the swatches/name/mode/marker,
+# name is the hidden field fzf's preview and the Enter handler read from.
+# ---------------------------------------------------------------------------
+
+build_rows() {
+  local cur name marker mode swatches display
+  cur="$(current_theme)"
+  while IFS= read -r name; do
+    (
+      # shellcheck disable=SC1091
+      . "$THEMES_DIR/$name/colors.sh"
+      mode="$(mode_for_bg "$BG")"
+      swatches="$(swatch "$BG")$(swatch "$FG")$(swatch "$ACCENT")$(swatch "$RED")$(swatch "$GREEN")$(swatch "$YELLOW")$(swatch "$BLUE")$(swatch "$MAGENTA")$(swatch "$CYAN")"
+      if [ "$name" = "$cur" ]; then marker="*"; else marker=" "; fi
+      display="$(printf '%s %s %-22s [%-5s]' "$swatches" "$marker" "$name" "$mode")"
+      if [ "$marker" = "*" ]; then display="$display (current)"; fi
+      printf '%s\t%s\n' "$display" "$name"
+    )
+  done < <(theme_names)
+}
+
+# ---------------------------------------------------------------------------
+# picker
+# ---------------------------------------------------------------------------
+
+SELF="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
+
+run_picker() {
+  command -v fzf >/dev/null 2>&1 || { echo "theme-pick: fzf is required (brew install fzf)" >&2; exit 1; }
+
+  local rows cur idx=0 i=0 name selected status
+  rows="$(build_rows)"
+  [ -n "$rows" ] || { echo "theme-pick: no themes found in $THEMES_DIR" >&2; exit 1; }
+
+  cur="$(current_theme)"
+  while IFS= read -r name; do
+    i=$((i + 1))
+    if [ "$name" = "$cur" ]; then idx=$i; fi
+  done < <(theme_names)
+
+  local -a bind_opt=()
+  if [ "$idx" -gt 0 ]; then bind_opt=(--bind "start:pos($idx)"); fi
+
+  if [ "${MACARCHY_THEMEPICK_POPUP:-0}" = 1 ]; then float_self; fi
+
+  set +e
+  selected="$(printf '%s\n' "$rows" | fzf \
+    --ansi \
+    --delimiter="$(printf '\t')" \
+    --with-nth=1 \
+    --header='type to filter - enter: apply theme - esc: cancel' \
+    --preview="THEMES_DIR=$(printf '%q' "$THEMES_DIR") $(printf '%q' "$SELF") --preview {2}" \
+    --preview-window=right,50%,wrap \
+    ${bind_opt[@]+"${bind_opt[@]}"})"
+  status=$?
+  set -e
+
+  # Esc (130) or no match (1): just exit clean.
+  [ "$status" -eq 0 ] && [ -n "$selected" ] || exit 0
+
+  name="$(printf '%s' "$selected" | cut -d "$(printf '\t')" -f2)"
+  [ -n "$name" ] || exit 0
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '%s\n' "$name"
+    exit 0
+  fi
+
+  exec "$(dirname "$SELF")/theme-set" "$name"
+}
+
+popup() {
+  command -v open >/dev/null 2>&1 && [ -d "/Applications/Ghostty.app" ] || {
+    echo "theme-pick: Ghostty.app / open not found, cannot pop up" >&2
+    exit 1
+  }
+  # Same reasoning as macarchy-keys' popup(): override `command` for this one
+  # instance so the picker runs bare and the window closes when it exits.
+  local q_self
+  q_self="$(printf '%q' "$SELF")"
+  exec open -na Ghostty.app --args \
+    --title=theme-pick \
+    --window-width=100 \
+    --window-height=30 \
+    --quit-after-last-window-closed=true \
+    --command="env MACARCHY_THEMEPICK_POPUP=1 $q_self"
+}
+
+# In popup mode, float + center our own window (see macarchy-keys' float_self
+# for the full rationale on why this polls instead of relying on the yabai
+# rule alone).
+float_self() {
+  command -v yabai >/dev/null 2>&1 || return 0
+  (
+    local i id
+    for i in $(seq 1 30); do
+      id="$(yabai -m query --windows 2>/dev/null \
+        | jq -r '[.[] | select(.app=="Ghostty" and .title=="theme-pick")][0].id // empty' 2>/dev/null)"
+      if [ -n "$id" ]; then
+        if yabai -m rule --list 2>/dev/null | jq -e 'map(select(.label=="theme-pick")) | length > 0' >/dev/null 2>&1; then
+          yabai -m rule --apply theme-pick >/dev/null 2>&1 || true
+        else
+          yabai -m window "$id" --toggle float --grid 6:6:1:1:4:4 >/dev/null 2>&1 || true
+        fi
+        yabai -m window "$id" --focus >/dev/null 2>&1 || true
+        return 0
+      fi
+      sleep 0.1
+    done
+  ) &
+}
+
+main() {
+  local mode="picker" preview_name=""
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      ""|-) shift ;;
+      --list) mode="list"; shift ;;
+      --preview)
+        [ $# -ge 2 ] || { echo "theme-pick: --preview requires a theme name" >&2; usage >&2; exit 2; }
+        mode="preview"; preview_name="$2"; shift 2 ;;
+      --preview=*)
+        mode="preview"; preview_name="${1#--preview=}"; shift ;;
+      --popup) mode="popup"; shift ;;
+      --dry-run) DRY_RUN=1; shift ;;
+      --rows) mode="rows"; shift ;;
+      -h|--help) mode="help"; shift ;;
+      *) echo "theme-pick: unknown argument: $1" >&2; usage >&2; exit 2 ;;
+    esac
+  done
+
+  case "$mode" in
+    help) usage ;;
+    list) print_list ;;
+    preview) print_preview "$preview_name" ;;
+    rows) build_rows ;;
+    popup) popup ;;
+    picker) run_picker ;;
+  esac
+}
+
+main "$@"

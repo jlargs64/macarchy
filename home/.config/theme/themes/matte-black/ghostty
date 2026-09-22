@@ -1,0 +1,26 @@
+# matte-black -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 121212
+foreground = bebebe
+cursor-color = e68e0d
+cursor-text = 121212
+selection-background = 333333
+selection-foreground = bebebe
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#121212
+palette = 1=#b35151
+palette = 2=#d9a406
+palette = 3=#9d1818
+palette = 4=#c4790b
+palette = 5=#b35151
+palette = 6=#a2a2a2
+palette = 7=#a2a2a2
+palette = 8=#333333
+palette = 9=#D35F5F
+palette = 10=#FFC107
+palette = 11=#b91c1c
+palette = 12=#e68e0d
+palette = 13=#D35F5F
+palette = 14=#bebebe
+palette = 15=#bebebe

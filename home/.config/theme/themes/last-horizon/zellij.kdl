@@ -1,0 +1,15 @@
+themes {
+    current {
+        fg "#FAFCFB"
+        bg "#0c0b0c"
+        black "#0c0b0c"
+        red "#c38b7b"
+        green "#87a9b0"
+        yellow "#6B5E73"
+        blue "#b59790"
+        magenta "#c4d8e2"
+        cyan "#a5a0b6"
+        white "#FAFCFB"
+        orange "#c4d8e2"
+    }
+}

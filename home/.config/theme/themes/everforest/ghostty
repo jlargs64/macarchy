@@ -1,0 +1,26 @@
+# everforest -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 2d353b
+foreground = d3c6aa
+cursor-color = 7fbbb3
+cursor-text = 2d353b
+selection-background = 475258
+selection-foreground = d3c6aa
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#2d353b
+palette = 1=#c46b6d
+palette = 2=#8ea36d
+palette = 3=#baa06c
+palette = 4=#6c9f98
+palette = 5=#b6829b
+palette = 6=#6fa37c
+palette = 7=#b3a891
+palette = 8=#475258
+palette = 9=#e67e80
+palette = 10=#a7c080
+palette = 11=#dbbc7f
+palette = 12=#7fbbb3
+palette = 13=#d699b6
+palette = 14=#83c092
+palette = 15=#d3c6aa

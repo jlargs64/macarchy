@@ -1,0 +1,26 @@
+# miasma -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 222222
+foreground = c2c2b0
+cursor-color = 78824b
+cursor-text = 222222
+selection-background = 666666
+selection-foreground = c2c2b0
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#222222
+palette = 1=#584a38
+palette = 2=#517351
+palette = 3=#985d39
+palette = 4=#666f40
+palette = 5=#9f653a
+palette = 6=#ab8c47
+palette = 7=#a5a596
+palette = 8=#666666
+palette = 9=#685742
+palette = 10=#5f875f
+palette = 11=#b36d43
+palette = 12=#78824b
+palette = 13=#bb7744
+palette = 14=#c9a554
+palette = 15=#c2c2b0

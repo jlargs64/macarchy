@@ -1,29 +1,37 @@
 #!/usr/bin/env bash
-# theme-port -- port an Omarchy theme (github.com/basecamp/omarchy) into the
-# macarchy theme format: DIR/<name>/{colors.sh,ghostty,zellij.kdl,neovim.lua,borders}
+# theme-port -- port an Omarchy theme (github.com/omacom/omarchy, quattro branch)
+# into the macarchy theme format: DIR/<name>/{colors.sh,ghostty,zellij.kdl,neovim.lua,borders}
 #
-# Usage: theme-port <omarchy-theme-name> [--out DIR] [--rev SHA] [--allow-light]
+# Usage: theme-port <omarchy-theme-name> [--out DIR] [--rev SHA] [--src DIR] [--allow-light]
 #
-# Downloads themes/<name>/{colors.toml,neovim.lua} from basecamp/omarchy at a
-# pinned rev (same default rev theme-bg-fetch uses), parses the flat TOML with
+# Downloads themes/<name>/{colors.toml,neovim.lua} from omacom/omarchy at a
+# pinned rev (947e2fc, on the quattro branch), parses the flat TOML with
 # sed/awk (no toml library, no python), and emits the 5 files in the same shape
-# as the existing themes (kanagawa-wave, catppuccin-mocha, retro-82). See
-# REPORT.md next to this script for the mapping table and what needs a human
-# look (ACCENT2 choice, neovim plugin availability, light themes).
+# as the existing themes (kanagawa-wave, catppuccin-mocha, retro-82). Pass
+# --src DIR to read themes/<name>/{colors.toml,neovim.lua} from a local clone
+# of omarchy instead of curling GitHub (useful offline or against a checkout
+# that's already pinned to the rev you want). See REPORT.md next to this
+# script for the mapping table and what needs a human look (ACCENT2 choice,
+# neovim plugin availability, light themes).
 #
 # Written for bash 3.2 (macOS system bash): no mapfile, no associative arrays.
 set -euo pipefail
 
-OMARCHY_REV_DEFAULT="45748a2812f42e32f915b053caf4074e150e2048"
-RAW_BASE="https://raw.githubusercontent.com/basecamp/omarchy"
+OMARCHY_REV_DEFAULT="947e2fc002d6831c7888b29b5761d59d29e69727"
+OMARCHY_OWNER="omacom"
+OMARCHY_REPO="omarchy"
+OMARCHY_BRANCH_FALLBACK="quattro"
+RAW_BASE="https://raw.githubusercontent.com/$OMARCHY_OWNER/$OMARCHY_REPO"
 
 usage() {
-  cat >&2 <<'EOF'
-usage: theme-port <omarchy-theme-name> [--out DIR] [--rev SHA] [--allow-light]
+  cat >&2 <<EOF
+usage: theme-port <omarchy-theme-name> [--out DIR] [--rev SHA] [--src DIR] [--allow-light]
 
-  <omarchy-theme-name>  name under https://github.com/basecamp/omarchy/tree/master/themes
-  --out DIR              output root; themes land in DIR/<name>/ (default: ./themes next to this script)
-  --rev SHA               omarchy commit to fetch from (default: the rev pinned in theme-bg-fetch)
+  <omarchy-theme-name>  name under https://github.com/$OMARCHY_OWNER/$OMARCHY_REPO/tree/$OMARCHY_BRANCH_FALLBACK/themes
+  --out DIR              output root; themes land in DIR/<name>/ (default: the themes/ dir next to this script's bin/ dir)
+  --rev SHA               omarchy commit to fetch from (default: $OMARCHY_REV_DEFAULT, quattro)
+  --src DIR               read themes/<name>/{colors.toml,neovim.lua} from this local omarchy
+                          checkout instead of curling GitHub (skips --rev entirely)
   --allow-light           allow porting a theme whose colors.toml has mode = "light"
                           (refused by default -- sketchybar/borders derivations here assume dark)
 EOF
@@ -33,12 +41,14 @@ EOF
 NAME=""
 OUT_DIR=""
 REV="$OMARCHY_REV_DEFAULT"
+SRC_DIR=""
 ALLOW_LIGHT=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --out) OUT_DIR="${2:-}"; shift 2 ;;
     --rev) REV="${2:-}"; shift 2 ;;
+    --src) SRC_DIR="${2:-}"; shift 2 ;;
     --allow-light) ALLOW_LIGHT=1; shift ;;
     -h|--help) usage ;;
     -*) echo "theme-port: unknown flag: $1" >&2; usage ;;
@@ -50,40 +60,59 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$NAME" ] || usage
+if [ -n "$SRC_DIR" ]; then
+  SRC_DIR="${SRC_DIR%/}"
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUT_DIR="${OUT_DIR:-$SCRIPT_DIR/themes}"
+OUT_DIR="${OUT_DIR:-$(cd "$SCRIPT_DIR/../themes" && pwd)}"
 DEST="$OUT_DIR/$NAME"
 
 tmpdir="$(mktemp -d -t theme-port)"
 trap 'rm -rf "$tmpdir"' EXIT
 
-FELL_BACK_TO_MASTER=0
+FELL_BACK_TO_BRANCH=0
 
 # fetch <upstream-relative-path> <local-out-file>
-# tries the pinned/requested rev first, falls back to master on 404.
+# with --src DIR: copies from the local checkout, no network, no fallback.
+# without: tries the pinned/requested rev first, falls back to the
+# OMARCHY_BRANCH_FALLBACK branch on 404.
 fetch() {
   path="$1"
   out="$2"
+  if [ -n "$SRC_DIR" ]; then
+    src="$SRC_DIR/themes/$NAME/$path"
+    if [ -f "$src" ]; then
+      cp "$src" "$out"
+      return 0
+    fi
+    return 1
+  fi
   if curl -fsSL "$RAW_BASE/$REV/themes/$NAME/$path" -o "$out" 2>/dev/null; then
     return 0
   fi
-  echo "theme-port: $NAME/$path not found at rev $REV, retrying at master" >&2
-  if curl -fsSL "$RAW_BASE/master/themes/$NAME/$path" -o "$out" 2>/dev/null; then
-    FELL_BACK_TO_MASTER=1
+  echo "theme-port: $NAME/$path not found at rev $REV, retrying at branch $OMARCHY_BRANCH_FALLBACK" >&2
+  if curl -fsSL "$RAW_BASE/$OMARCHY_BRANCH_FALLBACK/themes/$NAME/$path" -o "$out" 2>/dev/null; then
+    FELL_BACK_TO_BRANCH=1
     return 0
   fi
   return 1
 }
 
+if [ -n "$SRC_DIR" ]; then
+  SOURCE_DESC="$SRC_DIR/themes/$NAME"
+else
+  SOURCE_DESC="rev $REV or branch $OMARCHY_BRANCH_FALLBACK"
+fi
+
 fetch colors.toml "$tmpdir/colors.toml" || {
-  echo "theme-port: could not fetch colors.toml for '$NAME' at rev $REV or master -- is the theme name right?" >&2
+  echo "theme-port: could not fetch colors.toml for '$NAME' from $SOURCE_DESC -- is the theme name right?" >&2
   exit 1
 }
 
 HAVE_NVIM_LUA=1
 fetch neovim.lua "$tmpdir/neovim.lua" || {
-  echo "theme-port: no neovim.lua upstream for '$NAME'; NVIM_COLORSCHEME/plugin will need manual fill-in" >&2
+  echo "theme-port: no neovim.lua upstream for '$NAME' ($SOURCE_DESC); NVIM_COLORSCHEME/plugin will need manual fill-in" >&2
   HAVE_NVIM_LUA=0
   : > "$tmpdir/neovim.lua"
 }
@@ -204,18 +233,41 @@ if [ "$HAVE_NVIM_LUA" -eq 1 ]; then
       if (depth <= 0) capturing = 0
     }
   ' "$tmpdir/neovim.lua")"
+  # the captured block's last line is the closing brace as it appeared
+  # upstream, e.g. "  },\n" -- that trailing comma belongs to the *upstream*
+  # table entry it closed, not to our own re-emission of it below (which adds
+  # its own trailing comma after `opts = %s,`). Strip it so we don't end up
+  # with "},," in the generated file.
+  OPTS_BLOCK="$(printf '%s' "$OPTS_BLOCK" | sed -e 's/[[:space:]]*$//')"
+  OPTS_BLOCK="${OPTS_BLOCK%,}"
 fi
 [ -n "$NVIM_COLORSCHEME" ] || NVIM_COLORSCHEME="$NAME"
 if [ -z "$PLUGIN_REPO" ]; then
   echo "theme-port: could not find a colorscheme plugin repo in $NAME/neovim.lua; neovim.lua output needs a manual plugin name" >&2
 fi
 
+# NOTE on colors.toml gaps: some upstream palettes (last-horizon, solitude,
+# white) omit `orange`/`brown` entirely. Neither key is read anywhere in this
+# script -- ACCENT2 comes from the blue/cyan/magenta heuristic above, and the
+# zellij.kdl "orange" field is populated from ACCENT2, not toml's orange key --
+# so there is no exported var that could end up empty because of that gap.
+# The required-field loop above already guards the vars this script does
+# consume (BG/FG/ACCENT/MUTED/RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN); if a future
+# change starts consuming orange/brown directly, fall back the same way
+# ACCENT2 falls back today: orange -> yellow, brown -> muted.
+
 mkdir -p "$DEST"
+
+REV_SHORT="${REV:0:7}"
+PROVENANCE_BASE="github.com/$OMARCHY_OWNER/$OMARCHY_REPO ($OMARCHY_BRANCH_FALLBACK) themes/$NAME"
+PROVENANCE_NOTE=" @ ${REV_SHORT}"
+[ "$FELL_BACK_TO_BRANCH" -eq 1 ] && PROVENANCE_NOTE="$PROVENANCE_NOTE (fell back to branch $OMARCHY_BRANCH_FALLBACK)"
+[ -n "$SRC_DIR" ] && PROVENANCE_NOTE="$PROVENANCE_NOTE (via local --src checkout, not curl)"
 
 # --- colors.sh -------------------------------------------------------------
 cat > "$DEST/colors.sh" <<EOF
 # $NAME palette (0x/# free hex) -- ported from Omarchy
-# github.com/basecamp/omarchy themes/$NAME/colors.toml @ ${REV}$([ "$FELL_BACK_TO_MASTER" -eq 1 ] && echo " (fell back to master)")
+# $PROVENANCE_BASE/colors.toml$PROVENANCE_NOTE
 export THEME_NAME=$NAME
 export NVIM_COLORSCHEME=$NVIM_COLORSCHEME
 export BG=$BG
@@ -290,7 +342,7 @@ EOF
 
 # --- neovim.lua ------------------------------------------------------------
 {
-  echo "-- $NAME -- ported from Omarchy github.com/basecamp/omarchy themes/$NAME/neovim.lua @ ${REV}"
+  echo "-- $NAME -- ported from Omarchy $PROVENANCE_BASE/neovim.lua$PROVENANCE_NOTE"
   echo "return {"
   echo "  {"
   if [ -n "$PLUGIN_REPO" ]; then
@@ -318,5 +370,5 @@ EOF
 
 echo "theme-port: wrote $DEST/{colors.sh,ghostty,zellij.kdl,neovim.lua,borders}"
 echo "theme-port: ACCENT2 <- $ACCENT2_SRC ($ACCENT2); NVIM_COLORSCHEME <- $NVIM_COLORSCHEME; plugin <- ${PLUGIN_REPO:-<none found>}"
-[ "$FELL_BACK_TO_MASTER" -eq 1 ] && echo "theme-port: NOTE -- fell back to master, not rev $REV, for one or more files"
+[ "$FELL_BACK_TO_BRANCH" -eq 1 ] && echo "theme-port: NOTE -- fell back to branch $OMARCHY_BRANCH_FALLBACK, not rev $REV, for one or more files"
 exit 0

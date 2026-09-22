@@ -1,0 +1,26 @@
+# lumon -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 16242d
+foreground = d6e2ee
+cursor-color = 8bc9eb
+cursor-text = 16242d
+selection-background = 304860
+selection-foreground = d6e2ee
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#16242d
+palette = 1=#417296
+palette = 2=#507fa0
+palette = 3=#5e8bab
+palette = 4=#5e9cc1
+palette = 5=#76abc8
+palette = 6=#99c2d1
+palette = 7=#b6c0ca
+palette = 8=#304860
+palette = 9=#4d86b0
+palette = 10=#5e95bc
+palette = 11=#6fa4c9
+palette = 12=#6fb8e3
+palette = 13=#8bc9eb
+palette = 14=#b4e4f6
+palette = 15=#d6e2ee

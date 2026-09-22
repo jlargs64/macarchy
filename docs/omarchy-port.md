@@ -258,4 +258,89 @@ worth double-checking against the upstream repo if porting it, since
 - `https://raw.githubusercontent.com/basecamp/omarchy/45748a2812f42e32f915b053caf4074e150e2048/themes/nord/neovim.lua`
 - `https://raw.githubusercontent.com/basecamp/omarchy/45748a2812f42e32f915b053caf4074e150e2048/themes/<name>/colors.toml`
   for all 22 names in the mode table above
+
+## 2026-09-22 -- second wave: 16 more themes, source moved to `omacom/omarchy`
+
+Omarchy's upstream moved from `github.com/basecamp/omarchy` to
+`github.com/omacom/omarchy`, branch `quattro`. This port pins
+`947e2fc002d6831c7888b29b5761d59d29e69727` on that branch (fallback ref:
+`quattro` itself, used by `theme-bg-fetch` if the pinned commit's raw file
+404s). `theme-port`'s default fetch owner/repo/rev were updated to match.
+
+16 themes were ported in this pass, bringing the total to 22:
+
+- dark: `ethereal`, `everforest`, `hackerman`, `last-horizon`, `lumon`,
+  `matte-black`, `miasma`, `osaka-jade`, `ristretto`, `solitude`,
+  `vantablack`
+- light (`--allow-light`): `catppuccin-latte`, `flexoki-light`, `lupine`,
+  `rose-pine`, `white`
+
+**`--src DIR`.** `theme-port` gained a `--src DIR` flag: read
+`themes/<name>/{colors.toml,neovim.lua}` from a local Omarchy checkout
+instead of curling GitHub per-theme. All 16 themes above were ported this
+way, from a local clone of `omacom/omarchy` @ `quattro` pinned to
+947e2fc, rather than one `curl` per file.
+
+**Upstream nvim spec quirks -- fixed.** Two of the ported themes' upstream
+`neovim.lua` needed a human look rather than a mechanical port, and both are
+now fixed on disk:
+`everforest`'s hardness setting (`background = "soft"`) ships in
+upstream's `LazyVim/LazyVim` opts block, not in the `neanias/everforest-nvim`
+plugin's own `opts` -- which is a no-op there, since that key means nothing
+to LazyVim's own config surface. `themes/everforest/neovim.lua` now sets
+`opts = { background = "soft" }` on the `neanias/everforest-nvim` entry
+itself, so the setting actually takes effect.
+`osaka-jade`'s `ribru17/bamboo.nvim` plugin exposes multiple named styles
+(`bamboo`, `bamboo-vulgaris`, `bamboo-multiplex`); upstream's `neovim.lua`
+sets `colorscheme = "bamboo"` (the default style), but `bamboo-multiplex`
+(the jade-leaning variant) is the intended look for `osaka-jade`. Both
+`themes/osaka-jade/neovim.lua` (`colorscheme = "bamboo-multiplex"`) and
+`themes/osaka-jade/colors.sh` (`NVIM_COLORSCHEME=bamboo-multiplex`) now use
+it.
+
+**Local `mini.base16` themes.** Seven of the sixteen second-wave themes have
+no upstream Neovim plugin at all and follow retro-82's local-plugin pattern
+instead (see [theme-system.md](theme-system.md#adding-a-theme)): each ships
+a tiny `nvim-<slug>/colors/<slug>.lua` that feeds `nvim-mini/mini.base16`
+the theme's own palette and sets `vim.g.colors_name`, rather than a `TODO`
+placeholder for a plugin that doesn't exist upstream.
+
+| Theme | local plugin dir | `NVIM_COLORSCHEME` |
+|---|---|---|
+| ethereal | `nvim-ethereal/colors/ethereal.lua` | `ethereal` |
+| last-horizon | `nvim-lasthorizon/colors/lasthorizon.lua` | `lasthorizon` |
+| lupine | `nvim-lupine/colors/lupine.lua` | `lupine` |
+| miasma | `nvim-miasma/colors/miasma.lua` | `miasma` |
+| ristretto | `nvim-ristretto/colors/ristretto.lua` | `ristretto` |
+| vantablack | `nvim-vantablack/colors/vantablack.lua` | `vantablack` |
+| white | `nvim-white/colors/white.lua` | `white` |
+
+No `TODO/fill-in-colorscheme-plugin` placeholders remain anywhere under
+`home/.config/theme/themes`.
+
+**Renamed plugin owners -- fixed.** Two colorscheme plugins moved GitHub
+orgs since the last port: Lumon's colorscheme was `omacom-io/lumon.nvim`
+(GitHub renamed the org to `omacom`), and Solitude's was
+`ficcdaf/ashen.nvim` (GitHub renamed the user to `ficd0`). The old names'
+redirects still work, but the generated `neovim.lua` files now pin the
+**current** names -- `omacom/lumon.nvim` and `ficd0/ashen.nvim` -- with a
+comment noting the prior name for context. Use the current names in
+`~/.config/nvim/lua/plugins/theme-plugins.lua`'s `lazy = true` list (see
+[theme-system.md](theme-system.md#adding-a-theme)).
+
+**Trailing-comma bug in `theme-port`'s opts-block parser.** The brace-matcher
+that captures a plugin's own `opts = { ... }` block from upstream
+`neovim.lua` was carrying the closing line's upstream trailing comma
+(`  },\n`) straight through into the generated file, then adding its own
+trailing comma after re-emitting `opts = %s,` -- producing `},,` and a
+syntax error. Fixed by stripping trailing whitespace and a trailing `,` off
+the captured block before re-emitting it.
+
+**`--out` default bug.** Before this pass, `theme-port`'s default `--out`
+resolved to `$SCRIPT_DIR/themes` -- i.e. `bin/themes`, a directory that
+doesn't exist in this repo's layout -- instead of the sibling `themes/`
+directory next to `bin/`. Fixed to
+`$(cd "$SCRIPT_DIR/../themes" && pwd)`, matching
+`home/.config/theme/{bin,themes}/`. Anyone who ran `theme-port` without
+`--out` before this fix should check for a stray `bin/themes/` directory.
 - `https://api.github.com/repos/basecamp/omarchy/contents/themes?ref=45748a2812f42e32f915b053caf4074e150e2048`

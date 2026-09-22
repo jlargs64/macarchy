@@ -1,0 +1,26 @@
+# ethereal -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 060B1E
+foreground = ffcead
+cursor-color = 7d82d9
+cursor-text = 060B1E
+selection-background = 6d7db6
+selection-foreground = ffcead
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#060B1E
+palette = 1=#c94d4d
+palette = 2=#7c8c7d
+palette = 3=#c69f43
+palette = 4=#6a6fb8
+palette = 5=#aa85a4
+palette = 6=#8ba2b2
+palette = 7=#d9af93
+palette = 8=#6d7db6
+palette = 9=#ED5B5A
+palette = 10=#92a593
+palette = 11=#E9BB4F
+palette = 12=#7d82d9
+palette = 13=#c89dc1
+palette = 14=#a3bfd1
+palette = 15=#ffcead

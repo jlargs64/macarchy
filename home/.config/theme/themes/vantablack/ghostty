@@ -1,0 +1,26 @@
+# vantablack -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 000000
+foreground = ffffff
+cursor-color = 8d8d8d
+cursor-text = 000000
+selection-background = 7a7a7a
+selection-foreground = ffffff
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#000000
+palette = 1=#8b8b8b
+palette = 2=#9b9b9b
+palette = 3=#afafaf
+palette = 4=#787878
+palette = 5=#848484
+palette = 6=#969696
+palette = 7=#d9d9d9
+palette = 8=#7a7a7a
+palette = 9=#a4a4a4
+palette = 10=#b6b6b6
+palette = 11=#cecece
+palette = 12=#8d8d8d
+palette = 13=#9b9b9b
+palette = 14=#b0b0b0
+palette = 15=#ffffff

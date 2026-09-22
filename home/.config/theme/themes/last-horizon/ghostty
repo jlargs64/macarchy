@@ -1,0 +1,26 @@
+# last-horizon -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 0c0b0c
+foreground = FAFCFB
+cursor-color = b59790
+cursor-text = 0c0b0c
+selection-background = 584e51
+selection-foreground = FAFCFB
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#0c0b0c
+palette = 1=#a67669
+palette = 2=#739096
+palette = 3=#5b5062
+palette = 4=#9a807a
+palette = 5=#a7b8c0
+palette = 6=#8c889b
+palette = 7=#d5d6d5
+palette = 8=#584e51
+palette = 9=#c38b7b
+palette = 10=#87a9b0
+palette = 11=#6B5E73
+palette = 12=#b59790
+palette = 13=#c4d8e2
+palette = 14=#a5a0b6
+palette = 15=#FAFCFB

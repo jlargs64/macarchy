@@ -1,0 +1,26 @@
+# white -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = ffffff
+foreground = 000000
+cursor-color = 6e6e6e
+cursor-text = ffffff
+selection-background = 808080
+selection-foreground = 000000
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#ffffff
+palette = 1=#242424
+palette = 2=#313131
+palette = 3=#3f3f3f
+palette = 4=#161616
+palette = 5=#272727
+palette = 6=#353535
+palette = 7=#000000
+palette = 8=#808080
+palette = 9=#2a2a2a
+palette = 10=#3a3a3a
+palette = 11=#4a4a4a
+palette = 12=#1a1a1a
+palette = 13=#2e2e2e
+palette = 14=#3e3e3e
+palette = 15=#000000

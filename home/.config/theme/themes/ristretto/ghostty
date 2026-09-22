@@ -1,0 +1,26 @@
+# ristretto -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 2c2525
+foreground = e6d9db
+cursor-color = f38d70
+cursor-text = 2c2525
+selection-background = 72696a
+selection-foreground = e6d9db
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#2c2525
+palette = 1=#d7586f
+palette = 2=#93b966
+palette = 3=#d4ad5c
+palette = 4=#cf785f
+palette = 5=#8f90c8
+palette = 6=#71b9ad
+palette = 7=#c4b8ba
+palette = 8=#72696a
+palette = 9=#fd6883
+palette = 10=#adda78
+palette = 11=#f9cc6c
+palette = 12=#f38d70
+palette = 13=#a8a9eb
+palette = 14=#85dacc
+palette = 15=#e6d9db

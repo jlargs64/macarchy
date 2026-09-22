@@ -1,0 +1,26 @@
+# catppuccin-latte -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = eff1f5
+foreground = 4c4f69
+cursor-color = 1e66f5
+cursor-text = eff1f5
+selection-background = acb0be
+selection-foreground = 4c4f69
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#eff1f5
+palette = 1=#b30d30
+palette = 2=#368825
+palette = 3=#be7919
+palette = 4=#1a57d0
+palette = 5=#c764ad
+palette = 6=#147c82
+palette = 7=#414359
+palette = 8=#acb0be
+palette = 9=#d20f39
+palette = 10=#40a02b
+palette = 11=#df8e1d
+palette = 12=#1e66f5
+palette = 13=#ea76cb
+palette = 14=#179299
+palette = 15=#4c4f69

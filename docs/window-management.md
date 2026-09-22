@@ -118,6 +118,7 @@ and re-add it.
 |---|---|
 | `shift + alt - t` | cycle the desktop theme |
 | `shift + alt - b` | cycle the wallpaper within the current theme |
+| `shift + alt - /` | pop up `theme-pick` — fzf theme picker with swatch previews |
 | `shift + alt - r` | restart yabai and reload SketchyBar |
 | `alt - /` | pop up `macarchy-keys` — a searchable list of every skhd binding |
 | `ctrl - <number>` | switch Space (**native macOS**, see below) |

@@ -1,0 +1,26 @@
+# lupine -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = fafafa
+foreground = 212121
+cursor-color = 3264eb
+cursor-text = fafafa
+selection-background = 9e9e9e
+selection-foreground = 212121
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#fafafa
+palette = 1=#ab00a7
+palette = 2=#3f28b1
+palette = 3=#025ebd
+palette = 4=#2b55c8
+palette = 5=#753fb7
+palette = 6=#0a58bd
+palette = 7=#1c1c1c
+palette = 8=#9e9e9e
+palette = 9=#c900c4
+palette = 10=#4a2fd0
+palette = 11=#026fde
+palette = 12=#3264eb
+palette = 13=#8a4ad7
+palette = 14=#0c67de
+palette = 15=#212121

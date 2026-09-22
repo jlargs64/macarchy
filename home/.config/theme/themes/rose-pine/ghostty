@@ -1,0 +1,26 @@
+# rose-pine -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = faf4ed
+foreground = 575279
+cursor-color = 56949f
+cursor-text = faf4ed
+selection-background = cecacd
+selection-foreground = 575279
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#faf4ed
+palette = 1=#995468
+palette = 2=#22596f
+palette = 3=#c7852c
+palette = 4=#497e87
+palette = 5=#7a6890
+palette = 6=#b76f6b
+palette = 7=#4a4667
+palette = 8=#cecacd
+palette = 9=#b4637a
+palette = 10=#286983
+palette = 11=#ea9d34
+palette = 12=#56949f
+palette = 13=#907aa9
+palette = 14=#d7827e
+palette = 15=#575279

@@ -1,0 +1,26 @@
+# solitude -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 101315
+foreground = cacccc
+cursor-color = 798186
+cursor-text = 101315
+selection-background = 4b4e55
+selection-foreground = cacccc
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#101315
+palette = 1=#494f52
+palette = 2=#878c90
+palette = 3=#b8babb
+palette = 4=#676e72
+palette = 5=#949494
+palette = 6=#5f5f5f
+palette = 7=#acadad
+palette = 8=#4b4e55
+palette = 9=#565d60
+palette = 10=#9fa5a9
+palette = 11=#d9dbdc
+palette = 12=#798186
+palette = 13=#aeaeae
+palette = 14=#707070
+palette = 15=#cacccc
