@@ -1,0 +1,26 @@
+# nord -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 2e3440
+foreground = d8dee9
+cursor-color = 81a1c1
+cursor-text = 2e3440
+selection-background = 4c566a
+selection-foreground = d8dee9
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#2e3440
+palette = 1=#a2525a
+palette = 2=#8ba277
+palette = 3=#c8ad76
+palette = 4=#6e89a4
+palette = 5=#997993
+palette = 6=#74a3b1
+palette = 7=#b8bdc6
+palette = 8=#4c566a
+palette = 9=#bf616a
+palette = 10=#a3be8c
+palette = 11=#ebcb8b
+palette = 12=#81a1c1
+palette = 13=#b48ead
+palette = 14=#88c0d0
+palette = 15=#d8dee9

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC1091
+source "$HOME/.config/theme/current/colors.sh"
+
+options=(
+  style=round
+  width=6.0
+  hidpi=off
+  active_color=0xff${ACCENT}
+  inactive_color=0xff${MUTED}
+)
+
+borders "${options[@]}"

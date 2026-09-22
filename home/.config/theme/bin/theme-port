@@ -1,0 +1,322 @@
+#!/usr/bin/env bash
+# theme-port -- port an Omarchy theme (github.com/basecamp/omarchy) into the
+# macarchy theme format: DIR/<name>/{colors.sh,ghostty,zellij.kdl,neovim.lua,borders}
+#
+# Usage: theme-port <omarchy-theme-name> [--out DIR] [--rev SHA] [--allow-light]
+#
+# Downloads themes/<name>/{colors.toml,neovim.lua} from basecamp/omarchy at a
+# pinned rev (same default rev theme-bg-fetch uses), parses the flat TOML with
+# sed/awk (no toml library, no python), and emits the 5 files in the same shape
+# as the existing themes (kanagawa-wave, catppuccin-mocha, retro-82). See
+# REPORT.md next to this script for the mapping table and what needs a human
+# look (ACCENT2 choice, neovim plugin availability, light themes).
+#
+# Written for bash 3.2 (macOS system bash): no mapfile, no associative arrays.
+set -euo pipefail
+
+OMARCHY_REV_DEFAULT="45748a2812f42e32f915b053caf4074e150e2048"
+RAW_BASE="https://raw.githubusercontent.com/basecamp/omarchy"
+
+usage() {
+  cat >&2 <<'EOF'
+usage: theme-port <omarchy-theme-name> [--out DIR] [--rev SHA] [--allow-light]
+
+  <omarchy-theme-name>  name under https://github.com/basecamp/omarchy/tree/master/themes
+  --out DIR              output root; themes land in DIR/<name>/ (default: ./themes next to this script)
+  --rev SHA               omarchy commit to fetch from (default: the rev pinned in theme-bg-fetch)
+  --allow-light           allow porting a theme whose colors.toml has mode = "light"
+                          (refused by default -- sketchybar/borders derivations here assume dark)
+EOF
+  exit 1
+}
+
+NAME=""
+OUT_DIR=""
+REV="$OMARCHY_REV_DEFAULT"
+ALLOW_LIGHT=0
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --out) OUT_DIR="${2:-}"; shift 2 ;;
+    --rev) REV="${2:-}"; shift 2 ;;
+    --allow-light) ALLOW_LIGHT=1; shift ;;
+    -h|--help) usage ;;
+    -*) echo "theme-port: unknown flag: $1" >&2; usage ;;
+    *)
+      if [ -z "$NAME" ]; then NAME="$1"; else echo "theme-port: unexpected argument: $1" >&2; usage; fi
+      shift
+      ;;
+  esac
+done
+
+[ -n "$NAME" ] || usage
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OUT_DIR="${OUT_DIR:-$SCRIPT_DIR/themes}"
+DEST="$OUT_DIR/$NAME"
+
+tmpdir="$(mktemp -d -t theme-port)"
+trap 'rm -rf "$tmpdir"' EXIT
+
+FELL_BACK_TO_MASTER=0
+
+# fetch <upstream-relative-path> <local-out-file>
+# tries the pinned/requested rev first, falls back to master on 404.
+fetch() {
+  path="$1"
+  out="$2"
+  if curl -fsSL "$RAW_BASE/$REV/themes/$NAME/$path" -o "$out" 2>/dev/null; then
+    return 0
+  fi
+  echo "theme-port: $NAME/$path not found at rev $REV, retrying at master" >&2
+  if curl -fsSL "$RAW_BASE/master/themes/$NAME/$path" -o "$out" 2>/dev/null; then
+    FELL_BACK_TO_MASTER=1
+    return 0
+  fi
+  return 1
+}
+
+fetch colors.toml "$tmpdir/colors.toml" || {
+  echo "theme-port: could not fetch colors.toml for '$NAME' at rev $REV or master -- is the theme name right?" >&2
+  exit 1
+}
+
+HAVE_NVIM_LUA=1
+fetch neovim.lua "$tmpdir/neovim.lua" || {
+  echo "theme-port: no neovim.lua upstream for '$NAME'; NVIM_COLORSCHEME/plugin will need manual fill-in" >&2
+  HAVE_NVIM_LUA=0
+  : > "$tmpdir/neovim.lua"
+}
+
+# --- TOML parsing (flat `key = "value"` lines, no tables/arrays) ---------
+toml_get() {
+  # toml_get <key>  ->  value with quotes stripped, first match only
+  sed -n "s/^${1}[[:space:]]*=[[:space:]]*\"\\(.*\\)\"[[:space:]]*\$/\\1/p" "$tmpdir/colors.toml" | head -n1
+}
+
+get_hex() {
+  # get_hex <key> -> value with a leading '#' stripped (bare hex, per contract)
+  v="$(toml_get "$1")"
+  printf '%s' "${v#\#}"
+}
+
+MODE="$(toml_get mode)"
+if [ "$MODE" = "light" ] && [ "$ALLOW_LIGHT" -ne 1 ]; then
+  echo "theme-port: '$NAME' is a light theme (mode = \"light\"). Refusing: sketchybar/borders/ghostty" >&2
+  echo "            dim/bright derivations in this theme system assume a dark base. Re-run with" >&2
+  echo "            --allow-light to force the port anyway (output will need manual review)." >&2
+  exit 2
+fi
+
+BG="$(get_hex background)"
+FG="$(get_hex foreground)"
+ACCENT="$(get_hex accent)"
+MUTED="$(get_hex muted)"
+RED="$(get_hex red)"
+GREEN="$(get_hex green)"
+YELLOW="$(get_hex yellow)"
+BLUE="$(get_hex blue)"
+MAGENTA="$(get_hex magenta)"
+CYAN="$(get_hex cyan)"
+BRIGHT_BLUE="$(get_hex bright_blue)"
+BRIGHT_CYAN="$(get_hex bright_cyan)"
+BRIGHT_MAGENTA="$(get_hex bright_magenta)"
+[ -n "$BRIGHT_BLUE" ] || BRIGHT_BLUE="$BLUE"
+[ -n "$BRIGHT_CYAN" ] || BRIGHT_CYAN="$CYAN"
+[ -n "$BRIGHT_MAGENTA" ] || BRIGHT_MAGENTA="$MAGENTA"
+
+for kv in "BG:$BG" "FG:$FG" "ACCENT:$ACCENT" "MUTED:$MUTED" "RED:$RED" "GREEN:$GREEN" \
+          "YELLOW:$YELLOW" "BLUE:$BLUE" "MAGENTA:$MAGENTA" "CYAN:$CYAN"; do
+  k="${kv%%:*}"; v="${kv#*:}"
+  if [ -z "$v" ]; then
+    echo "theme-port: colors.toml for '$NAME' is missing a value this contract needs ($k)" >&2
+    exit 1
+  fi
+done
+
+# --- helpers: hex arithmetic via bash's own base-N integer literals --------
+# (macOS ships the "one true awk", which has no strtonum -- pure bash avoids
+# that dependency entirely; $((16#xx)) is POSIX ksh-style arithmetic.)
+hexdist() {
+  # hexdist <hexA> <hexB> -> squared RGB distance (integer)
+  a="$1"; b="$2"
+  r1=$((16#${a:0:2})); g1=$((16#${a:2:2})); b1=$((16#${a:4:2}))
+  r2=$((16#${b:0:2})); g2=$((16#${b:2:2})); b2=$((16#${b:4:2}))
+  printf '%d\n' $(( (r1-r2)*(r1-r2) + (g1-g2)*(g1-g2) + (b1-b2)*(b1-b2) ))
+}
+
+darken15() {
+  # darken15 <hex> -> hex with each channel * 0.85, rounded (matches retro-82's
+  # hand-authored 0-7 ANSI dim slots -- see theme-system.md). Integer math:
+  # *17/20 == *0.85, +10 before the /20 rounds instead of truncating.
+  h="$1"
+  r=$((16#${h:0:2})); g=$((16#${h:2:2})); b=$((16#${h:4:2}))
+  r=$(( (r*17 + 10) / 20 ))
+  g=$(( (g*17 + 10) / 20 ))
+  b=$(( (b*17 + 10) / 20 ))
+  printf '%02x%02x%02x\n' "$r" "$g" "$b"
+}
+
+# --- ACCENT2 heuristic: bright variant of whichever of blue/cyan/magenta ---
+# is farthest (squared RGB distance) from ACCENT, using the *base* (non-bright)
+# values for the comparison, then emitting that channel's *bright* value.
+# This is a heuristic, not something Omarchy's palette encodes directly --
+# the aim is an accent-adjacent-but-distinct second accent, same intent as
+# ACCENT2 in the hand-authored themes (e.g. kanagawa-wave: ACCENT=blue-ish,
+# ACCENT2=purple-ish).
+D_BLUE="$(hexdist "$ACCENT" "$BLUE")"
+D_CYAN="$(hexdist "$ACCENT" "$CYAN")"
+D_MAGENTA="$(hexdist "$ACCENT" "$MAGENTA")"
+ACCENT2="$BRIGHT_BLUE"; ACCENT2_SRC="bright_blue"
+if [ "$D_CYAN" -gt "$D_BLUE" ] && [ "$D_CYAN" -gt "$D_MAGENTA" ]; then
+  ACCENT2="$BRIGHT_CYAN"; ACCENT2_SRC="bright_cyan"
+elif [ "$D_MAGENTA" -gt "$D_BLUE" ] && [ "$D_MAGENTA" -gt "$D_CYAN" ]; then
+  ACCENT2="$BRIGHT_MAGENTA"; ACCENT2_SRC="bright_magenta"
+fi
+
+# --- neovim.lua: pull the plugin repo + LazyVim colorscheme name ----------
+PLUGIN_REPO=""
+NVIM_COLORSCHEME=""
+OPTS_BLOCK=""
+if [ "$HAVE_NVIM_LUA" -eq 1 ]; then
+  PLUGIN_REPO="$(grep -oE '"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"' "$tmpdir/neovim.lua" \
+    | tr -d '"' | grep -v '^LazyVim/LazyVim$' | head -n1 || true)"
+  NVIM_COLORSCHEME="$(grep -oE 'colorscheme[[:space:]]*=[[:space:]]*"[^"]+"' "$tmpdir/neovim.lua" \
+    | sed -E 's/.*"([^"]+)"/\1/' | head -n1 || true)"
+  # best-effort: capture a brace-balanced `opts = { ... }` block that belongs
+  # to the colorscheme plugin (i.e. appears before the LazyVim/LazyVim entry).
+  OPTS_BLOCK="$(awk '
+    /"LazyVim\/LazyVim"/ { exit }
+    !capturing && /opts[ \t]*=[ \t]*\{/ {
+      capturing = 1; depth = 0
+      line = $0
+      sub(/^.*opts[ \t]*=[ \t]*/, "", line)
+      print line
+      depth += gsub(/\{/, "{", line)
+      depth -= gsub(/\}/, "}", line)
+      if (depth <= 0) capturing = 0
+      next
+    }
+    capturing {
+      print $0
+      depth += gsub(/\{/, "{", $0)
+      depth -= gsub(/\}/, "}", $0)
+      if (depth <= 0) capturing = 0
+    }
+  ' "$tmpdir/neovim.lua")"
+fi
+[ -n "$NVIM_COLORSCHEME" ] || NVIM_COLORSCHEME="$NAME"
+if [ -z "$PLUGIN_REPO" ]; then
+  echo "theme-port: could not find a colorscheme plugin repo in $NAME/neovim.lua; neovim.lua output needs a manual plugin name" >&2
+fi
+
+mkdir -p "$DEST"
+
+# --- colors.sh -------------------------------------------------------------
+cat > "$DEST/colors.sh" <<EOF
+# $NAME palette (0x/# free hex) -- ported from Omarchy
+# github.com/basecamp/omarchy themes/$NAME/colors.toml @ ${REV}$([ "$FELL_BACK_TO_MASTER" -eq 1 ] && echo " (fell back to master)")
+export THEME_NAME=$NAME
+export NVIM_COLORSCHEME=$NVIM_COLORSCHEME
+export BG=$BG
+export FG=$FG
+export ACCENT=$ACCENT
+export ACCENT2=$ACCENT2
+export MUTED=$MUTED
+export RED=$RED
+export GREEN=$GREEN
+export YELLOW=$YELLOW
+export BLUE=$BLUE
+export MAGENTA=$MAGENTA
+export CYAN=$CYAN
+EOF
+
+# --- ghostty -----------------------------------------------------------
+# Custom 16-slot ANSI palette (no verified Ghostty built-in theme name for
+# Omarchy's exact palette), following the same darken-for-dim rule retro-82
+# uses: slots 0-7 are BG/RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG at 85% of their
+# channel values (BG itself is left verbatim, it's already the darkest),
+# slots 8-15 are MUTED followed by the canonical RED..CYAN and FG verbatim.
+cat > "$DEST/ghostty" <<EOF
+# $NAME -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = $BG
+foreground = $FG
+cursor-color = $ACCENT
+cursor-text = $BG
+selection-background = $MUTED
+selection-foreground = $FG
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#$BG
+palette = 1=#$(darken15 "$RED")
+palette = 2=#$(darken15 "$GREEN")
+palette = 3=#$(darken15 "$YELLOW")
+palette = 4=#$(darken15 "$BLUE")
+palette = 5=#$(darken15 "$MAGENTA")
+palette = 6=#$(darken15 "$CYAN")
+palette = 7=#$(darken15 "$FG")
+palette = 8=#$MUTED
+palette = 9=#$RED
+palette = 10=#$GREEN
+palette = 11=#$YELLOW
+palette = 12=#$BLUE
+palette = 13=#$MAGENTA
+palette = 14=#$CYAN
+palette = 15=#$FG
+EOF
+
+# --- zellij.kdl ----------------------------------------------------------
+# Simple fg/bg/named-color theme (same shape retro-82 uses), not the verbose
+# upstream-Zellij-repo format kanagawa-wave/catppuccin-mocha use, since these
+# ported palettes aren't in zellij's own theme collection.
+cat > "$DEST/zellij.kdl" <<EOF
+themes {
+    current {
+        fg "#$FG"
+        bg "#$BG"
+        black "#$BG"
+        red "#$RED"
+        green "#$GREEN"
+        yellow "#$YELLOW"
+        blue "#$BLUE"
+        magenta "#$MAGENTA"
+        cyan "#$CYAN"
+        white "#$FG"
+        orange "#$ACCENT2"
+    }
+}
+EOF
+
+# --- neovim.lua ------------------------------------------------------------
+{
+  echo "-- $NAME -- ported from Omarchy github.com/basecamp/omarchy themes/$NAME/neovim.lua @ ${REV}"
+  echo "return {"
+  echo "  {"
+  if [ -n "$PLUGIN_REPO" ]; then
+    echo "    \"$PLUGIN_REPO\","
+  else
+    echo "    \"TODO/fill-in-colorscheme-plugin\", -- theme-port could not parse a plugin repo from upstream neovim.lua"
+  fi
+  echo "    lazy = false,"
+  echo "    priority = 1000,"
+  if [ -n "$OPTS_BLOCK" ]; then
+    printf '    opts = %s,\n' "$OPTS_BLOCK"
+  fi
+  echo "  },"
+  echo "  { \"LazyVim/LazyVim\", opts = { colorscheme = \"$NVIM_COLORSCHEME\" } },"
+  echo "}"
+} > "$DEST/neovim.lua"
+
+# --- borders -----------------------------------------------------------
+# Identical across every theme -- borders always reads colors.sh via the
+# `current` symlink, so there's nothing theme-specific to port.
+cat > "$DEST/borders" <<'EOF'
+source "$HOME/.config/theme/current/colors.sh"
+active_color=0xff${ACCENT}
+EOF
+
+echo "theme-port: wrote $DEST/{colors.sh,ghostty,zellij.kdl,neovim.lua,borders}"
+echo "theme-port: ACCENT2 <- $ACCENT2_SRC ($ACCENT2); NVIM_COLORSCHEME <- $NVIM_COLORSCHEME; plugin <- ${PLUGIN_REPO:-<none found>}"
+[ "$FELL_BACK_TO_MASTER" -eq 1 ] && echo "theme-port: NOTE -- fell back to master, not rev $REV, for one or more files"
+exit 0

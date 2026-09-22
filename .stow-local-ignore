@@ -1,0 +1,7 @@
+^/README.*
+^/LICENSE
+^/install\.sh
+^/docs
+^/\.git
+^/\.stow-local-ignore
+^/\.github

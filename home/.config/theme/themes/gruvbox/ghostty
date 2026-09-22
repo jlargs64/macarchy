@@ -1,0 +1,26 @@
+# gruvbox -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 282828
+foreground = d4be98
+cursor-color = 7daea3
+cursor-text = 282828
+selection-background = 665c54
+selection-foreground = d4be98
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#282828
+palette = 1=#c75953
+palette = 2=#909b56
+palette = 3=#b88d4a
+palette = 4=#6a948b
+palette = 5=#b37284
+palette = 6=#74996f
+palette = 7=#b4a281
+palette = 8=#665c54
+palette = 9=#ea6962
+palette = 10=#a9b665
+palette = 11=#d8a657
+palette = 12=#7daea3
+palette = 13=#d3869b
+palette = 14=#89b482
+palette = 15=#d4be98

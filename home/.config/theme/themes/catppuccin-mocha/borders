@@ -1,0 +1,3 @@
+# sourced by bordersrc / theme-set
+source "$HOME/.config/theme/current/colors.sh"
+active_color=0xff${ACCENT}

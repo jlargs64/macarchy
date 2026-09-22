@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# =============================================================================
+# yabai — tiling window manager, layered on top of NATIVE macOS Spaces.
+#
+# The scripting addition is deliberately NOT loaded. It requires partially
+# disabling SIP, which this setup does not do. Everything below works without
+# it. What you give up without the scripting addition:
+#   * creating / destroying spaces from yabai  (use Mission Control)
+#   * moving a window to another space via yabai (use native drag, or
+#     System Settings > Keyboard shortcuts)
+#   * window shadows/opacity toggles on some macOS versions
+# Tiling, resizing, focus and layout all work fine without it.
+#
+# Restart after editing:  yabai --restart-service
+# =============================================================================
+
+# ----- global layout --------------------------------------------------------
+yabai -m config layout                      bsp
+yabai -m config window_placement            second_child
+yabai -m config auto_balance                off
+yabai -m config split_ratio                 0.50
+
+# ----- gaps and padding -----------------------------------------------------
+# yabai already excludes the 32pt menu-bar/notch strip at the top of the display
+# (even with the menu bar auto-hidden), and SketchyBar lives entirely inside that
+# strip. So top_padding is just the gap under the bar, same as every other gap.
+yabai -m config top_padding                 8
+yabai -m config bottom_padding              8
+yabai -m config left_padding                8
+yabai -m config right_padding               8
+yabai -m config window_gap                  8
+
+# ----- focus behaviour ------------------------------------------------------
+yabai -m config mouse_follows_focus          off
+yabai -m config focus_follows_mouse          off
+# window_topmost was removed in yabai v7.
+yabai -m config window_shadow                float
+
+# ----- mouse ----------------------------------------------------------------
+# alt + left-drag  = move window, alt + right-drag = resize window
+yabai -m config mouse_modifier               alt
+yabai -m config mouse_action1                move
+yabai -m config mouse_action2                resize
+yabai -m config mouse_drop_action            swap
+
+# ----- borders ---------------------------------------------------------------
+# JankyBorders draws the focused-window border. yabai's own `window_border`
+# config was removed in yabai v7, so there is nothing to turn off here.
+
+# ----- keep SketchyBar's space indicators in sync ---------------------------
+# Without the scripting addition yabai cannot emit space_change itself, so we
+# mirror window lifecycle events into a custom SketchyBar event.
+yabai -m signal --add event=window_created   action="sketchybar --trigger yabai_window_change"
+yabai -m signal --add event=window_destroyed action="sketchybar --trigger yabai_window_change"
+yabai -m signal --add event=window_focused   action="sketchybar --trigger yabai_window_change"
+yabai -m signal --add event=space_changed    action="sketchybar --trigger yabai_window_change"
+
+# ----- rules: apps that should never be tiled -------------------------------
+# These app rules, including 1Password and Steam below, are opinionated
+# defaults carried over from the original setup this was extracted from.
+# Comment out or add to the list for your own apps as needed.
+yabai -m rule --add app="^System Settings$"        manage=off
+yabai -m rule --add app="^System Information$"     manage=off
+yabai -m rule --add app="^Activity Monitor$"       manage=off
+yabai -m rule --add app="^Calculator$"             manage=off
+yabai -m rule --add app="^Archive Utility$"        manage=off
+yabai -m rule --add app="^Finder$" title="^Copy$"  manage=off
+yabai -m rule --add app="^1Password$"              manage=off
+yabai -m rule --add app="^Raycast$"                manage=off
+
+# macarchy-keys pops up in its own Ghostty window (alt - /); float it,
+# centered, instead of letting it tile like a normal terminal window.
+yabai -m rule --add label=macarchy-keys app="^Ghostty$" title="^macarchy-keys$" manage=off grid=6:6:1:1:4:4
+
+# Steam's windows are not AXStandardWindow, so yabai cannot tile them at all.
+# Float it explicitly rather than letting it look like a yabai failure.
+yabai -m rule --add app="^Steam$"                  manage=off
+yabai -m rule --add app="^steam_osx$"              manage=off
+
+echo "yabai configuration loaded"

@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# theme-wallpaper-enroll -- point EVERY macOS Space at the shared wallpaper file.
+#
+# Why this exists: macOS stores the wallpaper per Space, and AppleScript can
+# only reach the Space that is currently active (System Events exposes one
+# "desktop" per DISPLAY, not per Space). yabai cannot switch Spaces either
+# without the scripting addition, which this setup does not use.
+#
+# So this walks the Spaces using the native ctrl+<number> shortcut, sets the
+# wallpaper on each, and returns to where you started. Run it ONCE. After that
+# every Space points at ~/.config/theme/wallpaper-current.jpg and `theme-set`
+# only has to rewrite that file.
+#
+# Your screen will visibly flick through each Space. That is expected.
+set -euo pipefail
+
+THEME_ROOT="$HOME/.config/theme"
+FIXED="$THEME_ROOT/wallpaper-current.jpg"
+
+[ -L "$THEME_ROOT/current" ] || { echo "no theme selected; run theme-set first" >&2; exit 1; }
+cp -f "$THEME_ROOT/current/wallpaper.jpg" "$FIXED"
+
+if ! command -v yabai >/dev/null 2>&1; then
+  echo "theme-wallpaper-enroll: needs yabai to enumerate Spaces" >&2; exit 1
+fi
+
+count=$(yabai -m query --spaces 2>/dev/null | jq 'length')
+start=$(yabai -m query --spaces 2>/dev/null | jq -r '.[] | select(."has-focus") | .index')
+[ -z "$count" ] && { echo "could not query Spaces" >&2; exit 1; }
+[ "$count" -gt 9 ] && count=9
+
+# macOS key codes for the digits 1..9
+codes=(18 19 20 21 23 22 26 28 25)
+
+goto() {
+  osascript -e "tell application \"System Events\" to key code ${codes[$(($1 - 1))]} using control down" >/dev/null 2>&1 || true
+  sleep 0.6
+}
+setwp() {
+  osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$FIXED\"" >/dev/null 2>&1 || true
+}
+
+echo "enrolling $count Space(s)..."
+i=1
+while [ "$i" -le "$count" ]; do
+  goto "$i"; setwp
+  echo "  Space $i"
+  i=$((i + 1))
+done
+
+[ -n "$start" ] && goto "$start"
+killall WallpaperAgent >/dev/null 2>&1 || true
+echo "done. every Space now follows theme-set."
+echo "note: ctrl+<number> must be enabled in System Settings > Keyboard >"
+echo "      Keyboard Shortcuts > Mission Control for this to work."

@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# hotkey-check -- find hotkey collisions between skhd, macOS system shortcuts,
+# Raycast's global hotkey, and a hand-kept list of Raycast command hotkeys.
+#
+# Raycast stores per-command hotkeys in an encrypted database, so keep them in
+#   ~/.config/macarchy/raycast-hotkeys      one binding per line, skhd syntax:
+#   alt - space        # Set Theme
+#   cmd + shift - n    # Floating Notes
+# Everything is normalised to  "<mods> - <key>"  with mods sorted (alt cmd ctrl fn shift).
+set -uo pipefail
+SKHDRC="${SKHDRC:-$HOME/.config/skhd/skhdrc}"
+RAYLIST="${RAYLIST:-$HOME/.config/macarchy/raycast-hotkeys}"
+SYMHOT="$HOME/Library/Preferences/com.apple.symbolichotkeys.plist"
+
+norm() { # "shift + alt - h" -> "alt shift - h"
+  local lhs="${1%%-*}" key="${1##*- }"
+  lhs="${lhs//+/ }"; lhs="${lhs//lalt/alt}"; lhs="${lhs//ralt/alt}"; lhs="${lhs//lcmd/cmd}"; lhs="${lhs//rcmd/cmd}"
+  lhs="${lhs//lshift/shift}"; lhs="${lhs//rshift/shift}"; lhs="${lhs//lctrl/ctrl}"; lhs="${lhs//rctrl/ctrl}"
+  local mods; mods=$(tr ' ' '\n' <<<"$lhs" | sed '/^$/d' | sort -u | tr '\n' ' '); mods="${mods% }"
+  key=$(tr '[:upper:]' '[:lower:]' <<<"$key" | sed 's/^0x//; s/ *$//')
+  printf '%s - %s\n' "$mods" "$key"
+}
+
+keyname() { # macOS virtual keycode -> skhd key name
+  case "$1" in
+    0) echo a;; 1) echo s;; 2) echo d;; 3) echo f;; 4) echo h;; 5) echo g;; 6) echo z;; 7) echo x;; 8) echo c;; 9) echo v;;
+    11) echo b;; 12) echo q;; 13) echo w;; 14) echo e;; 15) echo r;; 16) echo y;; 17) echo t;; 18) echo 1;; 19) echo 2;; 20) echo 3;;
+    21) echo 4;; 22) echo 6;; 23) echo 5;; 24) echo =;; 25) echo 9;; 26) echo 7;; 27) echo -;; 28) echo 8;; 29) echo 0;;
+    31) echo o;; 32) echo u;; 34) echo i;; 35) echo p;; 36) echo return;; 37) echo l;; 38) echo j;; 40) echo k;; 45) echo n;; 46) echo m;;
+    48) echo tab;; 49) echo space;; 51) echo delete;; 53) echo escape;; 96) echo f5;; 97) echo f6;; 98) echo f7;; 99) echo f3;;
+    100) echo f8;; 101) echo f9;; 103) echo f11;; 109) echo f10;; 111) echo f12;; 118) echo f4;; 120) echo f2;; 122) echo f1;;
+    123) echo left;; 124) echo right;; 125) echo down;; 126) echo up;; 65535) echo "";; *) echo "kc$1";;
+  esac
+}
+modnames() { # macOS modifier bitmask -> sorted skhd mod names
+  local m=$1 out=()
+  (( m & 524288 ))  && out+=(alt);  (( m & 1048576 )) && out+=(cmd); (( m & 262144 )) && out+=(ctrl)
+  (( m & 8388608 )) && out+=(fn);   (( m & 131072 ))  && out+=(shift)
+  echo "${out[*]-}"
+}
+symname() {
+  case "$1" in
+    32) echo "Mission Control";; 33) echo "Application windows";; 36) echo "Show Desktop";; 60) echo "Previous input source";;
+    61) echo "Next input source";; 64) echo "Spotlight";; 65) echo "Spotlight (Finder)";; 79|80) echo "Move left a Space";;
+    81|82) echo "Move right a Space";; 118) echo "Switch to Desktop 1";; 119) echo "Switch to Desktop 2";; 120) echo "Switch to Desktop 3";;
+    121) echo "Switch to Desktop 4";; 122) echo "Switch to Desktop 5";; 123) echo "Switch to Desktop 6";; 124) echo "Switch to Desktop 7";;
+    *) echo "system shortcut #$1";;
+  esac
+}
+
+tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT
+# 1. skhd
+if [ -f "$SKHDRC" ]; then
+  grep -E '^[a-z0-9 +]+ *- *[^:]+:' "$SKHDRC" | sed -E 's/ *:.*//' | while read -r b; do
+    printf '%s\tskhd\t%s\n' "$(norm "$b")" "$(grep -F -m1 "$b " "$SKHDRC" | grep -v "^ *#" | sed -E 's/^[^:]*: *//' | cut -c1-60)"
+  done >> "$tmp"
+fi
+# 2. macOS symbolic hotkeys (enabled, with a key)
+if [ -f "$SYMHOT" ]; then
+  plutil -convert json -o - "$SYMHOT" 2>/dev/null | /usr/bin/jq -r '.AppleSymbolicHotKeys | to_entries[] | select(.value.enabled==true and (.value.value.parameters|length)==3) | "\(.key) \(.value.value.parameters[1]) \(.value.value.parameters[2])"' |
+  while read -r id kc mods; do
+    k=$(keyname "$kc"); [ -z "$k" ] && continue
+    printf '%s\tmacos\t%s\n' "$(norm "$(modnames "$mods") - $k")" "$(symname "$id")" >> "$tmp"
+  done
+fi
+# 3. Raycast global hotkey ("Command-49")
+g=$(defaults read com.raycast.macos raycastGlobalHotkey 2>/dev/null | tr -d '"')
+if [ -n "$g" ]; then
+  mods=$(tr '[:upper:]' '[:lower:]' <<<"${g%-*}" | sed 's/command/cmd/; s/option/alt/; s/control/ctrl/; s/,/ /g')
+  printf '%s\traycast\t%s\n' "$(norm "$mods - $(keyname "${g##*-}")")" "Raycast (global)" >> "$tmp"
+fi
+# 4. hand-kept Raycast command hotkeys
+if [ -f "$RAYLIST" ]; then
+  sed -E 's/#.*//' "$RAYLIST" | sed '/^ *$/d' | while read -r b; do
+    printf '%s\traycast\t%s\n' "$(norm "$b")" "$(grep -F -m1 "$b" "$RAYLIST" | sed -E 's/^[^#]*# *//')" >> "$tmp"
+  done
+else
+  echo "note: no $RAYLIST; Raycast command hotkeys are in an encrypted DB, list them there by hand." >&2
+fi
+
+sort "$tmp" > "$tmp.s"; mv "$tmp.s" "$tmp"
+if [ "${1:-}" = "--all" ]; then column -t -s $'\t' "$tmp"; echo; fi
+dups=$(cut -f1 "$tmp" | sort | uniq -d)
+if [ -z "$dups" ]; then echo "no conflicts across $(wc -l < "$tmp" | tr -d ' ') bindings"; exit 0; fi
+echo "CONFLICTS:"; while read -r d; do echo "  $d"; grep -F "$d	" "$tmp" | awk -F'\t' '{printf "      %-8s %s\n", $2, $3}'; done <<<"$dups"
+exit 1

@@ -1,0 +1,826 @@
+#!/usr/bin/env bash
+# macarchy-keys — which-key style hotkey discovery for skhd, Ghostty, and Zellij.
+#
+# Parses ${SKHDRC:-~/.config/skhd/skhdrc}, Ghostty's `keybind` lines, and
+# Zellij's `keybinds { ... }` block into (source, section, key, description,
+# command) records and either:
+#   (no args)    pops up an fzf picker; Enter runs a skhd binding's command,
+#                or copies a ghostty/zellij binding's key to the clipboard
+#   --list       prints the aligned table to stdout, no fzf
+#   --markdown   prints a GitHub markdown table grouped by source, then section
+#   --popup      relaunches the picker in a floating Ghostty window
+#
+# Which sources are shown is controlled by MACARCHY_KEYS_SOURCES (default:
+# "skhd ghostty zellij"), overridable per invocation with one or more
+# --source flags. A source whose config file does not exist is skipped
+# silently -- except skhd, whose skhdrc is required whenever skhd is active.
+#
+# skhd descriptions come from (in priority order): a trailing "# comment" on
+# the binding line (with a leading "mods - key" hint stripped off it first,
+# since skhd hex keycodes like 0x21 often get a human-readable hint such as
+# "# alt - ["), else the comment line(s) directly above the binding, else the
+# section name from the most recent "# ----- Name ---" header.
+#
+# Ghostty descriptions come from the comment line(s) directly above the
+# `keybind` line (same rule as skhd), else a humanized version of the action,
+# e.g. "resize_split:left,10" -> "resize split left 10".
+#
+# Zellij descriptions are built from the actions inside a bind's "{ ... }"
+# body, comma-joined, with a lone trailing `SwitchToMode "normal"` dropped as
+# noise (kept when it is the bind's only action -- then it IS the point) and
+# quotes stripped.
+set -euo pipefail
+
+SKHDRC="${SKHDRC:-$HOME/.config/skhd/skhdrc}"
+MACARCHY_KEYS_GHOSTTY="${MACARCHY_KEYS_GHOSTTY:-$HOME/.config/ghostty/config}"
+MACARCHY_KEYS_ZELLIJ="${MACARCHY_KEYS_ZELLIJ:-$HOME/.config/zellij/config.kdl}"
+MACARCHY_KEYS_SOURCES="${MACARCHY_KEYS_SOURCES:-skhd ghostty zellij}"
+
+# Same load order as ~/.config/macarchy/lib.sh (defaults first, then the
+# user's config file overrides). Inlined here rather than sourcing lib.sh,
+# since lib.sh doesn't know about these MACARCHY_KEYS_* keys.
+# shellcheck disable=SC1091
+[ -f "$HOME/.config/macarchy/config" ] && . "$HOME/.config/macarchy/config"
+
+usage() {
+  cat <<'EOF'
+usage: macarchy-keys [--list | --markdown | --popup | --help] [--source NAME]...
+
+  (no args)   fuzzy-searchable picker (fzf); Enter runs a skhd binding's
+              command, or copies a ghostty/zellij binding's key to the
+              clipboard
+  --list      print the aligned "source | section | key | description" table
+  --markdown  print a GitHub markdown table, grouped by "## source" then
+              "### section"
+  --popup     relaunch the picker in a floating Ghostty window
+  --source NAME
+              restrict to one source; repeatable, or comma-separated
+              (e.g. --source zellij, or --source ghostty,zellij).
+              NAME is one of: skhd ghostty zellij
+  --help      this message
+
+SKHDRC=<path>                 skhdrc to parse (default: ~/.config/skhd/skhdrc)
+MACARCHY_KEYS_GHOSTTY=<path>  Ghostty config to parse
+                              (default: ~/.config/ghostty/config)
+MACARCHY_KEYS_ZELLIJ=<path>   Zellij config to parse
+                              (default: ~/.config/zellij/config.kdl)
+MACARCHY_KEYS_SOURCES="skhd ghostty zellij"
+                              space-separated sources shown by default;
+                              also settable in ~/.config/macarchy/config
+EOF
+}
+
+# hex keycode -> human-readable key, for the keys skhdrc uses as 0xNN because
+# they have no name skhd recognizes.
+keycode_name() {
+  case "$1" in
+    0x21) printf '[' ;;
+    0x1E) printf ']' ;;
+    0x2C) printf '/' ;;
+    0x2B) printf ',' ;;
+    0x2F) printf '.' ;;
+    0x32) printf '`' ;;
+    0x27) printf "'" ;;
+    0x29) printf ';' ;;
+    0x1B) printf '-' ;;
+    0x18) printf '=' ;;
+    0x31) printf 'space' ;;
+    0x24) printf 'return' ;;
+    0x30) printf 'tab' ;;
+    0x35) printf 'escape' ;;
+    0x33) printf 'delete' ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
+# trim leading/trailing whitespace
+trim() {
+  local s="$1"
+  s="${s#"${s%%[![:space:]]*}"}"
+  s="${s%"${s##*[![:space:]]}"}"
+  printf '%s' "$s"
+}
+
+# Split a line into "code" and "trailing comment" the way a shell would:
+# a '#' only starts a comment when it is not inside a '...' or "..." string
+# and it begins a word (preceded by whitespace, or at the start of the
+# line). This avoids misreading a '#' embedded in a quoted command, e.g.
+# `echo "hello # world"`, as a comment delimiter. Sets globals CODE/TRAILING.
+split_code_comment() {
+  local line="$1" i len c prev=' ' in_s=0 in_d=0 esc=0 pos=-1
+  len=${#line}
+  for ((i = 0; i < len; i++)); do
+    c="${line:i:1}"
+    if [ "$esc" -eq 1 ]; then
+      esc=0; prev="$c"; continue
+    fi
+    if [ "$in_d" -eq 1 ]; then
+      case "$c" in
+        '\') esc=1 ;;
+        '"') in_d=0 ;;
+      esac
+      prev="$c"; continue
+    fi
+    if [ "$in_s" -eq 1 ]; then
+      [ "$c" = "'" ] && in_s=0
+      prev="$c"; continue
+    fi
+    case "$c" in
+      "'") in_s=1 ;;
+      '"') in_d=1 ;;
+      '#')
+        case "$prev" in
+          ' '|$'\t') pos=$i; break ;;
+        esac
+        ;;
+    esac
+    prev="$c"
+  done
+  if [ "$pos" -ge 0 ]; then
+    CODE="${line:0:pos}"
+    TRAILING="$(trim "${line:pos+1}")"
+  else
+    CODE="$line"
+    TRAILING=""
+  fi
+}
+
+# Emit TSV records: skhd \t section \t key \t description \t command
+parse_skhdrc() {
+  local file="$1"
+  [ -r "$file" ] || { echo "macarchy-keys: cannot read $file" >&2; return 1; }
+
+  local section="" pending="" line
+  # A trailing comment that is only a "mods - key" hint (e.g. "alt - [")
+  # gets its leading hint stripped; whatever (if anything) remains after it
+  # is the real description. Group 2 is the remainder.
+  local hint_re='^[A-Za-z]+([[:space:]]*\+[[:space:]]*[A-Za-z]+)*[[:space:]]*-[[:space:]]*[^[:space:]]+[[:space:]]*(.*)$'
+  local mode_re='^([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*\<[[:space:]]*(.+)$'
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    # tolerate a CRLF-saved file: strip a trailing \r left by `read`.
+    line="${line%$'\r'}"
+
+    # blank line: comments above it no longer apply to what follows
+    if [ -z "$(trim "$line")" ]; then
+      pending=""
+      continue
+    fi
+
+    # section header: "# ----- Name ---..."
+    if [[ "$line" =~ ^#[[:space:]]*-{3,} ]]; then
+      section="$(printf '%s' "$line" | sed -E 's/^#[[:space:]]*-+[[:space:]]*//; s/[[:space:]]*-+[[:space:]]*$//')"
+      pending=""
+      continue
+    fi
+
+    # plain comment line: accumulate for "comment directly above" fallback
+    if [[ "$line" =~ ^#(.*)$ ]]; then
+      local ctext
+      ctext="$(trim "${BASH_REMATCH[1]}")"
+      if [ -z "$pending" ]; then pending="$ctext"; else pending="$pending $ctext"; fi
+      continue
+    fi
+
+    # skhd directives we don't turn into bindings: .blacklist / .load /
+    # .define / ::mode declarations. Skip gracefully.
+    local trimmed
+    trimmed="$(trim "$line")"
+    case "$trimmed" in
+      .blacklist*|.load*|.define*|::*) pending=""; continue ;;
+    esac
+
+    # strip a trailing "# comment" (quote-aware: a '#' inside '...' or
+    # "..." in the command itself is not treated as a comment)
+    local code trailing
+    split_code_comment "$line"
+    code="$(trim "$CODE")"
+    trailing="$TRAILING"
+
+    # skhd mode binding: "mode_name < mods - key : command"
+    local mode="" rest="$code"
+    if [[ "$code" =~ $mode_re ]]; then
+      mode="${BASH_REMATCH[1]}"
+      rest="$(trim "${BASH_REMATCH[2]}")"
+    fi
+
+    # not a "MODS - KEY : COMMAND" line (e.g. a blacklist app-name entry) --
+    # skip it gracefully rather than emitting garbage.
+    if [[ "$rest" != *" : "* ]]; then
+      pending=""
+      continue
+    fi
+
+    local mods_key cmd mods key key_disp key_field desc
+    mods_key="${rest%% : *}"
+    cmd="${rest#* : }"
+    mods_key="$(trim "$mods_key")"
+    cmd="$(trim "$cmd")"
+
+    if [[ "$mods_key" == *" - "* ]]; then
+      mods="${mods_key% - *}"
+      key="${mods_key##* - }"
+    else
+      mods=""
+      key="$mods_key"
+    fi
+    key_disp="$(keycode_name "$key")"
+    if [ -n "$mods" ]; then key_field="$mods - $key_disp"; else key_field="$key_disp"; fi
+    if [ -n "$mode" ]; then key_field="$mode: $key_field"; fi
+
+    desc=""
+    if [ -n "$trailing" ]; then
+      if [[ "$trailing" =~ $hint_re ]]; then
+        desc="$(trim "${BASH_REMATCH[2]}")"
+      else
+        desc="$trailing"
+      fi
+    fi
+    [ -n "$desc" ] || desc="$pending"
+    [ -n "$desc" ] || desc="$section"
+
+    printf '%s\t%s\t%s\t%s\t%s\n' "skhd" "$section" "$key_field" "$desc" "$cmd"
+    pending=""
+  done < "$file"
+}
+
+# ---------------------------------------------------------------------------
+# Ghostty source
+# ---------------------------------------------------------------------------
+
+# Turn a ghostty action into a human-readable phrase when no comment covers
+# it: "goto_split:left" -> "goto split left", "resize_split:left,10" ->
+# "resize split left 10", "reload_config" -> "reload config".
+humanize_ghostty_action() {
+  local action="$1" name args
+  if [[ "$action" == *:* ]]; then
+    name="${action%%:*}"
+    args="${action#*:}"
+    args="${args//,/ }"
+  else
+    name="$action"
+    args=""
+  fi
+  name="${name//_/ }"
+  if [ -n "$args" ]; then
+    printf '%s %s' "$name" "$args"
+  else
+    printf '%s' "$name"
+  fi
+}
+
+# "cmd+shift+h" -> "cmd + shift - h"; a ">" sequence like "ctrl+a>n" becomes
+# "ctrl - a > n" (one "mods - key" group per step, steps joined with " > ").
+format_ghostty_key() {
+  local trigger="$1" step out="" first=1 mods key old_ifs="$IFS"
+  IFS='>'
+  set -f
+  # shellcheck disable=SC2086
+  set -- $trigger
+  set +f
+  IFS="$old_ifs"
+  for step in "$@"; do
+    step="$(trim "$step")"
+    if [[ "$step" == *+* ]]; then
+      mods="${step%+*}"
+      key="${step##*+}"
+      mods="${mods//+/ + }"
+      step="$mods - $key"
+    fi
+    if [ "$first" -eq 1 ]; then out="$step"; first=0; else out="$out > $step"; fi
+  done
+  printf '%s' "$out"
+}
+
+# Emit TSV records: ghostty \t section \t key \t description \t command
+parse_ghostty() {
+  local file="$1"
+  [ -r "$file" ] || return 0
+
+  local section="keybinds" pending="" line
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%$'\r'}"
+
+    if [ -z "$(trim "$line")" ]; then
+      pending=""
+      continue
+    fi
+
+    # section header: "# ----- Name ---..." (same style as skhd's)
+    if [[ "$line" =~ ^#[[:space:]]*-{3,} ]]; then
+      section="$(printf '%s' "$line" | sed -E 's/^#[[:space:]]*-+[[:space:]]*//; s/[[:space:]]*-+[[:space:]]*$//')"
+      pending=""
+      continue
+    fi
+
+    # plain comment line: accumulate for "comment directly above" fallback
+    if [[ "$line" =~ ^#(.*)$ ]]; then
+      local ctext
+      ctext="$(trim "${BASH_REMATCH[1]}")"
+      if [ -z "$pending" ]; then pending="$ctext"; else pending="$pending $ctext"; fi
+      continue
+    fi
+
+    local trimmed value trigger action global_flag=0 desc key_field
+    trimmed="$(trim "$line")"
+
+    if [[ "$trimmed" =~ ^keybind[[:space:]]*=[[:space:]]*(.*)$ ]]; then
+      value="$(trim "${BASH_REMATCH[1]}")"
+    else
+      # not a keybind line (font-family, window-padding-x, etc.) -- any
+      # comment directly above it no longer applies to what follows.
+      pending=""
+      continue
+    fi
+
+    if [ "$value" = "clear" ]; then
+      pending=""
+      continue
+    fi
+
+    if [[ "$value" != *=* ]]; then
+      pending=""
+      continue
+    fi
+
+    trigger="${value%%=*}"
+    action="${value#*=}"
+
+    case "$trigger" in
+      unconsumed:*) trigger="${trigger#unconsumed:}"; global_flag=1 ;;
+      global:*) trigger="${trigger#global:}"; global_flag=1 ;;
+      all:*) trigger="${trigger#all:}"; global_flag=1 ;;
+    esac
+
+    key_field="$(format_ghostty_key "$trigger")"
+
+    desc="$pending"
+    [ -n "$desc" ] || desc="$(humanize_ghostty_action "$action")"
+    [ "$global_flag" -eq 1 ] && desc="$desc (global)"
+
+    printf '%s\t%s\t%s\t%s\t%s\n' "ghostty" "$section" "$key_field" "$desc" "$action"
+    pending=""
+  done < "$file"
+}
+
+# ---------------------------------------------------------------------------
+# Zellij source
+# ---------------------------------------------------------------------------
+
+# Replace the contents of every double-quoted span (quotes included, with
+# backslash-escape support, e.g. the tmux-mode "\"" binding) with 'x' of the
+# same length, so brace/structure scanning on the result never mistakes a
+# quoted character (a zellij key can literally be "{" or "}") for real KDL
+# structure. Same length as the input, so indices still line up with it.
+qmask() {
+  local line="$1" i len c in_q=0 esc=0 out=""
+  len=${#line}
+  for ((i = 0; i < len; i++)); do
+    c="${line:i:1}"
+    if [ "$in_q" -eq 1 ]; then
+      if [ "$esc" -eq 1 ]; then out+="x"; esc=0; continue; fi
+      case "$c" in
+        '\') out+="x"; esc=1 ;;
+        '"') out+="x"; in_q=0 ;;
+        *) out+="x" ;;
+      esac
+      continue
+    fi
+    case "$c" in
+      '"') out+="x"; in_q=1 ;;
+      *) out+="$c" ;;
+    esac
+  done
+  QMASK="$out"
+}
+
+# Net brace delta ("{" count minus "}" count) of a qmask'd string.
+count_delta() {
+  # Deliberately not `${s//[^{]/}`-style substitution: on bash 3.2 (macOS's
+  # /bin/bash) a literal "}" inside a bracket expression inside `${...}`
+  # confuses the parameter-expansion parser into closing the substitution
+  # early, silently truncating the pattern. `tr -cd` sidesteps that parser.
+  local s="$1" opens closes
+  opens="$(printf '%s' "$s" | tr -cd '{')"
+  closes="$(printf '%s' "$s" | tr -cd '}')"
+  printf '%s' "$(( ${#opens} - ${#closes} ))"
+}
+
+# Dequoted, escape-aware double-quoted tokens from a string, in order, into
+# the global array TOKENS. `\"` inside a token decodes to a literal `"`.
+extract_tokens() {
+  local s="$1" i len c in_q=0 esc=0 tok=""
+  TOKENS=()
+  len=${#s}
+  for ((i = 0; i < len; i++)); do
+    c="${s:i:1}"
+    if [ "$in_q" -eq 1 ]; then
+      if [ "$esc" -eq 1 ]; then tok+="$c"; esc=0; continue; fi
+      case "$c" in
+        '\') esc=1 ;;
+        '"') in_q=0; TOKENS+=("$tok"); tok="" ;;
+        *) tok+="$c" ;;
+      esac
+      continue
+    fi
+    if [ "$c" = '"' ]; then in_q=1; tok=""; fi
+  done
+  return 0
+}
+
+# Turn a bind's raw "{ ... }" body into its description: split on ";", trim,
+# drop a trailing SwitchToMode "normal" as noise -- unless it is the bind's
+# only action, in which case it IS the description -- strip quotes, and
+# join what's left with ", ".
+zellij_describe() {
+  local body="$1" part out=() n last last_bare joined="" p first=1
+  local -a raw_parts
+  IFS=';' read -r -a raw_parts <<< "$body"
+  for part in ${raw_parts[@]+"${raw_parts[@]}"}; do
+    part="$(trim "$part")"
+    [ -n "$part" ] && out+=("$part")
+  done
+  n=${#out[@]}
+  if [ "$n" -gt 1 ]; then
+    last="${out[$((n - 1))]}"
+    last_bare="${last//\"/}"
+    if [ "$last_bare" = "SwitchToMode normal" ]; then
+      unset 'out[n-1]'
+    fi
+  fi
+  for p in ${out[@]+"${out[@]}"}; do
+    p="${p//\"/}"
+    if [ "$first" -eq 1 ]; then joined="$p"; first=0; else joined="$joined, $p"; fi
+  done
+  printf '%s' "$joined"
+}
+
+zellij_emit() {
+  local mode="$1" key="$2" body="$3" desc
+  desc="$(zellij_describe "$body")"
+  printf '%s\t%s\t%s\t%s\t%s\n' "zellij" "$mode" "$key" "$desc" "$body"
+}
+
+# Emit TSV records: zellij \t section \t key \t description \t command
+#
+# Tracked with a plain brace-depth scanner: depth 0 is outside `keybinds`,
+# 1 is directly inside it (where mode blocks like `pane { ... }` open), 2 is
+# inside a mode block (where `bind "key" { ... }` lines live). Most binds
+# close on the line they open ("bind \"h\" { MoveFocus \"left\"; }"), but a
+# handful in the "session" and "tmux" modes span multiple lines (a bind
+# launching a plugin, whose own `{ ... }` config nests one level deeper) --
+# those are collected line by line until depth returns to the bind's own
+# level, with a synthetic ";" inserted at each point the accumulated body
+# returns to that level, so multi-line bodies get the same ";"-joined shape
+# zellij_describe() expects from single-line ones.
+parse_zellij() {
+  local file="$1"
+  [ -r "$file" ] || return 0
+
+  local in_kb=0 depth=0 mode="" line
+  local collecting=0 bind_open_depth=0 body=""
+  local -a key_list=()
+  local mode_header_re='^[A-Za-z_][A-Za-z0-9_]*([[:space:]]+"[^"]*")*[[:space:]]*\{$'
+  local bind_line_re='^bind[[:space:]]'
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%$'\r'}"
+    line="${line%%//*}"
+
+    if [ "$in_kb" -eq 0 ]; then
+      if [[ "$line" =~ ^[[:space:]]*keybinds([[:space:]].*)?\{[[:space:]]*$ ]]; then
+        in_kb=1
+        depth=1
+        mode=""
+      fi
+      continue
+    fi
+
+    if [ "$collecting" -eq 1 ]; then
+      local delta newdepth
+      qmask "$line"
+      delta="$(count_delta "$QMASK")"
+      newdepth=$(( depth + delta ))
+
+      if [ "$newdepth" -eq "$bind_open_depth" ]; then
+        # terminator line: this line's content up to (not including) the
+        # closing "}" that brought us back to the mode's own depth.
+        local prefix tail=""
+        prefix="${QMASK%\}*}"
+        if [ "$prefix" != "$QMASK" ]; then
+          tail="$(trim "${line:0:${#prefix}}")"
+        fi
+        [ -n "$tail" ] && body="$body $tail"
+        collecting=0
+        depth="$newdepth"
+        local k
+        for k in ${key_list[@]+"${key_list[@]}"}; do
+          zellij_emit "$mode" "$k" "$(trim "$body")"
+        done
+        continue
+      fi
+
+      if [ "$newdepth" -eq $(( bind_open_depth + 1 )) ]; then
+        body="$body $(trim "$line") ;"
+      else
+        body="$body $(trim "$line")"
+      fi
+      depth="$newdepth"
+      continue
+    fi
+
+    local trimmed
+    trimmed="$(trim "$line")"
+    [ -n "$trimmed" ] || continue
+
+    if [ "$depth" -eq 1 ]; then
+      if [[ "$trimmed" =~ $mode_header_re ]]; then
+        mode="${trimmed%\{}"
+        mode="$(trim "$mode")"
+        depth=2
+        continue
+      fi
+      qmask "$trimmed"
+      if [ "$(count_delta "$QMASK")" -lt 0 ]; then
+        depth=0
+        in_kb=0
+      fi
+      continue
+    fi
+
+    # depth == 2: inside a mode block, looking for "bind ... { ... }" lines
+    if [[ "$trimmed" =~ $bind_line_re ]]; then
+      qmask "$line"
+      local before pos header rest restmask d mi i ch
+      before="${QMASK%%\{*}"
+      if [ "$before" = "$QMASK" ]; then
+        continue   # no "{" at all -- malformed, skip gracefully
+      fi
+      pos=${#before}
+      header="${line:0:pos}"
+      extract_tokens "$header"
+      key_list=(${TOKENS[@]+"${TOKENS[@]}"})
+      [ "${#key_list[@]}" -gt 0 ] || continue
+
+      rest="${line:pos}"
+      restmask="${QMASK:pos}"
+      d=0
+      mi=-1
+      for ((i = 0; i < ${#restmask}; i++)); do
+        ch="${restmask:i:1}"
+        if [ "$ch" = "{" ]; then
+          d=$((d + 1))
+        elif [ "$ch" = "}" ]; then
+          d=$((d - 1))
+          if [ "$d" -eq 0 ]; then mi=$i; break; fi
+        fi
+      done
+
+      if [ "$mi" -ge 0 ]; then
+        body="$(trim "${rest:1:mi-1}")"
+        local k
+        for k in ${key_list[@]+"${key_list[@]}"}; do
+          zellij_emit "$mode" "$k" "$body"
+        done
+      else
+        body="$(trim "${rest:1}")"
+        bind_open_depth=2
+        depth=$(( 2 + $(count_delta "$restmask") ))
+        collecting=1
+      fi
+      continue
+    fi
+
+    qmask "$trimmed"
+    if [ "$(count_delta "$QMASK")" -lt 0 ]; then
+      depth=1
+      mode=""
+    fi
+  done < "$file"
+}
+
+# ---------------------------------------------------------------------------
+# Wiring: sources, listing, markdown, fzf picker
+# ---------------------------------------------------------------------------
+
+# Resolve the ordered list of active sources into the global ACTIVE_SOURCES,
+# from --source args if any were given, else MACARCHY_KEYS_SOURCES.
+resolve_sources() {
+  local -a want=("$@") result=()
+  local s parts p
+
+  if [ "${#want[@]}" -eq 0 ]; then
+    # shellcheck disable=SC2206
+    result=($MACARCHY_KEYS_SOURCES)
+  else
+    for s in ${want[@]+"${want[@]}"}; do
+      local -a parts
+      IFS=',' read -r -a parts <<< "$s"
+      for p in ${parts[@]+"${parts[@]}"}; do
+        p="$(trim "$p")"
+        [ -n "$p" ] && result+=("$p")
+      done
+    done
+  fi
+
+  for s in ${result[@]+"${result[@]}"}; do
+    case "$s" in
+      skhd|ghostty|zellij) : ;;
+      *) echo "macarchy-keys: unknown source: $s (expected skhd, ghostty, or zellij)" >&2; exit 2 ;;
+    esac
+  done
+  [ "${#result[@]}" -gt 0 ] || { echo "macarchy-keys: no sources selected" >&2; exit 2; }
+
+  ACTIVE_SOURCES=(${result[@]+"${result[@]}"})
+}
+
+# Concatenated TSV (source, section, key, description, command) across every
+# active source. skhd errors (as it always has) if its skhdrc can't be read;
+# ghostty/zellij stay silent about a missing config file.
+gather_tsv() {
+  local src
+  for src in ${ACTIVE_SOURCES[@]+"${ACTIVE_SOURCES[@]}"}; do
+    case "$src" in
+      skhd) parse_skhdrc "$SKHDRC" || exit 1 ;;
+      ghostty) parse_ghostty "$MACARCHY_KEYS_GHOSTTY" ;;
+      zellij) parse_zellij "$MACARCHY_KEYS_ZELLIJ" ;;
+    esac
+  done
+}
+
+print_list() {
+  gather_tsv | cut -f1-4 | column -t -s "$(printf '\t')"
+}
+
+print_markdown() {
+  local tsv src src_tsv sections section first_src=1 first_sec
+  tsv="$(gather_tsv)"
+  for src in ${ACTIVE_SOURCES[@]+"${ACTIVE_SOURCES[@]}"}; do
+    src_tsv="$(printf '%s\n' "$tsv" | awk -F '\t' -v s="$src" '$1 == s')"
+    [ -n "$src_tsv" ] || continue
+    [ "$first_src" -eq 1 ] || printf '\n'
+    first_src=0
+    printf '## %s\n\n' "$src"
+    sections="$(printf '%s\n' "$src_tsv" | cut -f2 | awk '!seen[$0]++')"
+    first_sec=1
+    while IFS= read -r section; do
+      [ -n "$section" ] || continue
+      [ "$first_sec" -eq 1 ] || printf '\n'
+      first_sec=0
+      printf '### %s\n\n' "$section"
+      printf '| Keys | Action |\n'
+      printf '|---|---|\n'
+      printf '%s\n' "$src_tsv" | awk -F '\t' -v s="$section" '$2 == s { printf "| `%s` | %s |\n", $3, $4 }'
+    done <<< "$sections"
+  done
+}
+
+# Build "display\tsource\tsection\tkey\tcommand\tdescription" rows for fzf:
+# display is the source/section/key/desc columns pre-aligned with column -t
+# (hidden fields carry the rest, used for --preview and for the Enter action).
+build_fzf_rows() {
+  local tsv aligned
+  tsv="$(gather_tsv)"
+  aligned="$(printf '%s\n' "$tsv" | cut -f1-4 | column -t -s "$(printf '\t')")"
+  paste -d "$(printf '\t')" \
+    <(printf '%s\n' "$aligned") \
+    <(printf '%s\n' "$tsv" | cut -f1) \
+    <(printf '%s\n' "$tsv" | cut -f2) \
+    <(printf '%s\n' "$tsv" | cut -f3) \
+    <(printf '%s\n' "$tsv" | cut -f5) \
+    <(printf '%s\n' "$tsv" | cut -f4)
+}
+
+run_picker() {
+  command -v fzf >/dev/null 2>&1 || { echo "macarchy-keys: fzf is required (brew install fzf)" >&2; exit 1; }
+
+  local tsv rows selected status
+  # Check emptiness against the raw TSV, not the built rows: `paste` on two
+  # empty inputs still emits one blank (tab-only) line, so testing `rows`
+  # directly would miss an empty/binding-less set of sources and hand fzf a
+  # single blank row -- which then hangs waiting on a real TTY instead of
+  # exiting.
+  tsv="$(gather_tsv)"
+  [ -n "$tsv" ] || { echo "macarchy-keys: no bindings found in any active source (${ACTIVE_SOURCES[*]})" >&2; exit 1; }
+  rows="$(build_fzf_rows)"
+
+  [ "${MACARCHY_KEYS_POPUP:-0}" = 1 ] && float_self
+
+  set +e
+  selected="$(printf '%s\n' "$rows" | fzf \
+    --delimiter="$(printf '\t')" \
+    --with-nth=1 \
+    --header='type to filter - enter: run (skhd) / copy key (others) - esc to cancel' \
+    --preview='printf "%s · %s\n" {2} {3}; printf "%s\n" {5} | fold -s -w "${FZF_PREVIEW_COLUMNS:-80}"' \
+    --preview-window=down,3,wrap)"
+  status=$?
+  set -e
+
+  # Esc (130) or no match (1): just exit clean.
+  [ "$status" -eq 0 ] && [ -n "$selected" ] || exit 0
+
+  local src key cmd desc
+  src="$(printf '%s' "$selected" | cut -f2)"
+  key="$(printf '%s' "$selected" | cut -f4)"
+  cmd="$(printf '%s' "$selected" | cut -f5)"
+  desc="$(printf '%s' "$selected" | cut -f6)"
+
+  if [ "$src" = "skhd" ]; then
+    [ -n "$cmd" ] || exit 0
+    sh -c "$cmd"
+  else
+    # ghostty/zellij bindings only mean something inside those programs --
+    # the best this picker can do is hand you the key to use there.
+    command -v pbcopy >/dev/null 2>&1 && printf '%s' "$key" | pbcopy
+    printf '%s %s -> %s\n' "$src" "$key" "$desc"
+    exit 0
+  fi
+}
+
+popup() {
+  command -v open >/dev/null 2>&1 && [ -d "/Applications/Ghostty.app" ] || {
+    echo "macarchy-keys: Ghostty.app / open not found, cannot pop up" >&2
+    exit 1
+  }
+  # Why --command and not -e: on this setup (Ghostty `command = zsh -lc
+  # "zellij -s ..."`) launching with `-e` still spawned the configured zellij
+  # wrapper, leaving an orphaned zellij session behind every popup. Overriding
+  # `command` for this one instance runs the picker bare and the window closes
+  # the moment the script exits. `open -na` goes through LaunchServices, so
+  # SKHDRC is threaded through explicitly instead of relying on inheritance.
+  # $0 may be relative; the new Ghostty process has a different cwd.
+  local self q_skhdrc q_self
+  self="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
+  q_skhdrc="$(printf '%q' "$SKHDRC")"
+  q_self="$(printf '%q' "$self")"
+  exec open -na Ghostty.app --args \
+    --title=macarchy-keys \
+    --window-width=100 \
+    --window-height=30 \
+    --quit-after-last-window-closed=true \
+    --command="env SKHDRC=$q_skhdrc MACARCHY_KEYS_POPUP=1 $q_self"
+}
+
+# In popup mode, float + center our own window. yabai evaluates rules when a
+# window is created, but Ghostty applies --title a beat later, so the yabairc
+# rule (label macarchy-keys) usually misses. Poll for the titled window and
+# re-apply that rule to it, falling back to a direct toggle if the rule is
+# not loaded (e.g. yabairc not yet re-sourced).
+float_self() {
+  command -v yabai >/dev/null 2>&1 || return 0
+  (
+    local i id
+    for i in $(seq 1 30); do
+      id="$(yabai -m query --windows 2>/dev/null \
+        | jq -r '[.[] | select(.app=="Ghostty" and .title=="macarchy-keys")][0].id // empty' 2>/dev/null)"
+      if [ -n "$id" ]; then
+        if yabai -m rule --list 2>/dev/null | jq -e 'map(select(.label=="macarchy-keys")) | length > 0' >/dev/null 2>&1; then
+          yabai -m rule --apply macarchy-keys >/dev/null 2>&1 || true
+        else
+          yabai -m window "$id" --toggle float --grid 6:6:1:1:4:4 >/dev/null 2>&1 || true
+        fi
+        yabai -m window "$id" --focus >/dev/null 2>&1 || true
+        return 0
+      fi
+      sleep 0.1
+    done
+  ) &
+}
+
+main() {
+  local mode="picker"
+  local -a source_args=()
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      ""|-) shift ;;
+      --list) mode="list"; shift ;;
+      --markdown) mode="markdown"; shift ;;
+      --popup) mode="popup"; shift ;;
+      -h|--help) mode="help"; shift ;;
+      --source)
+        [ $# -ge 2 ] || { echo "macarchy-keys: --source requires a value" >&2; usage >&2; exit 2; }
+        source_args+=("$2"); shift 2 ;;
+      --source=*)
+        source_args+=("${1#--source=}"); shift ;;
+      *) echo "macarchy-keys: unknown argument: $1" >&2; usage >&2; exit 2 ;;
+    esac
+  done
+
+  if [ "$mode" = "help" ]; then
+    usage
+    return 0
+  fi
+
+  resolve_sources ${source_args[@]+"${source_args[@]}"}
+
+  case "$mode" in
+    list) print_list ;;
+    markdown) print_markdown ;;
+    popup) popup ;;
+    picker) run_picker ;;
+  esac
+}
+
+main "$@"

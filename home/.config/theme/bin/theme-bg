@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# theme-bg            -- print the active theme's backgrounds, marking the current one
+# theme-bg <n|name>   -- set that background
+# theme-bg next|prev  -- cycle within the active theme
+# theme-bg apply      -- re-apply the remembered choice (theme-set calls this)
+#
+# Each theme keeps its images in themes/<name>/backgrounds/. The choice is
+# remembered per theme in themes/<name>/.bg so switching away and back keeps it.
+set -euo pipefail
+
+THEME_ROOT="$HOME/.config/theme"
+CURRENT="$THEME_ROOT/current"
+FIXED="$THEME_ROOT/wallpaper-current.jpg"
+
+[ -L "$CURRENT" ] || { echo "no theme selected; run theme-set first" >&2; exit 1; }
+DIR="$(cd "$CURRENT" && pwd -P)"
+BGDIR="$DIR/backgrounds"
+
+list() { find "$BGDIR" -maxdepth 1 -type f \( -name '*.jpg' -o -name '*.png' \) 2>/dev/null | LC_ALL=C sort; }
+
+if [ ! -d "$BGDIR" ] || [ -z "$(list)" ]; then
+  echo "no backgrounds for $(basename "$DIR"); run theme-bg-fetch" >&2
+  exit 1
+fi
+
+bgs=()
+while IFS= read -r f; do bgs+=("$f"); done < <(list)
+n=${#bgs[@]}
+
+cur=""
+[ -f "$DIR/.bg" ] && cur="$(cat "$DIR/.bg" 2>/dev/null || true)"
+[ -f "$cur" ] || cur="${bgs[0]}"
+
+idx=0
+for i in "${!bgs[@]}"; do [ "${bgs[$i]}" = "$cur" ] && idx=$i && break; done
+
+apply() {
+  echo "$1" > "$DIR/.bg"
+  cp -f "$1" "$FIXED"
+  osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$FIXED\"" >/dev/null 2>&1 || true
+  killall WallpaperAgent >/dev/null 2>&1 || true
+  echo "background: $(basename "$1")"
+}
+
+case "${1:-}" in
+  apply)   apply "$cur" ;;          # re-apply the remembered choice (used by theme-set)
+  "")      for i in "${!bgs[@]}"; do
+             mark=" "; [ "$i" = "$idx" ] && mark="*"
+             printf '%s %2d  %s\n' "$mark" "$((i + 1))" "$(basename "${bgs[$i]}")"
+           done ;;
+  next)    apply "${bgs[$(( (idx + 1) % n ))]}" ;;
+  prev)    apply "${bgs[$(( (idx - 1 + n) % n ))]}" ;;
+  [0-9]*)  i=$(( $1 - 1 ))
+           [ "$i" -ge 0 ] && [ "$i" -lt "$n" ] || { echo "out of range 1..$n" >&2; exit 1; }
+           apply "${bgs[$i]}" ;;
+  *)       match=""
+           for f in "${bgs[@]}"; do case "$(basename "$f")" in *"$1"*) match="$f"; break;; esac; done
+           [ -n "$match" ] || { echo "no background matching '$1'" >&2; exit 1; }
+           apply "$match" ;;
+esac

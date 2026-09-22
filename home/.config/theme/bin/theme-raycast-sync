@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# theme-raycast-sync — regenerate the Raycast script command so its dropdown
+# matches `theme-list`. Run after adding or removing a theme.
+set -euo pipefail
+# shellcheck disable=SC1091
+. "$HOME/.config/macarchy/lib.sh" 2>/dev/null || true
+OUT="$HOME/.config/raycast/scripts/theme-set.sh"
+mkdir -p "$(dirname "$OUT")"
+
+data=""
+while IFS= read -r t; do
+  [ -n "$data" ] && data="$data, "
+  data="$data{\"title\": \"$t\", \"value\": \"$t\"}"
+done < <("$HOME/.config/theme/bin/theme-list")
+
+author_line=""
+[ -n "${MACARCHY_RAYCAST_AUTHOR:-}" ] && author_line="# @raycast.author ${MACARCHY_RAYCAST_AUTHOR}"
+
+cat > "$OUT" <<RC
+#!/bin/bash
+
+# Required parameters:
+# @raycast.schemaVersion 1
+# @raycast.title Set Theme
+# @raycast.mode silent
+
+# Optional parameters:
+# @raycast.icon 🎨
+# @raycast.packageName Theme
+# @raycast.argument1 { "type": "dropdown", "placeholder": "theme", "optional": false, "data": [$data] }
+
+# Documentation:
+# @raycast.description Switch Ghostty, Zellij, Neovim, SketchyBar, borders and wallpaper together.
+RC
+[ -n "$author_line" ] && echo "$author_line" >> "$OUT"
+cat >> "$OUT" <<RC
+
+export PATH="\$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+exec "\$HOME/.config/theme/bin/theme-set" "\$1"
+RC
+chmod +x "$OUT"
+echo "raycast: $OUT"

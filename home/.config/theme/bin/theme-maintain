@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# theme-maintain — rerun the housekeeping install.sh does once on a new
+# machine: regenerate fallback wallpapers, fetch the real backgrounds, and
+# resync the Raycast dropdown. Chezmoi's run_onchange used to trigger this
+# automatically whenever a theme's colors.sh changed; here you run it by hand
+# after editing a palette or adding/removing a theme.
+set -euo pipefail
+
+THEME_ROOT="$HOME/.config/theme"
+
+# 1. generate the fallback gradient wallpapers (theme-wallpaper is a no-op if
+#    wallpaper.jpg already exists)
+for d in "$THEME_ROOT"/themes/*/; do
+  [ -f "$d/colors.sh" ] || continue
+  "$THEME_ROOT/bin/theme-wallpaper" "$d" || echo "theme-maintain: wallpaper generation failed for $d" >&2
+done
+
+# 2. fetch the real wallpapers from upstream Omarchy (skips what exists)
+[ -x "$THEME_ROOT/bin/theme-bg-fetch" ] && "$THEME_ROOT/bin/theme-bg-fetch" || true
+
+# 3. keep the Raycast dropdown in sync with the theme list
+[ -x "$THEME_ROOT/bin/theme-raycast-sync" ] && "$THEME_ROOT/bin/theme-raycast-sync" >/dev/null || true
+
+echo "theme-maintain: done"

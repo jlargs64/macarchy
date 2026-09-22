@@ -1,0 +1,75 @@
+# =============================================================================
+# skhd — hotkey daemon driving yabai.
+#
+# Reload after editing:  skhd --restart-service
+# skhd needs Accessibility permission:
+#   System Settings > Privacy & Security > Accessibility > /opt/homebrew/bin/skhd
+#
+# Modifier convention:
+#   alt         - focus / query
+#   shift + alt - move / mutate
+# =============================================================================
+
+# ----- focus window ---------------------------------------------------------
+alt - h : yabai -m window --focus west   # focus west
+alt - j : yabai -m window --focus south  # focus south
+alt - k : yabai -m window --focus north  # focus north
+alt - l : yabai -m window --focus east   # focus east
+
+# ----- move window within the tree -----------------------------------------
+shift + alt - h : yabai -m window --warp west   # move window west
+shift + alt - j : yabai -m window --warp south  # move window south
+shift + alt - k : yabai -m window --warp north  # move window north
+shift + alt - l : yabai -m window --warp east   # move window east
+
+# ----- resize (grow toward, then shrink for the opposite edge) -------------
+ctrl + alt - h : yabai -m window --resize left:-40:0  || yabai -m window --resize right:-40:0   # resize left
+ctrl + alt - l : yabai -m window --resize right:40:0  || yabai -m window --resize left:40:0     # resize right
+ctrl + alt - j : yabai -m window --resize bottom:0:40 || yabai -m window --resize top:0:40      # resize down
+ctrl + alt - k : yabai -m window --resize top:0:-40   || yabai -m window --resize bottom:0:-40  # resize up
+
+# ----- layout ---------------------------------------------------------------
+alt - 0x18       : yabai -m space --balance                            # alt - =   balance space
+alt - r          : yabai -m space --rotate 90                          # rotate layout 90°
+alt - g          : yabai -m window --toggle float --grid 4:4:1:1:2:2   # toggle float window
+alt - f          : yabai -m window --toggle zoom-fullscreen            # toggle zoom fullscreen
+shift + alt - f  : yabai -m window --toggle native-fullscreen          # toggle native fullscreen
+alt - v          : yabai -m window --toggle split                     # flip split orientation
+
+# ----- app launchers (yours to fill in) -------------------------------------
+# alt-<letter> is left free for app launchers so skhd can be the single source
+# of truth for hotkeys. Example:
+#   alt - t : open -a "Ghostty"
+#   alt - b : open -a "Safari"
+# Run `hotkey-check` after editing to catch collisions with macOS or Raycast.
+
+# ----- stacking ---------------------------------------------------------------
+# A "stack" puts several windows in one tile, like browser tabs -- only the
+# focused one is visible. All of this works without the scripting addition.
+alt - s          : yabai -m space --layout "$(test "$(yabai -m query --spaces --space | jq -r .type)" = bsp && echo stack || echo bsp)"  # toggle bsp / stack layout
+alt - 0x21       : yabai -m window --focus stack.prev    # alt - [   focus previous in stack
+alt - 0x1E       : yabai -m window --focus stack.next    # alt - ]   focus next in stack
+
+# Where the NEXT new window lands relative to the focused one.
+shift + alt - s  : yabai -m window --insert stack        # stack onto this window
+shift + alt - e  : yabai -m window --insert east         # split to the right
+shift + alt - d  : yabai -m window --insert south        # split below
+
+# ----- theme ----------------------------------------------------------------
+# Cycle Ghostty + Zellij + Neovim + SketchyBar + borders + wallpaper together.
+shift + alt - t : ~/.local/bin/theme-next
+# Cycle the BACKGROUND within the current theme (retro-82 ships 9, catppuccin 3).
+shift + alt - b : ~/.local/bin/theme-bg next
+
+# ----- restart services -----------------------------------------------------
+shift + alt - r : yabai --restart-service && sketchybar --reload   # restart yabai + sketchybar
+
+# ----- help -------------------------------------------------------------
+alt - 0x2C : ~/.local/bin/macarchy-keys --popup   # alt - /   show all hotkeys
+
+# ----- NOTE on spaces -------------------------------------------------------
+# Switching and moving windows between spaces needs yabai's scripting addition
+# (which requires partially disabling SIP) and is intentionally not configured.
+# Use the native macOS shortcuts instead:
+#   ctrl - <number>      switch to desktop N   (System Settings > Keyboard)
+#   ctrl - left / right  switch desktop

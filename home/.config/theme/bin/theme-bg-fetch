@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# theme-bg-fetch -- download each theme's backgrounds from upstream Omarchy
+# and convert them to JPEG in themes/<name>/backgrounds/.
+#
+# Backgrounds are NOT committed to this repo (~15 MB of binaries); they are
+# fetched on demand, by `install.sh` and by `theme-maintain`. Re-running is
+# cheap: a file that already exists is skipped.
+#
+# Sources are Omarchy's own theme backgrounds, except retro-82, which uses
+# tokyo-night's `quattro` first -- Omarchy's retro-82 set is teal/orange and
+# does not match the magenta/cyan/amber palette this retro-82 uses.
+set -euo pipefail
+
+THEMES="$HOME/.config/theme/themes"
+
+# Pinned to a commit, not a branch. These bytes go straight into ImageMagick,
+# so a moving ref would let any upstream commit choose what gets decoded here.
+# Bump deliberately: git ls-remote https://github.com/basecamp/omarchy HEAD
+OMARCHY_REV="45748a2812f42e32f915b053caf4074e150e2048"
+RAW="https://raw.githubusercontent.com/basecamp/omarchy/$OMARCHY_REV/themes"
+
+command -v magick >/dev/null 2>&1 || { echo "theme-bg-fetch: needs imagemagick" >&2; exit 1; }
+
+# "<local theme>|<n>|<upstream theme>/<file>|<local name>"
+MAP="
+retro-82|01|tokyo-night/1-quattro.webp|quattro
+retro-82|02|retro-82/1-in-the-groove.webp|in-the-groove
+retro-82|03|retro-82/2-dusk-guardian.webp|dusk-guardian
+retro-82|04|retro-82/3-glassy-lines.webp|glassy-lines
+retro-82|05|retro-82/4-gateway.webp|gateway
+retro-82|06|retro-82/5-zen-boat.webp|zen-boat
+retro-82|07|retro-82/6-abstract-pyramids.webp|abstract-pyramids
+retro-82|08|retro-82/7-the-journey.webp|the-journey
+retro-82|09|retro-82/8-glitter-glass.webp|glitter-glass
+kanagawa-wave|01|kanagawa/1-kanagawa.jpg|great-wave
+catppuccin-mocha|01|catppuccin/2-waves.webp|waves
+catppuccin-mocha|02|catppuccin/1-totoro.webp|totoro
+catppuccin-mocha|03|catppuccin/3-blue-eye.webp|blue-eye
+"
+
+# One private scratch dir for every download; mktemp owns the name, we own
+# the files inside it, and the trap removes all of it on any exit.
+tmpdir="$(mktemp -d -t theme-bg)"
+trap 'rm -rf "$tmpdir"' EXIT
+
+echo "$MAP" | while IFS='|' read -r theme n src label; do
+  [ -z "$theme" ] && continue
+  [ -d "$THEMES/$theme" ] || continue
+  mkdir -p "$THEMES/$theme/backgrounds"
+  out="$THEMES/$theme/backgrounds/$n-$label.jpg"
+  [ -f "$out" ] && continue
+  tmp="$tmpdir/$theme-$n.${src##*.}"
+  # $src is "<upstream theme>/<file>"; the real path has /backgrounds/ between them
+  url="$RAW/${src%%/*}/backgrounds/${src#*/}"
+  if curl -fsSL --max-time 120 -o "$tmp" "$url"; then
+    # Omarchy ships these at 5120x2880 already; cover-fit anything that is not.
+    magick "$tmp" -resize 5120x2880^ -gravity center -extent 5120x2880 \
+      -quality 88 "$out" 2>/dev/null && echo "  $theme/$n-$label.jpg"
+  else
+    echo "  FAILED $url" >&2
+  fi
+  rm -f "$tmp"
+done
+echo "backgrounds ready"

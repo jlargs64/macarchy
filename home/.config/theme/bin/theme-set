@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# theme-set <name> — point ~/.config/theme/current at a theme and reload everything live.
+set -euo pipefail
+
+THEME_ROOT="$HOME/.config/theme"
+THEMES_DIR="$THEME_ROOT/themes"
+CURRENT="$THEME_ROOT/current"
+name="${1:-}"
+
+if [ -z "$name" ]; then
+  echo "usage: theme-set <name>" >&2
+  echo "themes:" >&2; "$THEME_ROOT/bin/theme-list" | sed 's/^/  /' >&2
+  exit 2
+fi
+
+# A theme is a plain directory name. Anything path-like would pass the -d
+# check below and then get `source`d, so refuse it outright.
+case "$name" in
+  */*|.*|*[[:space:]]*)
+    echo "theme-set: invalid theme name: $name" >&2
+    exit 1 ;;
+esac
+
+if [ ! -d "$THEMES_DIR/$name" ]; then
+  echo "theme-set: no such theme: $name" >&2
+  echo "themes:" >&2; "$THEME_ROOT/bin/theme-list" | sed 's/^/  /' >&2
+  exit 1
+fi
+
+# 1. THE symlink
+ln -sfn "$THEMES_DIR/$name" "$CURRENT"
+
+# shellcheck disable=SC1091
+source "$CURRENT/colors.sh"
+
+# 2. SketchyBar
+if command -v sketchybar >/dev/null 2>&1; then
+  sketchybar --reload >/dev/null 2>&1 || true
+fi
+
+# 3. borders
+if command -v borders >/dev/null 2>&1; then
+  borders active_color="0xff${ACCENT}" inactive_color="0xff${MUTED}" >/dev/null 2>&1 || true
+fi
+
+# 4. zellij — nudge its config watcher
+[ -f "$HOME/.config/zellij/config.kdl" ] && touch "$HOME/.config/zellij/config.kdl"
+
+# 5. running neovim instances
+# nvim puts its server socket under $TMPDIR on macOS and /tmp on Linux.
+# /tmp is a symlink on macOS, so find needs -L to descend into it.
+if command -v nvim >/dev/null 2>&1 && [ -n "${NVIM_COLORSCHEME:-}" ]; then
+  sockdirs=""
+  for d in "${TMPDIR:-}" /tmp /private/tmp; do
+    [ -n "$d" ] && [ -d "$d" ] && sockdirs="$sockdirs $d"
+  done
+  # shellcheck disable=SC2086
+  while IFS= read -r sock; do
+    [ -S "$sock" ] || continue
+    nvim --server "$sock" --remote-send \
+      "<Cmd>silent! colorscheme ${NVIM_COLORSCHEME}<CR>" >/dev/null 2>&1 || true
+  done < <(find -L $sockdirs -maxdepth 3 -name 'nvim.*.0' -type s 2>/dev/null | sort -u)
+fi
+
+# 6. wallpaper
+#
+# Each theme keeps real images in themes/<name>/backgrounds/ (fetched from
+# upstream Omarchy by theme-bg-fetch). theme-bg applies the one remembered for
+# this theme, falling back to the first. If a theme has no backgrounds, fall
+# back to the palette-generated gradient.
+#
+# macOS stores the wallpaper PER SPACE and AppleScript only reaches the active
+# one, so every Space must be pointed at the shared file once by
+# theme-wallpaper-enroll.
+if [ -d "$CURRENT/backgrounds" ] && [ -n "$(ls -A "$CURRENT/backgrounds" 2>/dev/null)" ]; then
+  "$THEME_ROOT/bin/theme-bg" apply >/dev/null 2>&1 || true
+else
+  wp="$CURRENT/wallpaper.jpg"
+  [ -f "$wp" ] || "$THEME_ROOT/bin/theme-wallpaper" "$THEMES_DIR/$name" >/dev/null 2>&1 || true
+  if [ -f "$wp" ]; then
+    cp -f "$wp" "$THEME_ROOT/wallpaper-current.jpg" 2>/dev/null || true
+    osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$THEME_ROOT/wallpaper-current.jpg\"" >/dev/null 2>&1 || true
+    killall WallpaperAgent >/dev/null 2>&1 || true
+  fi
+fi
+
+# 7. Ghostty — ask it to reload its config
+if pgrep -qi "^ghostty$" 2>/dev/null || pgrep -qf "Ghostty.app" 2>/dev/null; then
+  osascript >/dev/null 2>&1 <<'OSA' || echo "cmd+shift+, in Ghostty"
+tell application "System Events"
+  if exists (process "Ghostty") then
+    set frontmost of process "Ghostty" to true
+    delay 0.2
+    keystroke "," using {command down, shift down}
+  end if
+end tell
+OSA
+fi
+
+echo "theme: $name"

@@ -1,0 +1,25 @@
+# retro-82 — 1982 arcade CRT (custom, derived from the 16-slot base16 palette)
+background = 0b0a0f
+foreground = f2c66d
+cursor-color = 3ef1ff
+cursor-text = 0b0a0f
+selection-background = 3a3148
+selection-foreground = fff0c0
+
+# 0-7 dim (canonical slots darkened 15%), 8-15 bright (canonical slots verbatim)
+palette = 0=#0b0a0f
+palette = 1=#d9435d
+palette = 2=#68d968
+palette = 3=#cea85d
+palette = 4=#438fd9
+palette = 5=#d94ccc
+palette = 6=#35cdd9
+palette = 7=#fff0c0
+palette = 8=#3a3148
+palette = 9=#ff4f6d
+palette = 10=#7bff7b
+palette = 11=#f2c66d
+palette = 12=#4fa8ff
+palette = 13=#ff59f0
+palette = 14=#3ef1ff
+palette = 15=#ffffff

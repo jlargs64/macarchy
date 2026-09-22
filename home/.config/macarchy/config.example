@@ -1,0 +1,34 @@
+# macarchy config — copy to ~/.config/macarchy/config and edit.
+# install.sh does this automatically if the target file does not exist yet.
+#
+# Every value below is the built-in default; ~/.config/macarchy/lib.sh sets
+# these first, then sources ~/.config/macarchy/config over them if it exists.
+# Delete any line you don't want to override -- lib.sh's own default takes
+# over once it's gone.
+
+# Theme selected on first install and by `theme-set` with no argument.
+# One of the names under ~/.config/theme/themes/.
+MACARCHY_DEFAULT_THEME=retro-82
+
+# Font used by sketchybarrc and the space.sh plugin. Must be installed and
+# resolvable by SketchyBar as "<font>:<style>:<size>".
+MACARCHY_FONT="Hack Nerd Font"
+
+# Number of Spaces sketchybarrc renders indicators for (1-9; macOS control-N
+# switching and the sketchybar-app-font key-code table only cover up to 9).
+MACARCHY_SPACES=5
+
+# Author line emitted in generated Raycast script commands
+# (@raycast.author). Left blank, no author line is emitted at all.
+MACARCHY_RAYCAST_AUTHOR=""
+
+# Network interface the wifi plugin reads SSID/IP from. `en0` is the primary
+# Wi-Fi interface on nearly all Macs; check `networksetup -listallhardwareports`
+# if yours differs.
+MACARCHY_WIFI_IFACE=en0
+
+# Hotkey sources macarchy-keys shows in its which-key picker, space-separated.
+# One or more of: skhd ghostty zellij. Override per invocation with
+# `macarchy-keys --source <name>`. A listed source whose config file doesn't
+# exist (e.g. no Ghostty installed) is skipped silently.
+MACARCHY_KEYS_SOURCES="skhd ghostty zellij"

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# theme-list — print available theme names, alphabetically.
+set -euo pipefail
+THEMES_DIR="$HOME/.config/theme/themes"
+[ -d "$THEMES_DIR" ] || { echo "no themes dir: $THEMES_DIR" >&2; exit 1; }
+find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | LC_ALL=C sort

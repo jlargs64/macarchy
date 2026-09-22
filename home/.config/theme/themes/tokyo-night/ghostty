@@ -1,0 +1,26 @@
+# tokyo-night -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 1a1b26
+foreground = a9b1d6
+cursor-color = 7aa2f7
+cursor-text = 1a1b26
+selection-background = 414868
+selection-foreground = a9b1d6
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#1a1b26
+palette = 1=#d26479
+palette = 2=#86af5a
+palette = 3=#be9558
+palette = 4=#688ad2
+palette = 5=#9379c4
+palette = 6=#3a8591
+palette = 7=#9096b6
+palette = 8=#414868
+palette = 9=#f7768e
+palette = 10=#9ece6a
+palette = 11=#e0af68
+palette = 12=#7aa2f7
+palette = 13=#ad8ee6
+palette = 14=#449dab
+palette = 15=#a9b1d6
