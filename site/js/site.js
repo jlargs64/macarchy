@@ -31,6 +31,9 @@
   }
   applyTheme(root.getAttribute("data-theme") || "retro-82", false);
   shine(700); // after the hero has risen
+
+  // Footer year: the copyright line follows the clock, not the commit.
+  Array.prototype.forEach.call(document.querySelectorAll("[data-year]"), function (el) { el.textContent = String(new Date().getFullYear()); });
   cards.forEach(function (c) { c.addEventListener("click", function () { applyTheme(c.getAttribute("data-set-theme"), true); }); });
 
   // Swatches: paint each theme card's eight bands from its --pal-* list.
