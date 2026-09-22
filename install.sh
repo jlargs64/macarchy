@@ -88,7 +88,8 @@ step_brew() {
 
   run brew update
   run brew install "${BREW_FORMULAE[@]}"
-  run brew install --cask "${BREW_CASKS[@]}"
+  # --adopt: take over an app that is already in /Applications (e.g. Handy installed by hand) instead of failing
+  run brew install --cask --adopt "${BREW_CASKS[@]}"
 
   echo "==> sketchybar-app-font"
   local dest="$HOME/Library/Fonts/sketchybar-app-font.ttf"
