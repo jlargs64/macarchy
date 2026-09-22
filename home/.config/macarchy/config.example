@@ -36,7 +36,9 @@ MACARCHY_KEYS_SOURCES="skhd ghostty zellij"
 # --- workspace agent (ws) ---
 MACARCHY_AGENT_MODEL="$HOME/.local/share/macarchy/models/workspace-agent.cact"   # fine-tuned Needle 3
 MACARCHY_AGENT_EXECUTE=false      # true: `ws` and `ws --voice` act instead of printing what they would do
-MACARCHY_MIC=":0"                 # ffmpeg avfoundation audio device (ffmpeg -f avfoundation -list_devices true -i "")
+MACARCHY_MIC=":default"           # mic for `ws --voice`: the system default input. To pin one, use its avfoundation
+                                  # index, e.g. ":1" (ffmpeg -f avfoundation -list_devices true -i ""). Virtual devices
+                                  # such as BlackHole often sit at :0 and record silence.
 # Installed by install.sh (brew cask `handy`, https://handy.computer). Handy's
 # own dictation hotkey is alt-space (hold to talk, tap to toggle) -- that is
 # configured inside Handy itself, not skhd; see skhdrc for why.

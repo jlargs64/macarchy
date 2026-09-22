@@ -12,9 +12,13 @@ ws --voice                                                    # alt - w: press t
 ## Pipeline
 
 1. **Text in.** Typed, or a WAV from `ws --voice` (bound to `alt - w` in skhdrc; ffmpeg
-   records the mic, [Handy](https://handy.computer) transcribes it headlessly with
-   `handy --transcribe-file`). Handy itself is installed by `install.sh` (brew cask
-   `handy`) and owns its own dictation hotkey, `alt - space`, separately from skhd.
+   records the system default mic, `MACARCHY_MIC`, and [Handy](https://handy.computer)
+   transcribes it headlessly with `handy --transcribe-file`). Handy itself is installed
+   by `install.sh` (brew cask `handy`) and owns its own dictation hotkey, `alt - space`,
+   separately from skhd. Feedback works like Handy's: a pill at the bottom of the screen
+   (`macarchy-overlay`, built from `home/.config/macarchy/swift/`) shows listening,
+   transcribing, then what was heard and what ran; the bar's mic glyph turns red while
+   ws holds the mic, and a Tink/Pop sound marks start and stop.
 2. **Vocabulary gate.** No desktop word in the sentence, no model call.
 3. **Model.** Cactus Needle 3, fine-tuned on these tools (see
    `home/.config/macarchy/agent/finetune/README.md`). The sentence is tried whole and

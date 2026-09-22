@@ -233,6 +233,18 @@ step_agent() {
   fi
 }
 
+step_build() {
+  # Two small Swift helpers: the Handy-style pill `ws --voice` draws, and the
+  # mic/camera probe the bar's `mic` and `cam` items poll. Needs swiftc (Xcode CLT).
+  echo "==> Swift helpers (macarchy-overlay, macarchy-avstate)"
+  if xcrun -f swiftc >/dev/null 2>&1; then
+    run "$REPO/home/.config/macarchy/swift/build"
+  else
+    echo "  swiftc not found; skipping. ws --voice falls back to notifications and the mic/cam items stay hidden." >&2
+    echo "  Install with: xcode-select --install, then run home/.config/macarchy/swift/build" >&2
+  fi
+}
+
 step_optional_integrations() {
   echo "==> Optional integrations"
   if [ -d "$HOME/.config/zellij" ]; then
@@ -256,6 +268,7 @@ step_seed_current
 step_theme_assets
 step_config
 step_agent
+step_build
 step_optional_integrations
 
 cat <<NOTICE

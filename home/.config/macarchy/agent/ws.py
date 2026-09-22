@@ -23,6 +23,7 @@ import tools as T  # noqa: E402
 
 HOME = os.path.expanduser("~")
 CACHE = os.path.join(HOME, ".cache", "macarchy")
+OVERLAY = os.path.join(HOME, ".local", "share", "macarchy", "bin", "macarchy-overlay")  # built by ../swift/build
 CFG_FILE = os.path.join(HOME, ".config", "macarchy", "config")
 KEYCODES = {1: 18, 2: 19, 3: 20, 4: 21, 5: 23, 6: 22, 7: 26, 8: 28, 9: 25}   # ctrl+<n> Space switching
 CONNECTORS = re.compile(r"\s*(?:,\s*(?:and\s+|then\s+)?|\band then\b|\bthen\b|\band also\b|\bafter that\b|\band\b|\.\s+)\s*", re.I)
@@ -35,7 +36,7 @@ VOCAB |= {a.lower() for a in T.APPS} | {t.lower() for t in T.THEMES} | set(T.THE
 
 def cfg():
     out = {"MACARCHY_AGENT_MODEL": os.path.join(HOME, ".local/share/macarchy/models/workspace-agent.cact"),
-           "MACARCHY_AGENT_EXECUTE": "false", "MACARCHY_MIC": ":0",
+           "MACARCHY_AGENT_EXECUTE": "false", "MACARCHY_MIC": ":default",
            "MACARCHY_HANDY": "/Applications/Handy.app/Contents/MacOS/handy"}
     if os.path.exists(CFG_FILE):
         for line in open(CFG_FILE):
@@ -260,29 +261,107 @@ def zellij_session():
 
 
 # ----- voice ----------------------------------------------------------------
+def _kill(pid, wait=3.0):
+    """SIGINT, then SIGTERM, then SIGKILL. Returns once the process is gone."""
+    for sig, patience in ((signal.SIGINT, wait), (signal.SIGTERM, 1.0), (signal.SIGKILL, 1.0)):
+        try:
+            os.kill(pid, sig)
+        except ProcessLookupError:
+            return
+        deadline = time.time() + patience
+        while time.time() < deadline:
+            time.sleep(0.05)
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                return
+
+
+def _fix_wav(wav):
+    """A recorder that was killed hard leaves the RIFF sizes at 0. Rewrite the header from the data length."""
+    import wave
+    try:
+        with wave.open(wav) as w:
+            if w.getnframes() > 0:
+                return
+    except Exception:
+        pass
+    try:
+        data = open(wav, "rb").read()
+        if not data.startswith(b"RIFF"):
+            return
+        i = data.find(b"data")
+        pcm = data[i + 8:] if i >= 0 else data[44:]
+        with wave.open(wav, "wb") as w:
+            w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(pcm)
+    except Exception:
+        pass
+
+
+def _ding(name):
+    """Audible cue, since the notification may be silenced: Tink when the mic opens, Pop when it closes."""
+    subprocess.Popen(["afplay", f"/System/Library/Sounds/{name}.aiff"], stdin=subprocess.DEVNULL,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+_ov = None  # the result pill for this run, an open pipe to macarchy-overlay
+
+
+def _ov_say(state, title, detail=""):
+    """Update the bottom-of-screen pill (like Handy's). Falls back to a notification if it is not built."""
+    global _ov
+    if not os.path.exists(OVERLAY):
+        notify("ws", title if not detail else f"{title}\n{detail}")
+        return
+    if _ov is None or _ov.poll() is not None:
+        _ov = subprocess.Popen([OVERLAY, "--ttl", "3.5"], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, text=True)
+    try:
+        d = detail.replace("\n", "\\n")  # the pill takes one state per line
+        _ov.stdin.write(f"{state}\t{title}\t{d}\n"); _ov.stdin.flush()
+    except (BrokenPipeError, OSError):
+        pass
+
+
 def voice(c):
+    import fcntl
     os.makedirs(CACHE, exist_ok=True)
     pidf, wav = os.path.join(CACHE, "ws-rec.pid"), os.path.join(CACHE, "ws-rec.wav")
+    lock = open(os.path.join(CACHE, "ws-rec.lock"), "w")
+    fcntl.flock(lock, fcntl.LOCK_EX)  # a doubled keypress (key repeat, two skhd events) waits here instead of racing
     if os.path.exists(pidf):
-        pid = int(open(pidf).read().strip() or 0)
+        pid, started, ov_pid = 0, 0.0, 0
         try:
-            os.kill(pid, signal.SIGINT)
-            for _ in range(30):
-                time.sleep(0.1)
-                os.kill(pid, 0)
-        except (ProcessLookupError, ValueError):
+            parts = (open(pidf).read().split() + ["0", "0", "0"])[:3]
+            pid, started, ov_pid = int(parts[0]), float(parts[1]), int(parts[2])
+        except ValueError:
             pass
+        if time.time() - started < 0.6:
+            return None  # the same press arriving twice; keep recording
+        if pid:
+            _kill(pid)
+        if ov_pid:
+            try: os.kill(ov_pid, signal.SIGTERM)
+            except ProcessLookupError: pass
         os.remove(pidf)
+        subprocess.run(["pkill", "-INT", "-f", f"ffmpeg .* {re.escape(wav)}$"], capture_output=True)  # strays from any earlier bug
         subprocess.run(["sketchybar", "--trigger", "ws_listen", "LISTENING=0"], capture_output=True)
-        out = sh(c["MACARCHY_HANDY"], "--transcribe-file", wav, "--json")
-        m = re.search(r"\{.*\"text\".*\}", out, re.S)
-        text = json.loads(m.group(0))["text"] if m else ""
-        return text
-    p = subprocess.Popen(["ffmpeg", "-loglevel", "quiet", "-f", "avfoundation", "-i", c["MACARCHY_MIC"],
+        _ding("Pop")
+        _fix_wav(wav)
+        _ov_say("busy", "Transcribing…")
+        return transcribe(c, wav)
+    p = subprocess.Popen(["ffmpeg", "-nostdin", "-loglevel", "quiet", "-f", "avfoundation", "-i", c["MACARCHY_MIC"],
                           "-ac", "1", "-ar", "16000", "-y", wav], stdin=subprocess.DEVNULL)
-    open(pidf, "w").write(str(p.pid))
+    ov_pid = 0
+    if os.path.exists(OVERLAY):  # the pill outlives this process; the next press kills it
+        ov = subprocess.Popen([OVERLAY, "listen", "Listening…", "alt-w again to run"], start_new_session=True,
+                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        ov_pid = ov.pid
+    else:
+        notify("ws", "listening… press again to run")
+    open(pidf, "w").write(f"{p.pid} {time.time()} {ov_pid}")
     subprocess.run(["sketchybar", "--trigger", "ws_listen", "LISTENING=1"], capture_output=True)
-    notify("ws", "listening… press again to run")
+    _ding("Tink")
     return None
 
 
@@ -315,7 +394,11 @@ def main(argv):
     else:
         text = " ".join(a.text)
     if not text.strip():
-        print("nothing heard", file=sys.stderr); return 1
+        print("nothing heard", file=sys.stderr)
+        if a.voice:
+            _ov_say("fail", "Nothing heard", f"mic {c['MACARCHY_MIC']} recorded silence, or you did not speak")
+            if _ov: _ov.stdin.close()
+        return 1
 
     wins = windows()
     calls, why = plan(text, c["MACARCHY_AGENT_MODEL"], wins)
@@ -339,7 +422,10 @@ def main(argv):
         print(f"think: {why}")
         print("\n".join(lines) if lines else "no action")
     if a.voice or a.wav:
-        notify("ws" + ("" if execute_mode else " (dry-run)"), "\n".join(l[:90] for l in lines) or f"no action for: {text}")
+        failed = any(l.startswith(("FAIL", "skip")) for l in lines)
+        body = "\n".join(l[:90] for l in lines) or "no action"
+        _ov_say("fail" if failed or not calls else "ok", ("heard: " if execute_mode else "dry-run, heard: ") + text, body)
+        if _ov: _ov.stdin.close()  # the pill fades a few seconds after this
     return 0 if calls else 2
 
 

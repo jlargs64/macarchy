@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Compile the two small Swift helpers into ~/.local/share/macarchy/bin.
+# Needs the Xcode command line tools (swiftc). Safe to re-run.
+set -euo pipefail
+SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OUT="${MACARCHY_BIN:-$HOME/.local/share/macarchy/bin}"
+if ! xcrun -f swiftc >/dev/null 2>&1; then
+  echo "build: swiftc not found; install the Xcode command line tools (xcode-select --install)" >&2
+  echo "build: ws --voice falls back to notifications, the bar's mic/camera items stay hidden" >&2
+  exit 1
+fi
+mkdir -p "$OUT"
+for name in overlay avstate; do
+  echo "  swiftc $name.swift -> $OUT/macarchy-$name"
+  xcrun swiftc -O -o "$OUT/macarchy-$name" "$SRC/$name.swift"   # xcrun sets SDKROOT; a bare toolchain path cannot find the stdlib
+done

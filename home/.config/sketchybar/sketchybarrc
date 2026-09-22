@@ -82,6 +82,21 @@ sketchybar --add item clock q \
     script="$PLUGIN_DIR/clock.sh" \
     click_script="$CONFIG_DIR/helpers/open_centered com.apple.iCal ''"
 
+##### Mic and camera in use (right of the notch, like the native menu bar's dots) #####
+# plugins/av.sh polls macarchy-avstate (built by ~/.config/macarchy/swift/build) every
+# 2s, so any app that opens the mic or camera shows here. While `ws --voice` (alt - w)
+# owns the mic the glyph turns red and clicking it is the same as pressing alt - w again.
+sketchybar --add event ws_listen
+for av in mic cam; do
+  sketchybar --add item $av e \
+    --set $av \
+      drawing=off \
+      label.drawing=off \
+      update_freq=2 \
+      script="$PLUGIN_DIR/av.sh" \
+    --subscribe $av ws_listen mouse.clicked mouse.entered mouse.exited
+done
+
 ##### Now playing (right of the notch) #####
 sketchybar --add item media e \
   --set media \
