@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" data-theme="retro-82">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>About macarchy</title>
+<meta name="description" content="Why macarchy exists: Omarchy’s desktop on the MacBook you already own, what it gives up, and who made it.">
+<meta name="color-scheme" content="dark light">
+<script>
+  // Apply the saved theme before first paint. Silent if storage is unavailable.
+  (function(){try{var t=localStorage.getItem("macarchy-site-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav__inner">
+    <a class="nav__brand" href="index.html"><span class="prompt" aria-hidden="true">&gt;</span>macarchy</a>
+    <button class="pill" type="button" data-cmdk-open aria-label="Jump to a section or command (press slash or command K)">
+      <span class="pill__ico" aria-hidden="true"></span>
+      <span class="pill__text">Jump to…</span>
+      <kbd>/</kbd>
+    </button>
+    <nav class="nav__links" aria-label="Sections">
+      <a href="index.html#install">Install</a>
+      <a href="index.html#themes">Themes</a>
+      <a href="index.html#hotkeys">Hotkeys</a>
+      <a href="https://github.com/jlargs64/macarchy">GitHub</a>
+    </nav>
+    <a class="btn btn--brand btn--sm nav__cta" href="index.html#install">Install</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="band" id="why" data-jump="Why this exists" aria-labelledby="why-title">
+    <div class="wrap">
+      <div class="prose">
+        <h2 id="why-title">Why macarchy exists</h2>
+        <p style="margin-top: var(--space-lg)">I love Linux. Hyprland, Niri and Omarchy are the desktops I want to use, and I would run one of them full time. I also already paid for a MacBook. It is a very good laptop, and spending a few thousand dollars on a second one that fits my needs worse is not a trade I want to make. Some of my work needs Xcode and the Mac apps anyway.</p>
+        <p>So I did what Omarchy does, on macOS. One theme directory drives Ghostty, Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper, and <code>theme-set</code> repaints them together. yabai tiles windows inside each Space. Nothing here disables System Integrity Protection, patches the OS or needs a reboot to try. macarchy changes the desktop and leaves the machine alone.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--deep" id="questions" data-jump="Questions" aria-labelledby="q-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="q-title">Questions I get</h2>
+      </div>
+      <dl class="facts">
+        <div><dt>Why not just install Linux?</dt><dd>If you can, do. Omarchy is the better version of this idea. macarchy is for the MacBook you already own, or the one your apps keep you on.</dd></div>
+        <div><dt>Isn’t this yabai with dotfiles?</dt><dd>yabai is the tiler. The rest is one theme directory driving six apps at once, 22 palettes ported from Omarchy with a porter for the rest of its catalogue, and <code>ws</code>, a voice agent that runs on a 14 MB model on the machine.</dd></div>
+        <div><dt>What do I give up?</dt><dd>macOS keeps owning Spaces, so yabai cannot create them or move windows between them. Only the apps in my stack are themed today; a Kitty or VS Code user gets tiling and nothing else. Both lists are on the <a href="index.html#hotkeys">front page</a>, in full.</dd></div>
+        <div><dt>Who made this?</dt><dd>Me, for my own machine, and published as is. Expect opinions. Most of them are a config edit away from yours. <a href="https://github.com/jlargs64">Justin Largo</a> on GitHub.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p class="foot__mark"><span class="prompt" aria-hidden="true">&gt;</span>macarchy</p>
+    <p class="foot__tag">Omarchy’s desktop, on a Mac. yabai, skhd, SketchyBar, JankyBorders and Omarchy itself are their authors’ work.</p>
+    <p class="foot__links"><a href="index.html">Home</a><a href="https://github.com/jlargs64/macarchy">GitHub</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">Theme system</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/window-management.md">Window management</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/omarchy-port.md">Porting themes</a><a href="https://omarchy.org">Omarchy</a></p>
+    <p class="foot__fine">MIT licensed · Justin Largo, <span data-year>2026</span> · set in JetBrains Mono and Geist · coloured by <code data-theme-name>retro-82</code></p>
+    <div class="stripe foot__stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+</footer>
+
+<dialog class="cmdk" id="cmdk" aria-label="Jump to a section or run a command">
+  <div class="cmdk__field"><span class="prompt" aria-hidden="true">&gt;</span><input class="cmdk__input" id="cmdk-input" type="text" placeholder="Jump to a section, or type theme-set…" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="cmdk-list" aria-autocomplete="list"><kbd>esc</kbd></div>
+  <ul class="cmdk__list" id="cmdk-list" role="listbox"></ul>
+  <div class="cmdk__foot"><span><kbd>↑</kbd> <kbd>↓</kbd> move</span><span><kbd>↵</kbd> run</span><span><kbd>esc</kbd> close</span></div>
+</dialog>
+
+<script src="js/site.js"></script>
+</body>
+</html>

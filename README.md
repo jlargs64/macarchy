@@ -1,12 +1,15 @@
 # macarchy
 
-One person's macOS desktop config, published. It is an
-[Omarchy](https://omarchy.org)-style layer: a theme switcher that restyles the
-terminal, multiplexer, editor, status bar, window borders and wallpaper in one
-command, plus tiling over native macOS Spaces. It is built around the tools I
-use and it themes only those. If your terminal is not Ghostty or your editor is
-not Neovim, macarchy does not restyle it today; see [Scope](#scope) and
-[Plans](#plans).
+Omarchy's desktop, on the MacBook you already own.
+
+An [Omarchy](https://omarchy.org)-style layer for macOS: one command restyles
+the terminal, multiplexer, editor, status bar, window borders and wallpaper,
+and windows tile over native Spaces. System Integrity Protection stays on.
+
+It is one person's config, published as is. It is built around the tools I use
+and it themes only those. If your terminal is not Ghostty or your editor is not
+Neovim, macarchy does not restyle it today; see [Scope](#scope) and
+[Plans](#plans). The reasoning is in [Why macarchy exists](#why-macarchy-exists).
 
 | Area | What |
 |---|---|
@@ -57,6 +60,27 @@ What it does not do:
 The hotkeys, the bar layout, the five-Space default and the choice of tools are
 my preferences. Most of them are a config edit or a file away from being yours.
 Some are hard-coded.
+
+## Why macarchy exists
+
+I love Linux. Hyprland, Niri and Omarchy are the desktops I want, and I would
+run one full time. I also already paid for a MacBook. It is a very good laptop,
+and a few thousand dollars for a second one that fits my needs worse is not a
+trade I want to make. Some of my work needs Xcode and the Mac apps anyway. So
+this does what Omarchy does, on macOS, and leaves the machine alone.
+
+**Why not just install Linux?** If you can, do. Omarchy is the better version
+of this idea. macarchy is for the MacBook you already own, or the one your
+apps keep you on.
+
+**Isn't this yabai with dotfiles?** yabai is the tiler. The rest is one theme
+directory driving six apps at once, 22 palettes ported from Omarchy with a
+porter for the rest of its catalogue, and a voice agent that runs on device.
+
+**What do I give up?** macOS keeps owning Spaces, so yabai cannot create them
+or move windows between them; see
+[docs/window-management.md](docs/window-management.md). Only the apps in my
+stack are themed today; see [Scope](#scope).
 
 ## Plans
 

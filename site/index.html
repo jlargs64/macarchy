@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>macarchy</title>
-<meta name="description" content="One person’s macOS desktop config, published: an Omarchy-style theme switcher for Ghostty, Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper, plus yabai tiling over native Spaces with SIP left on.">
+<meta name="description" content="Omarchy for the Mac. Hyprland-style tiling and one-command theming across Ghostty, Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper, on Apple silicon with the battery, the apps and SIP left on.">
 <meta name="color-scheme" content="dark light">
 <script>
   // Apply the saved theme before first paint. Silent if storage is unavailable.
@@ -26,6 +26,7 @@
       <kbd>/</kbd>
     </button>
     <nav class="nav__links" aria-label="Sections">
+      <a href="about.html">About</a>
       <a href="#install">Install</a>
       <a href="#themes">Themes</a>
       <a href="#hotkeys">Hotkeys</a>
@@ -47,18 +48,28 @@
 |_| |_| |_|\__,_|\___\__,_|_|  \___|_| |_|\__, |
                                           |___/<!-- banner:end --></pre><span class="sr-only">macarchy</span></h1>
         <p class="byline" data-rise style="--i:1">by <a href="https://github.com/jlargs64">Justin Largo</a></p>
-        <p class="lede" data-rise style="--i:2">Omarchy’s desktop, ported to the Mac. One person’s opinionated config, published: a theme switcher that restyles the terminal, editor, status bar and window borders together, and tiling over native macOS Spaces. System Integrity Protection stays on.</p>
+        <p class="lede" data-rise style="--i:2">The tiling desktop from Linux, on the MacBook you already own. One command restyles the terminal, editor, status bar, window borders and wallpaper. Windows tile over native Spaces. Say what you want out loud and it happens. System Integrity Protection stays on.</p>
         <div class="hero__actions" data-rise style="--i:3">
           <a class="btn btn--brand" href="#install">Install macarchy</a>
           <a class="btn" href="#hotkeys">See the hotkeys</a>
         </div>
       </div>
       <div class="hero__aside">
+        <figure class="desk" aria-label="A mock of the macarchy desktop, drawn from the active theme’s palette" data-rise style="--i:2">
+          <div class="desk__bar"><span class="desk__spaces"><i class="is-on"></i><i></i><i></i><i></i><i></i></span><span class="desk__app" data-theme-name>retro-82</span><span class="desk__status"><i></i><i></i><i></i></span></div>
+          <div class="desk__tiles">
+            <div class="desk__win desk__win--focus"><span class="desk__title"></span><span class="desk__ln desk__ln--w70"></span><span class="desk__ln desk__ln--w40"></span><span class="desk__ln desk__ln--w85"></span><span class="desk__ln desk__ln--w55"></span><span class="desk__ln desk__ln--w30"></span><span class="desk__ln desk__ln--prompt"></span></div>
+            <div class="desk__col">
+              <div class="desk__win"><span class="desk__title"></span><span class="desk__ln desk__ln--w60 desk__ln--kw"></span><span class="desk__ln desk__ln--w80"></span><span class="desk__ln desk__ln--w45 desk__ln--str"></span><span class="desk__ln desk__ln--w70"></span></div>
+              <div class="desk__win"><span class="desk__title"></span><span class="desk__ln desk__ln--w50"></span><span class="desk__ln desk__ln--w75 desk__ln--kw"></span><span class="desk__ln desk__ln--w35"></span></div>
+            </div>
+          </div>
+        </figure>
         <figure class="code">
           <figcaption class="code__bar"><span>one theme, every app</span><button class="btn btn--sm" type="button" data-copy><span class="btn__label">Copy</span></button></figcaption>
 <pre><code><span class="ln"><span class="p">$ </span>theme-set <span data-theme-name>retro-82</span></span></code></pre>
         </figure>
-        <p class="muted">This page reads its colours the same way your desktop will. The stripe below is the active theme’s <code>colors.sh</code>. Pick another one in the Themes section, or press <kbd>/</kbd> and type <code>theme-set</code>.</p>
+        <p class="muted">This mock, this page and your desktop read the same <code>colors.sh</code>. Press <kbd>/</kbd>, type <code>theme-set</code>, and watch them repaint together.</p>
       </div>
     </div>
     <div class="stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -68,7 +79,7 @@
     <div class="wrap about">
       <div class="prose">
         <h2 id="about-title">What macarchy is, and what it is not</h2>
-        <p style="margin-top: var(--space-lg)">macarchy is the author’s own Mac desktop config, published as is. It themes the apps in that setup and no others: Ghostty, Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper. <code>theme-set &lt;name&gt;</code> repoints one symlink and pokes each of them to re-read its config, so they repaint together. yabai tiles windows inside each Space, skhd binds the keys, and <kbd>alt</kbd>+<kbd>/</kbd> pops up a searchable list of every binding.</p>
+        <p style="margin-top: var(--space-lg)">macarchy is one Mac desktop config, published as is. It themes the apps in that setup and no others: Ghostty, Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper. <code>theme-set &lt;name&gt;</code> repoints one symlink and pokes each of them to re-read its config, so they repaint together. yabai tiles windows inside each Space, skhd binds the keys, and <kbd>alt</kbd>+<kbd>/</kbd> pops up a searchable list of every binding.</p>
         <p>If your terminal is Kitty or your editor is VS Code, nothing here restyles it today. A theme directory has no file for those apps, so a switch leaves them alone. The mechanism is <a href="https://omarchy.org">Omarchy</a>’s and could drive more apps; that is the plan below. Your Ghostty, Zellij and Neovim configs stay yours, since macarchy hooks in with one line each.</p>
       </div>
       <dl class="facts">
@@ -388,8 +399,8 @@
 <footer class="foot">
   <div class="wrap">
     <p class="foot__mark"><span class="prompt" aria-hidden="true">&gt;</span>macarchy</p>
-    <p class="foot__tag">Omarchy’s theme mechanism and a tiling desktop, ported to macOS. yabai, skhd, SketchyBar and JankyBorders are their authors’ work.</p>
-    <p class="foot__links"><a href="https://github.com/jlargs64/macarchy">GitHub</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">Theme system</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/window-management.md">Window management</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/omarchy-port.md">Porting themes</a><a href="https://omarchy.org">Omarchy</a></p>
+    <p class="foot__tag">Omarchy’s desktop, on a Mac. yabai, skhd, SketchyBar, JankyBorders and Omarchy itself are their authors’ work.</p>
+    <p class="foot__links"><a href="about.html">About</a><a href="https://github.com/jlargs64/macarchy">GitHub</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">Theme system</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/window-management.md">Window management</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/omarchy-port.md">Porting themes</a><a href="https://omarchy.org">Omarchy</a></p>
     <p class="foot__fine">MIT licensed · Justin Largo, <span data-year>2026</span> · set in JetBrains Mono and Geist · coloured by <code data-theme-name>retro-82</code></p>
     <div class="stripe foot__stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
   </div>
