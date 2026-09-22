@@ -1,0 +1,23 @@
+[
+  {
+    "date": "2026-09-21",
+    "macrostructure": "Ecosystem Index",
+    "theme": "studied-DNA",
+    "theme_source": "https://omarchy.org/",
+    "theme_axes": "dark / mono / chromatic-other (brand = active macarchy ACCENT)",
+    "enrichment": "Tier A CSS palette stripe + live theme switch",
+    "nav": "N13 inline ⌘K pill (jump palette)",
+    "footer": "Ft1 mast-headed",
+    "brief": "macarchy · GitHub Pages site rebuilt on the studied Omarchy DNA"
+  },
+  {
+    "date": "2026-09-21",
+    "macrostructure": "Narrative Workflow",
+    "theme": "Terminal",
+    "theme_axes": "dark / mono / chromatic-other (per macarchy palette, default retro-82 magenta)",
+    "enrichment": "Tier A CSS theme switcher",
+    "nav": "N8 Terminal command",
+    "footer": "Ft4 dense colophon",
+    "brief": "macarchy · GitHub Pages site: how to install and use it"
+  }
+]

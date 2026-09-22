@@ -10,7 +10,8 @@ together, plus a tiling window manager over native macOS Spaces.
 | Window management | yabai (tiling) + skhd (hotkeys) + SketchyBar (status bar) + JankyBorders (focus border), layered over native macOS Spaces, no SIP changes. [docs/window-management.md](docs/window-management.md) |
 | Hotkey discovery | `alt - /` pops up a searchable which-key style list of every skhd binding; Enter runs it. Also lists Ghostty and Zellij keybinds when those configs exist |
 | Raycast | a generated "Set Theme" script command |
-| Workspace agent | `ws`: plain-English (or voice, `alt - space`) control of windows, Spaces, theme and terminal tabs via an on-device 14 MB model. [docs/agent.md](docs/agent.md) |
+| Workspace agent | `ws`: plain-English (or voice, `alt - w`) control of windows, Spaces, theme and terminal tabs via an on-device 14 MB model. [docs/agent.md](docs/agent.md) |
+| Speech-to-text | [Handy](https://handy.computer) (offline, open-source; brew cask `handy`, installed by `install.sh`) transcribes for `ws --voice`. Its own hotkey, `alt - space` (hold to talk, tap to toggle), is configured inside Handy, not skhd. |
 
 Six themes ship: `retro-82` (custom, 1982 arcade CRT), `kanagawa-wave`,
 `catppuccin-mocha`, and three ported from Omarchy with `theme-port`:
@@ -24,6 +25,27 @@ editor themselves are yours; macarchy just hooks into them (see
 ## Install
 
 Pick one.
+
+### Agentic install
+
+One line, on a fresh Mac, walks you through the rest interactively:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/jlargs64/macarchy/main/install-agent.sh | sh -s -- claude
+```
+
+Swap `claude` for any of `codex`, `pi`, `opencode`, `gemini`, `copilot`,
+`cursor`, `amp` — or leave the argument off to auto-detect (or get a picker,
+or install hints if none are found). This launches that agent CLI
+interactively, seeded with [`AGENT-INSTALL.md`](AGENT-INSTALL.md), which
+walks it (and you) through the same steps below: prerequisites, cloning,
+`./install.sh --dry-run` then `./install.sh`, the manual Accessibility and
+Handy steps, and verification. The agent asks before it runs anything —
+this never passes a skip-permissions/yolo flag to any agent.
+
+Don't use one of the supported CLIs, or want to paste the prompt into a
+chat-based agent instead? `install-agent.sh --print` dumps the same prompt
+to stdout for that.
 
 ### stow
 
@@ -50,6 +72,9 @@ Accessibility permission:
 1. System Settings > Privacy & Security > Accessibility
 2. Add and enable `/opt/homebrew/bin/yabai` and `/opt/homebrew/bin/skhd`
 3. `yabai --start-service && skhd --start-service && brew services start borders && brew services start sketchybar`
+4. Open Handy.app once and grant Microphone + Accessibility when it asks,
+   then pick a model (Parakeet EN recommended, ~700 MB) -- needed for
+   `ws --voice`
 
 ### chezmoi archive external
 

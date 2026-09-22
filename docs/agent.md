@@ -6,13 +6,15 @@ model turns it into yabai, zellij and theme commands. Nothing leaves the machine
 ```
 ws "put slack on space 2 and switch to the kanagawa theme"   # prints what it would run
 ws -x "focus helium"                                          # runs it
-ws --voice                                                    # alt - space: press to listen, press again to run
+ws --voice                                                    # alt - w: press to listen, press again to run
 ```
 
 ## Pipeline
 
-1. **Text in.** Typed, or a WAV from `ws --voice` (ffmpeg records the mic; [Handy](https://handy.computer)
-   transcribes it headlessly with `handy --transcribe-file`).
+1. **Text in.** Typed, or a WAV from `ws --voice` (bound to `alt - w` in skhdrc; ffmpeg
+   records the mic, [Handy](https://handy.computer) transcribes it headlessly with
+   `handy --transcribe-file`). Handy itself is installed by `install.sh` (brew cask
+   `handy`) and owns its own dictation hotkey, `alt - space`, separately from skhd.
 2. **Vocabulary gate.** No desktop word in the sentence, no model call.
 3. **Model.** Cactus Needle 3, fine-tuned on these tools (see
    `home/.config/macarchy/agent/finetune/README.md`). The sentence is tried whole and

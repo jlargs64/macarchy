@@ -55,6 +55,11 @@ let either daemon run until you grant Accessibility permission by hand.**
    brew services start sketchybar
    ```
 
+4. Open Handy.app once and grant it Microphone + Accessibility when
+   prompted, then pick a model (Parakeet EN recommended, ~700 MB). This is
+   separate from yabai/skhd's Accessibility grant above, and is what
+   `ws --voice` (see [docs/agent.md](agent.md)) transcribes through.
+
 If a service refuses to start, the reason is in its log:
 
 ```sh
@@ -98,7 +103,7 @@ and re-add it.
 | `alt - f` | zoom to fullscreen (within the tile tree) |
 | `shift + alt - f` | native macOS fullscreen |
 | `alt - v` | toggle split direction |
-| `alt - <letter>` | free for your app launchers, see skhdrc |
+| `alt - <letter>` | free for your app launchers (except `w`, `space` -- see below), see skhdrc |
 
 ### Mouse
 
@@ -116,6 +121,15 @@ and re-add it.
 | `shift + alt - r` | restart yabai and reload SketchyBar |
 | `alt - /` | pop up `macarchy-keys` — a searchable list of every skhd binding |
 | `ctrl - <number>` | switch Space (**native macOS**, see below) |
+| `alt - w` | `ws --voice` — the workspace agent, see [docs/agent.md](agent.md) |
+| `alt - space` *(Handy, not skhd)* | Handy: transcribe (hold to talk, tap to toggle) |
+| `shift + alt - space` *(Handy, not skhd)* | Handy: transcribe with post-process |
+
+The last two rows aren't skhd bindings — Handy runs its own global-hotkey
+listener (it needs hold-to-talk key-down/key-up semantics skhd doesn't give
+it) and owns `alt - space` / `shift + alt - space` by default, configurable
+in Handy > Settings > Shortcuts. `ws --voice` was moved to `alt - w` to stay
+out of the way; `hotkey-check` knows about Handy's defaults too.
 
 `ctrl + <number>` is not a skhd binding — it is macOS's own shortcut, and it is
 off by default for Spaces past the first few. Enable it in

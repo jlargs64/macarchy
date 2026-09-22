@@ -3,7 +3,7 @@
 
   ws "put slack on space 2 and switch to the kanagawa theme"   # dry-run: prints the calls
   ws -x "focus helium"                                          # execute
-  ws --voice                                                    # press once: record, press again: transcribe + run
+  ws --voice                                                    # press once: record, press again: transcribe + run (bound to alt - w)
   ws --wav clip.wav                                             # run from an existing 16 kHz mono WAV
 
 Pipeline: text -> vocabulary gate -> Needle (tuned .cact) per clause -> schema validation

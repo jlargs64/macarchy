@@ -53,9 +53,11 @@ echo
 # This is the *workflow subset* only: the desktop stack (yabai, skhd,
 # sketchybar, borders) and what they need (jq for the space plugin,
 # imagemagick for wallpaper generation, fzf for macarchy-keys, Hack Nerd
-# Font for bar glyphs). It deliberately does not install shell/editor
-# tooling (zellij, neovim, starship, etc) -- that is a different concern
-# from this repo.
+# Font for bar glyphs), plus Handy -- the offline speech-to-text engine
+# `ws --voice` shells out to (see MACARCHY_HANDY in
+# home/.config/macarchy/config.example). It deliberately does not install
+# shell/editor tooling (zellij, neovim, starship, etc) -- that is a
+# different concern from this repo.
 # -----------------------------------------------------------------------
 BREW_FORMULAE=(
   jq
@@ -66,7 +68,7 @@ BREW_FORMULAE=(
   FelixKratz/formulae/sketchybar
   FelixKratz/formulae/borders
 )
-BREW_CASKS=(font-hack-nerd-font)
+BREW_CASKS=(font-hack-nerd-font handy)
 
 # Pinned release + sha256 for the per-app glyph font used by the SketchyBar
 # Space indicators. A moved tag or tampered asset is refused, not installed.
@@ -271,6 +273,13 @@ MANUAL STEP REQUIRED -- yabai and skhd cannot start without it:
        skhd --start-service
        brew services start borders
        brew services start sketchybar
+
+  3. Open Handy.app once (it's installed but needs manual setup):
+       - Grant Microphone and Accessibility when it prompts
+         (System Settings > Privacy & Security)
+       - Pick a model on first run -- Parakeet EN is recommended (~700 MB)
+       - Optional: enable "launch at login" in Handy's own settings
+     This is what \`ws --voice\` transcribes through (MACARCHY_HANDY).
 
 One-line hooks to add to your OWN configs (not managed by this repo):
 

@@ -1,7 +1,11 @@
 ^/README.*
 ^/LICENSE
 ^/install\.sh
+^/install-agent\.sh
+^/AGENT-INSTALL\.md
 ^/docs
 ^/\.git
 ^/\.stow-local-ignore
 ^/\.github
+^/site
+^/\.hallmark

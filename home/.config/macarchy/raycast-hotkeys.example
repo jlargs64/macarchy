@@ -1,5 +1,5 @@
 # Raycast keeps command hotkeys in an encrypted database, so list yours here
 # (skhd syntax, one per line) and `hotkey-check` will diff them against skhd
 # and macOS. Copy to ~/.config/macarchy/raycast-hotkeys.
-# alt - space          # Set Theme (script command)
+# alt - t              # Set Theme (script command) -- NOT `alt - space`: that's Handy's
 # cmd + shift - n      # Floating Notes

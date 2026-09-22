@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # hotkey-check -- find hotkey collisions between skhd, macOS system shortcuts,
-# Raycast's global hotkey, and a hand-kept list of Raycast command hotkeys.
+# Raycast's global hotkey, a hand-kept list of Raycast command hotkeys, and
+# Handy's own default global hotkeys.
 #
 # Raycast stores per-command hotkeys in an encrypted database, so keep them in
 #   ~/.config/macarchy/raycast-hotkeys      one binding per line, skhd syntax:
-#   alt - space        # Set Theme
+#   alt - t            # Set Theme
 #   cmd + shift - n    # Floating Notes
 # Everything is normalised to  "<mods> - <key>"  with mods sorted (alt cmd ctrl fn shift).
 set -uo pipefail
@@ -77,6 +78,18 @@ if [ -f "$RAYLIST" ]; then
 else
   echo "note: no $RAYLIST; Raycast command hotkeys are in an encrypted DB, list them there by hand." >&2
 fi
+# 5. Handy (https://handy.computer) default global hotkeys. Hardcoded rather
+# than a hand-kept file (like $RAYLIST) because these are Handy's own
+# Settings > Shortcuts defaults, not something this machine's owner chose --
+# update this list if Handy's upstream defaults change or you rebind them.
+handy_defaults=(
+  "alt - space|Handy: transcribe (hold to talk, tap to toggle)"
+  "shift + alt - space|Handy: transcribe with post-process"
+  "- escape|Handy: cancel"
+)
+for entry in "${handy_defaults[@]}"; do
+  printf '%s\thandy\t%s\n' "$(norm "${entry%%|*}")" "${entry#*|}" >> "$tmp"
+done
 
 sort "$tmp" > "$tmp.s"; mv "$tmp.s" "$tmp"
 if [ "${1:-}" = "--all" ]; then column -t -s $'\t' "$tmp"; echo; fi

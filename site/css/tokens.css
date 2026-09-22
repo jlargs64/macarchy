@@ -1,0 +1,119 @@
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 */
+/* Hallmark · macrostructure: Ecosystem Index · hero: left-biased, content-height (swap for the source's full-viewport centred hero)
+ * theme: studied-DNA (source: https://omarchy.org/) · observed-paper #1a1b26 (tokyo-night default) · observed-accent #9ece6a
+ * observed-fonts: JetBrains Mono Variable (display + body) + Geist Variable (UI labels) · observed-radius: 0 · observed-elevation: 1px ring
+ * here: paper + brand come from the active macarchy theme (home/.config/theme/themes/<name>/colors.sh); token roles follow the source
+ * nav: N13 inline ⌘K pill (swap for the source's N1b) · footer: Ft1 mast-headed (swap for the source's Ft3)
+ * studied: yes · DNA-source: url (public reference for the user's own brand) · rhythm: unknown (URL mode)
+ */
+
+/* ---- macarchy palettes, verbatim from colors.sh (BG FG ACCENT ACCENT2 MUTED RED GREEN YELLOW BLUE MAGENTA CYAN) ---- */
+:root,
+:root[data-theme="retro-82"] {
+  --t-bg:#0b0a0f; --t-fg:#f2c66d; --t-accent:#ff59f0; --t-accent2:#3ef1ff; --t-muted:#3a3148;
+  --t-red:#ff4f6d; --t-green:#7bff7b; --t-yellow:#f2c66d; --t-blue:#4fa8ff; --t-magenta:#ff59f0; --t-cyan:#3ef1ff;
+}
+:root[data-theme="kanagawa-wave"] {
+  --t-bg:#1f1f28; --t-fg:#dcd7ba; --t-accent:#7e9cd8; --t-accent2:#957fb8; --t-muted:#54546d;
+  --t-red:#c34043; --t-green:#76946a; --t-yellow:#c0a36e; --t-blue:#7e9cd8; --t-magenta:#957fb8; --t-cyan:#6a9589;
+}
+:root[data-theme="catppuccin-mocha"] {
+  --t-bg:#1e1e2e; --t-fg:#cdd6f4; --t-accent:#cba6f7; --t-accent2:#89b4fa; --t-muted:#585b70;
+  --t-red:#f38ba8; --t-green:#a6e3a1; --t-yellow:#f9e2af; --t-blue:#89b4fa; --t-magenta:#f5c2e7; --t-cyan:#94e2d5;
+}
+:root[data-theme="tokyo-night"] {
+  --t-bg:#1a1b26; --t-fg:#a9b1d6; --t-accent:#7aa2f7; --t-accent2:#0db9d7; --t-muted:#414868;
+  --t-red:#f7768e; --t-green:#9ece6a; --t-yellow:#e0af68; --t-blue:#7aa2f7; --t-magenta:#ad8ee6; --t-cyan:#449dab;
+}
+:root[data-theme="gruvbox"] {
+  --t-bg:#282828; --t-fg:#d4be98; --t-accent:#7daea3; --t-accent2:#d3869b; --t-muted:#665c54;
+  --t-red:#ea6962; --t-green:#a9b665; --t-yellow:#d8a657; --t-blue:#7daea3; --t-magenta:#d3869b; --t-cyan:#89b482;
+}
+:root[data-theme="nord"] {
+  --t-bg:#2e3440; --t-fg:#d8dee9; --t-accent:#81a1c1; --t-accent2:#b48ead; --t-muted:#4c566a;
+  --t-red:#bf616a; --t-green:#a3be8c; --t-yellow:#ebcb8b; --t-blue:#81a1c1; --t-magenta:#b48ead; --t-cyan:#88c0d0;
+}
+
+/* static per-theme swatches for the theme cards (each card shows its own palette regardless of the active theme) */
+:root {
+  --pal-retro-82: #0b0a0f, #f2c66d, #ff59f0, #3ef1ff, #ff4f6d, #7bff7b, #4fa8ff, #f2c66d;
+  --pal-kanagawa-wave: #1f1f28, #dcd7ba, #7e9cd8, #957fb8, #c34043, #76946a, #7e9cd8, #c0a36e;
+  --pal-catppuccin-mocha: #1e1e2e, #cdd6f4, #cba6f7, #89b4fa, #f38ba8, #a6e3a1, #89b4fa, #f9e2af;
+  --pal-tokyo-night: #1a1b26, #a9b1d6, #7aa2f7, #0db9d7, #f7768e, #9ece6a, #7aa2f7, #e0af68;
+  --pal-gruvbox: #282828, #d4be98, #7daea3, #d3869b, #ea6962, #a9b665, #7daea3, #d8a657;
+  --pal-nord: #2e3440, #d8dee9, #81a1c1, #b48ead, #bf616a, #a3be8c, #81a1c1, #ebcb8b;
+  --black: oklch(0% 0 0); /* mixing partner only, never a surface */
+}
+
+/* ---- semantic tokens, roles as observed on the source (bg-deep · bg · surface · surface-2 · border-subtle · border-strong · text · text-secondary · text-muted · brand · brand-ink) ---- */
+:root {
+  --color-bg-deep:        color-mix(in oklch, var(--t-bg) 88%, var(--black));
+  --color-bg:             var(--t-bg);
+  --color-surface:        color-mix(in oklch, var(--t-bg) 94%, var(--t-fg));
+  --color-surface-2:      color-mix(in oklch, var(--t-bg) 90%, var(--t-fg));
+  --color-border-subtle:  color-mix(in oklch, var(--t-bg) 86%, var(--t-fg));
+  --color-border-strong:  var(--t-muted);
+  --color-text:           var(--t-fg);
+  --color-text-secondary: color-mix(in oklch, var(--t-fg) 90%, var(--t-bg));
+  --color-text-muted:     color-mix(in oklch, var(--t-fg) 78%, var(--t-bg));
+  --color-brand:          var(--t-accent);
+  --color-brand-2:        var(--t-accent2);
+  --color-brand-ink:      var(--t-bg);
+  --color-brand-soft:     color-mix(in oklch, var(--t-accent) 14%, transparent);
+  --color-field-bg:       color-mix(in oklch, var(--t-bg) 78%, var(--black));
+  --color-focus:          var(--t-accent);
+  --color-selection:      color-mix(in oklch, var(--t-accent) 35%, var(--t-bg));
+  --color-shine:          color-mix(in oklch, var(--t-accent) 20%, oklch(99% 0.01 90));
+  --shadow-elevation:        0 0 0 1px color-mix(in oklch, var(--t-fg) 9%, transparent);
+  --shadow-elevation-hover:  0 0 0 1px color-mix(in oklch, var(--t-fg) 16%, transparent);
+  --color-img-outline:       color-mix(in oklch, var(--t-fg) 12%, transparent);
+
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-ui:   "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-mono);
+  --font-body:    var(--font-mono);
+
+  /* observed scale: labels 12 · muted 13 · body 15 · h3 18 · h2 24→27 · h1 24→30 */
+  --text-xs:   0.75rem;
+  --text-sm:   0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.5rem;
+  --text-2xl:  1.7rem;
+  --text-3xl:  1.875rem;
+  --text-h1:   clamp(1.5rem, 1vw + 1.1rem, 1.875rem);
+  --text-h2:   clamp(1.5rem, 0.6vw + 1.3rem, 1.7rem);
+  --leading-relaxed: 1.625;
+  --leading-tight: 1.25;
+  --tracking-tight: -0.025em;
+
+  --space-2xs: 0.25rem;
+  --space-xs:  0.5rem;
+  --space-sm:  0.75rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2.5rem;
+  --space-2xl: 3rem;    /* section py mobile (observed py-12) */
+  --space-3xl: 6rem;    /* section py desktop (observed py-24) */
+  --space-4xl: 7rem;    /* hero py desktop (observed py-28) */
+
+  --measure: 35.5rem;   /* observed prose max-width */
+  --container: 72rem;   /* observed max-w-6xl */
+  --gutter: clamp(1rem, 2vw, 1.5rem);
+  --nav-h: 3.5rem;      /* observed h-14 */
+
+  --rule-hair: 1px;
+  --radius: 0px;        /* observed: every radius token is 0 */
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:  cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-rise: cubic-bezier(0.21, 0.47, 0.32, 0.98); /* observed hero-rise easing */
+  --dur-micro: 150ms;   /* observed default transition */
+  --dur-rise:  550ms;   /* observed hero-rise */
+  --dur-shine: 1600ms;  /* one glint across the banner */
+  --stagger:   90ms;    /* observed hero stagger */
+
+  --z-nav: 100;
+  --z-modal: 300;
+}

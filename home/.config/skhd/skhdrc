@@ -42,6 +42,8 @@ alt - v          : yabai -m window --toggle split                     # flip spl
 #   alt - t : open -a "Ghostty"
 #   alt - b : open -a "Safari"
 # Run `hotkey-check` after editing to catch collisions with macOS or Raycast.
+# NOTE: alt - space and shift + alt - space are NOT free -- Handy (see below)
+# owns both as its own global listener.
 
 # ----- stacking ---------------------------------------------------------------
 # A "stack" puts several windows in one tile, like browser tabs -- only the
@@ -55,10 +57,24 @@ shift + alt - s  : yabai -m window --insert stack        # stack onto this windo
 shift + alt - e  : yabai -m window --insert east         # split to the right
 shift + alt - d  : yabai -m window --insert south        # split below
 
+# ----- handy (speech to text) ------------------------------------------------
+# Handy (https://handy.computer, brew cask `handy`, installed by install.sh)
+# is the offline speech-to-text engine `ws --voice` shells out to below. It
+# needs push-to-talk (key-down/key-up) semantics, so it runs its OWN global
+# hotkey listener (tauri global-shortcut) instead of going through skhd.
+# These are its defaults, configurable in Handy > Settings > Shortcuts -- NOT
+# skhd bindings, listed here only so they aren't accidentally reused above:
+#   alt - space         transcribe (hold to talk, tap to toggle)
+#   shift + alt - space transcribe with post-process
+#   escape              cancel
+# `hotkey-check` also knows about these and will flag a clash.
+
 # ----- workspace agent ------------------------------------------------------
-# Press once to start listening, again to transcribe (Handy) and run. Dry-run
-# unless MACARCHY_AGENT_EXECUTE=true in ~/.config/macarchy/config.
-alt - space      : ~/.local/bin/ws --voice
+# Press once to start listening, again to transcribe (via Handy) and run.
+# Dry-run unless MACARCHY_AGENT_EXECUTE=true in ~/.config/macarchy/config.
+# Not bound to alt-v ("v" for voice) -- that's already toggle-split above.
+# Bound to alt-w ("w" for `ws`, the script this runs) instead.
+alt - w          : ~/.local/bin/ws --voice
 
 # ----- theme ----------------------------------------------------------------
 # Cycle Ghostty + Zellij + Neovim + SketchyBar + borders + wallpaper together.

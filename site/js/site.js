@@ -1,0 +1,111 @@
+// macarchy site: theme switching (the page runs theme-set too), copy buttons, and the jump palette.
+(function () {
+  var root = document.documentElement;
+  var KEY = "macarchy-site-theme";
+  var THEMES = ["retro-82", "kanagawa-wave", "catppuccin-mocha", "tokyo-night", "gruvbox", "nord"];
+  var cards = Array.prototype.slice.call(document.querySelectorAll("[data-set-theme]"));
+  var outs = Array.prototype.slice.call(document.querySelectorAll("[data-theme-name]"));
+
+  var banner = document.querySelector(".ascii");
+  var shineLayer = null;
+  function shine(delayMs) {
+    if (!banner) return;
+    if (!shineLayer) {
+      shineLayer = document.createElement("span");
+      shineLayer.className = "ascii__shine";
+      shineLayer.setAttribute("aria-hidden", "true");
+      shineLayer.textContent = banner.textContent;
+      banner.appendChild(shineLayer);
+    }
+    banner.style.setProperty("--shine-delay", (delayMs || 0) + "ms");
+    banner.classList.remove("is-shining");
+    void banner.offsetWidth; // restart the animation
+    banner.classList.add("is-shining");
+  }
+  function applyTheme(name, persist) {
+    if (THEMES.indexOf(name) < 0) return;
+    root.setAttribute("data-theme", name);
+    cards.forEach(function (c) { c.setAttribute("aria-pressed", String(c.getAttribute("data-set-theme") === name)); });
+    outs.forEach(function (o) { o.textContent = name; });
+    if (persist) { try { localStorage.setItem(KEY, name); } catch (e) {} shine(0); }
+  }
+  applyTheme(root.getAttribute("data-theme") || "retro-82", false);
+  shine(700); // after the hero has risen
+  cards.forEach(function (c) { c.addEventListener("click", function () { applyTheme(c.getAttribute("data-set-theme"), true); }); });
+
+  // Swatches: paint each theme card's eight bands from its --pal-* list.
+  Array.prototype.forEach.call(document.querySelectorAll(".theme-card__swatch"), function (sw) {
+    var name = sw.getAttribute("data-pal");
+    var list = getComputedStyle(root).getPropertyValue("--pal-" + name).split(",").map(function (s) { return s.trim(); });
+    Array.prototype.forEach.call(sw.children, function (i, idx) { if (list[idx]) i.style.background = list[idx]; });
+  });
+
+  // Copy: the label swap is the feedback. No toast.
+  Array.prototype.forEach.call(document.querySelectorAll("[data-copy]"), function (btn) {
+    btn.addEventListener("click", function () {
+      var block = btn.closest(".code");
+      var lines = block ? block.querySelectorAll(".ln") : [];
+      var text = Array.prototype.map.call(lines, function (l) { return l.textContent; }).join("\n");
+      var done = function (state) {
+        btn.setAttribute("data-state", state);
+        clearTimeout(btn._t);
+        btn._t = setTimeout(function () { btn.removeAttribute("data-state"); }, 2500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText && text) {
+        navigator.clipboard.writeText(text).then(function () { done("copied"); }, function () { done("error"); });
+      } else { done("error"); }
+    });
+  });
+
+  // Jump palette: the site's macarchy-keys. "/" or ⌘K opens, type to filter, Enter runs, Esc closes.
+  var dlg = document.getElementById("cmdk");
+  var input = document.getElementById("cmdk-input");
+  var list = document.getElementById("cmdk-list");
+  if (!dlg || !input || !list || typeof dlg.showModal !== "function") return;
+
+  var items = [];
+  document.querySelectorAll("[data-jump]").forEach(function (el) {
+    items.push({ group: "Sections", label: el.getAttribute("data-jump"), hint: "go", run: function () { location.hash = "#" + el.id; el.scrollIntoView(); } });
+  });
+  THEMES.forEach(function (t) { items.push({ group: "Commands", label: "theme-set " + t, hint: "switch this page", run: function () { applyTheme(t, true); } }); });
+  items.push({ group: "Commands", label: "theme-next", hint: "cycle", run: function () { var i = THEMES.indexOf(root.getAttribute("data-theme")); applyTheme(THEMES[(i + 1) % THEMES.length], true); } });
+  items.push({ group: "Links", label: "github.com/jlargs64/macarchy", hint: "open", run: function () { location.href = "https://github.com/jlargs64/macarchy"; } });
+  items.push({ group: "Links", label: "docs/theme-system.md", hint: "open", run: function () { location.href = "https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md"; } });
+  items.push({ group: "Links", label: "docs/window-management.md", hint: "open", run: function () { location.href = "https://github.com/jlargs64/macarchy/blob/main/docs/window-management.md"; } });
+
+  var visible = [], selected = 0;
+  function render() {
+    var q = input.value.trim().toLowerCase();
+    visible = items.filter(function (it) { return !q || it.label.toLowerCase().indexOf(q) >= 0 || it.group.toLowerCase().indexOf(q) >= 0; });
+    selected = Math.min(selected, Math.max(0, visible.length - 1));
+    list.innerHTML = "";
+    if (!visible.length) { var e = document.createElement("li"); e.className = "cmdk__empty"; e.textContent = "Nothing matches “" + input.value + "”."; list.appendChild(e); return; }
+    var lastGroup = null;
+    visible.forEach(function (it, idx) {
+      if (it.group !== lastGroup) { var g = document.createElement("li"); g.className = "cmdk__group"; g.textContent = it.group; list.appendChild(g); lastGroup = it.group; }
+      var li = document.createElement("li");
+      var b = document.createElement("button"); b.type = "button"; b.className = "cmdk__item"; b.setAttribute("role", "option");
+      b.setAttribute("aria-selected", String(idx === selected)); b.id = "cmdk-opt-" + idx;
+      b.innerHTML = "<span></span><small></small>"; b.firstChild.textContent = it.label; b.lastChild.textContent = it.hint;
+      b.addEventListener("click", function () { choose(idx); });
+      li.appendChild(b); list.appendChild(li);
+    });
+    input.setAttribute("aria-activedescendant", "cmdk-opt-" + selected);
+  }
+  function choose(idx) { var it = visible[idx]; if (!it) return; dlg.close(); it.run(); }
+  function open() { input.value = ""; selected = 0; render(); dlg.showModal(); input.focus(); }
+  document.querySelectorAll("[data-cmdk-open]").forEach(function (b) { b.addEventListener("click", open); });
+  input.addEventListener("input", function () { selected = 0; render(); });
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown") { e.preventDefault(); selected = Math.min(selected + 1, visible.length - 1); render(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); selected = Math.max(selected - 1, 0); render(); }
+    else if (e.key === "Enter") { e.preventDefault(); choose(selected); }
+    else if (e.key === "Escape") { e.preventDefault(); dlg.close(); }
+  });
+  dlg.addEventListener("keydown", function (e) { if (e.key === "Escape") { e.preventDefault(); dlg.close(); } });
+  dlg.addEventListener("click", function (e) { if (e.target === dlg) dlg.close(); });
+  document.addEventListener("keydown", function (e) {
+    var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || "");
+    if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing && !dlg.open)) { e.preventDefault(); dlg.open ? dlg.close() : open(); }
+  });
+})();
