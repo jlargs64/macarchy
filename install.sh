@@ -81,6 +81,7 @@ run() {
 . "$REPO/home/.config/macarchy/lib.sh"
 # shellcheck disable=SC1091
 . "$REPO/home/.config/macarchy/components.sh"
+REPO="$(macarchy_stable_repo "$REPO")"
 
 if [ "$LIST" = 1 ]; then
   for c in $MACARCHY_ALL_COMPONENTS; do printf '  %-8s %s\n' "$c" "$(macarchy_component_desc "$c")"; done
@@ -252,15 +253,7 @@ step_link() {
   echo "  $n new links"
 }
 
-# Files under home/ to link: tracked ones in a git checkout (so local junk
-# like __pycache__ never lands in $HOME), everything in a tarball.
-repo_files() {
-  if [ -d "$REPO/.git" ]; then
-    git -C "$REPO" ls-files home
-  else
-    (cd "$REPO" && find home \( -type f -o -type l \) -print)
-  fi
-}
+repo_files() { macarchy_repo_files "$REPO"; }
 
 # --remove: delete the links a component put in $HOME. Only links that point
 # into this repo are touched; brew packages and your own files stay.
