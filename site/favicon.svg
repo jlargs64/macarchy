@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- The "m" from the hero banner (figlet Standard), in retro-82's bg and accent. -->
+  <rect width="64" height="64" rx="12" fill="#0b0a0f"/>
+  <text x="32" y="17" fill="#ff59f0" font-family="JetBrains Mono, Menlo, Consolas, monospace" font-size="9.5" font-weight="700" text-anchor="middle" xml:space="preserve"><tspan x="32" dy="0"> _ __ ___  </tspan><tspan x="32" dy="11">| '_ ` _ \ </tspan><tspan x="32" dy="11">| | | | | |</tspan><tspan x="32" dy="11">|_| |_| |_|</tspan></text>
+</svg>
