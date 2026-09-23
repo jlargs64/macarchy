@@ -2,8 +2,18 @@
 # macarchy install.sh — idempotent installer for the macarchy desktop layer.
 #
 # Usage:
-#   ./install.sh              install/update everything
-#   ./install.sh --dry-run    print what would happen, change nothing
+#   ./install.sh                     install/update (first run in a terminal
+#                                    asks which components you want)
+#   ./install.sh --only themes,wm    install just these components
+#   ./install.sh --skip agent        everything you picked, minus these
+#   ./install.sh --all               every component, no questions
+#   ./install.sh --remove bar        unlink a component's files from $HOME
+#   ./install.sh --list              show the components and exit
+#   ./install.sh --dry-run           print what would happen, change nothing
+#
+# Components: themes wm bar borders keys agent (see
+# home/.config/macarchy/components.sh). Your choice is saved as
+# MACARCHY_COMPONENTS in ~/.config/macarchy/config and reused on re-runs.
 #
 # Safe to re-run: every step either checks first or overwrites the same
 # managed path (symlinks via ln -sfn, brew install of already-installed
@@ -19,11 +29,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$SCRIPT_DIR"
 
 DRY_RUN=0
-for arg in "$@"; do
+ONLY="" SKIP="" ALL=0 REMOVE="" LIST=0
+while [ $# -gt 0 ]; do
+  arg="$1"
+  shift
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
+    --only)
+      ONLY="${1:?--only needs a list}"
+      shift
+      ;;
+    --only=*) ONLY="${arg#*=}" ;;
+    --skip)
+      SKIP="${1:?--skip needs a list}"
+      shift
+      ;;
+    --skip=*) SKIP="${arg#*=}" ;;
+    --remove)
+      REMOVE="${1:?--remove needs a list}"
+      shift
+      ;;
+    --remove=*) REMOVE="${arg#*=}" ;;
+    --all) ALL=1 ;;
+    --list) LIST=1 ;;
     -h | --help)
-      sed -n '2,10p' "$0"
+      sed -n '2,20p' "$0"
       exit 0
       ;;
     *)
@@ -49,8 +79,63 @@ run() {
 # editing it picks up the new values.
 # shellcheck disable=SC1091
 . "$REPO/home/.config/macarchy/lib.sh"
+# shellcheck disable=SC1091
+. "$REPO/home/.config/macarchy/components.sh"
 
-echo "macarchy install${DRY_RUN:+ (dry run)}"
+if [ "$LIST" = 1 ]; then
+  for c in $MACARCHY_ALL_COMPONENTS; do printf '  %-8s %s\n' "$c" "$(macarchy_component_desc "$c")"; done
+  exit 0
+fi
+
+# -----------------------------------------------------------------------
+# 0. Which components
+#
+# --only / --all win, then a saved MACARCHY_COMPONENTS, then (first run in a
+# terminal, no config yet) a y/n question per component, then everything.
+# -----------------------------------------------------------------------
+pick_components() { # sets SELECTED
+  local c ans
+  SELECTED=""
+  echo "Which parts of macarchy do you want? Each works on its own."
+  echo "(Enter keeps the default. Change it later with --only, --skip or --remove.)"
+  echo
+  for c in $MACARCHY_ALL_COMPONENTS; do
+    printf '  %-8s %s\n' "$c" "$(macarchy_component_desc "$c")"
+    read -r -p "           install $c? [Y/n] " ans || ans=""
+    case "$ans" in [nN]*) ;; *) SELECTED="$SELECTED $c" ;; esac
+  done
+  echo
+}
+
+commas() { echo "$1" | tr ',' ' '; }
+
+if [ -n "$REMOVE" ]; then
+  SELECTED="${MACARCHY_COMPONENTS:-$MACARCHY_ALL_COMPONENTS}"
+elif [ -n "$ONLY" ]; then
+  SELECTED="$(commas "$ONLY")"
+elif [ "$ALL" = 1 ]; then
+  SELECTED="$MACARCHY_ALL_COMPONENTS"
+elif [ -n "${MACARCHY_COMPONENTS:-}" ]; then
+  SELECTED="$MACARCHY_COMPONENTS"
+elif [ -t 0 ] && [ -t 1 ] && [ ! -f "$HOME/.config/macarchy/config" ]; then
+  # first install: ask. An existing install without the setting keeps all.
+  pick_components
+else
+  SELECTED="$MACARCHY_ALL_COMPONENTS"
+fi
+for c in $(commas "$SKIP") $(commas "$REMOVE"); do
+  SELECTED="$(echo " $SELECTED " | sed "s/ $c / /g")"
+done
+MACARCHY_COMPONENTS="$(macarchy_resolve_components $SELECTED)"
+export MACARCHY_COMPONENTS
+[ -n "$MACARCHY_COMPONENTS" ] || {
+  echo "macarchy: no components selected; nothing to do" >&2
+  exit 1
+}
+
+DRY_NOTE=""
+[ "$DRY_RUN" = 1 ] && DRY_NOTE=" (dry run -- nothing above actually ran)"
+echo "macarchy install${DRY_NOTE:+ (dry run)}"
 [ "$DRY_RUN" = 1 ] && echo "(dry run: no changes will be made)"
 echo
 
@@ -66,16 +151,14 @@ echo
 # shell/editor tooling (zellij, neovim, starship, etc) -- that is a
 # different concern from this repo.
 # -----------------------------------------------------------------------
-BREW_FORMULAE=(
-  jq
-  fzf
-  imagemagick
-  koekeishiya/formulae/yabai
-  koekeishiya/formulae/skhd
-  FelixKratz/formulae/sketchybar
-  FelixKratz/formulae/borders
-)
-BREW_CASKS=(font-hack-nerd-font handy)
+BREW_FORMULAE=()
+BREW_CASKS=()
+macarchy_has themes && BREW_FORMULAE+=(imagemagick fzf)
+macarchy_has wm && BREW_FORMULAE+=(jq koekeishiya/formulae/yabai koekeishiya/formulae/skhd)
+macarchy_has bar && BREW_FORMULAE+=(jq FelixKratz/formulae/sketchybar) && BREW_CASKS+=(font-hack-nerd-font)
+macarchy_has borders && BREW_FORMULAE+=(FelixKratz/formulae/borders)
+macarchy_has keys && BREW_FORMULAE+=(fzf)
+macarchy_has agent && BREW_CASKS+=(handy)
 
 # Pinned release + sha256 for the per-app glyph font used by the SketchyBar
 # Space indicators. A moved tag or tampered asset is refused, not installed.
@@ -94,10 +177,11 @@ step_brew() {
   fi
 
   run brew update
-  run brew install "${BREW_FORMULAE[@]}"
+  [ ${#BREW_FORMULAE[@]} -eq 0 ] || run brew install "${BREW_FORMULAE[@]}"
   # --adopt: take over an app that is already in /Applications (e.g. Handy installed by hand) instead of failing
-  run brew install --cask --adopt "${BREW_CASKS[@]}"
+  [ ${#BREW_CASKS[@]} -eq 0 ] || run brew install --cask --adopt "${BREW_CASKS[@]}"
 
+  macarchy_has bar || return 0
   echo "==> sketchybar-app-font"
   local dest="$HOME/Library/Fonts/sketchybar-app-font.ttf"
   if [ -f "$dest" ]; then
@@ -125,6 +209,7 @@ step_brew() {
 # sudo, nothing system-wide, each one reversible with `defaults delete`.
 # -----------------------------------------------------------------------
 step_defaults() {
+  macarchy_has wm || return 0
   echo "==> macOS defaults"
   run defaults write com.apple.dock expose-animation-duration -float 0.1
   run defaults write com.apple.dock workspaces-edge-delay -float 0.05
@@ -137,31 +222,71 @@ step_defaults() {
 # 3. Link home/ into $HOME
 # -----------------------------------------------------------------------
 step_link() {
-  echo '==> Linking files into $HOME'
-  if command -v stow >/dev/null 2>&1; then
-    run stow -t "$HOME" -d "$REPO" home
-    return
-  fi
-
-  echo "  stow not found on PATH; falling back to manual symlinks"
-  # Mirror what stow would do, one real file/symlink at a time, so an
-  # existing unrelated ~/.config is never replaced wholesale.
-  while IFS= read -r -d '' src; do
-    rel="${src#"$REPO"/home/}"
+  echo "==> Linking files into \$HOME ($MACARCHY_COMPONENTS)"
+  # One symlink per file, never a whole directory, so an unrelated
+  # ~/.config/<app> is never replaced. A real file already at a target is
+  # moved aside to <file>.pre-macarchy first, never overwritten.
+  local repo_real rel src target dir_real n=0
+  repo_real="$(cd "$REPO" && pwd -P)"
+  while IFS= read -r rel; do
+    rel="${rel#home/}"
+    macarchy_has "$(macarchy_component_of "$rel")" || continue
+    src="$REPO/home/$rel"
     target="$HOME/$rel"
+    [ "$(readlink "$target" 2>/dev/null)" = "$src" ] && continue
+    # A directory stow folded into one link already resolves into the repo;
+    # linking through it would overwrite the repo file with a link to itself.
+    dir_real="$(cd "$(dirname "$target")" 2>/dev/null && pwd -P)" || dir_real=""
+    case "$dir_real/" in "$repo_real"/*) continue ;; esac
+    if [ -e "$target" ] && [ ! -L "$target" ]; then
+      run mv "$target" "$target.pre-macarchy"
+    fi
     if [ "$DRY_RUN" = 1 ]; then
-      echo "+ mkdir -p $(dirname "$target") && ln -sfn $src $target"
+      echo "+ ln -sfn $src $target"
     else
       mkdir -p "$(dirname "$target")"
       ln -sfn "$src" "$target"
     fi
-  done < <(find "$REPO/home" \( -type f -o -type l \) -print0)
+    n=$((n + 1))
+  done < <(repo_files)
+  echo "  $n new links"
+}
+
+# Files under home/ to link: tracked ones in a git checkout (so local junk
+# like __pycache__ never lands in $HOME), everything in a tarball.
+repo_files() {
+  if [ -d "$REPO/.git" ]; then
+    git -C "$REPO" ls-files home
+  else
+    (cd "$REPO" && find home \( -type f -o -type l \) -print)
+  fi
+}
+
+# --remove: delete the links a component put in $HOME. Only links that point
+# into this repo are touched; brew packages and your own files stay.
+step_unlink() {
+  local c rel target
+  for c in $(commas "$REMOVE"); do
+    echo "==> Removing $c"
+    while IFS= read -r rel; do
+      rel="${rel#home/}"
+      [ "$(macarchy_component_of "$rel")" = "$c" ] || continue
+      target="$HOME/$rel"
+      case "$(readlink "$target" 2>/dev/null)" in
+        "$REPO"/home/*)
+          run rm "$target"
+          if [ -e "$target.pre-macarchy" ]; then run mv "$target.pre-macarchy" "$target"; fi
+          ;;
+      esac
+    done < <(repo_files)
+  done
 }
 
 # -----------------------------------------------------------------------
 # 4. Seed the active theme
 # -----------------------------------------------------------------------
 step_seed_current() {
+  macarchy_has themes || return 0
   echo "==> Seeding active theme (\$MACARCHY_DEFAULT_THEME=$MACARCHY_DEFAULT_THEME)"
   local current="$HOME/.config/theme/current"
   local target="$HOME/.config/theme/themes/$MACARCHY_DEFAULT_THEME"
@@ -187,6 +312,7 @@ step_seed_current() {
 # time afterward as `theme-maintain`)
 # -----------------------------------------------------------------------
 step_theme_assets() {
+  macarchy_has themes || return 0
   echo "==> Generating fallback wallpapers"
   for d in "$HOME"/.config/theme/themes/*/; do
     [ -f "$d/colors.sh" ] || continue
@@ -211,16 +337,37 @@ step_config() {
   echo "==> Config file"
   local dst="$HOME/.config/macarchy/config"
   if [ -f "$dst" ]; then
-    echo "  $dst already exists, leaving it alone"
+    echo "  $dst already exists, leaving the rest of it alone"
   else
     run cp "$REPO/home/.config/macarchy/config.example" "$dst"
   fi
+  save_components "$dst"
+}
+
+# Record the component choice so re-runs, --remove and macarchy-update agree.
+# Rewrites only the MACARCHY_COMPONENTS line; the file is written through so a
+# config symlinked from dotfiles stays a symlink.
+save_components() {
+  local f="$1" line="MACARCHY_COMPONENTS=\"$MACARCHY_COMPONENTS\""
+  if [ "$DRY_RUN" = 1 ]; then
+    echo "+ set $line in $f"
+    return
+  fi
+  if grep -q '^MACARCHY_COMPONENTS=' "$f" 2>/dev/null; then
+    local out
+    out="$(LINE="$line" awk '/^MACARCHY_COMPONENTS=/ { print ENVIRON["LINE"]; next } { print }' "$f")"
+    printf '%s\n' "$out" >"$f"
+  else
+    printf '\n# Set by install.sh; edit, or re-run with --only / --skip / --remove.\n%s\n' "$line" >>"$f"
+  fi
+  echo "  $line"
 }
 
 # -----------------------------------------------------------------------
 # 9. Optional integrations -- only touched if the target app is present
 # -----------------------------------------------------------------------
 step_agent() {
+  macarchy_has agent || return 0
   # Workspace agent (`ws`): a venv with the Needle runtime and the fine-tuned model.
   local venv="$HOME/.local/share/macarchy/venv" models="$HOME/.local/share/macarchy/models"
   local model="${MACARCHY_AGENT_MODEL:-$models/workspace-agent.cact}"
@@ -241,6 +388,7 @@ step_agent() {
 }
 
 step_build() {
+  { macarchy_has agent || macarchy_has bar; } || return 0
   # Two small Swift helpers: the Handy-style pill `ws --voice` draws, and the
   # mic/camera probe the bar's `mic` and `cam` items poll. Needs swiftc (Xcode CLT).
   echo "==> Swift helpers (macarchy-overlay, macarchy-avstate)"
@@ -262,6 +410,7 @@ step_login_update() {
 }
 
 step_optional_integrations() {
+  macarchy_has themes || return 0
   echo "==> Optional integrations"
   if [ -d "$HOME/.config/zellij" ]; then
     run mkdir -p "$HOME/.config/zellij/themes"
@@ -277,6 +426,23 @@ step_optional_integrations() {
   fi
 }
 
+if [ -n "$REMOVE" ]; then
+  step_unlink
+  save_components "$HOME/.config/macarchy/config"
+  cat <<NOTICE
+
+Removed: $(commas "$REMOVE"). Still installed: $MACARCHY_COMPONENTS.
+Brew packages were left in place. To stop and remove them too:
+  wm       yabai --stop-service; skhd --stop-service; brew uninstall yabai skhd
+  bar      brew services stop sketchybar; brew uninstall sketchybar
+  borders  brew services stop borders; brew uninstall borders
+  agent    brew uninstall --cask handy; rm -rf ~/.local/share/macarchy/venv
+NOTICE
+  exit 0
+fi
+
+echo "components: $MACARCHY_COMPONENTS"
+echo
 step_brew
 step_defaults
 step_link
@@ -288,50 +454,61 @@ step_build
 step_login_update
 step_optional_integrations
 
+echo
+echo "macarchy installed$DRY_NOTE: $MACARCHY_COMPONENTS"
+step=0
+next_step() {
+  step=$((step + 1))
+  echo
+  echo "  $step. $*"
+}
+
+if macarchy_has wm; then
+  next_step "Accessibility, or yabai and skhd cannot start:"
+  echo "     System Settings > Privacy & Security > Accessibility, add and enable"
+  echo "       /opt/homebrew/bin/yabai"
+  echo "       /opt/homebrew/bin/skhd"
+fi
+if macarchy_has wm || macarchy_has bar || macarchy_has borders; then
+  next_step "Start the services:"
+  macarchy_has wm && echo "       yabai --start-service" && echo "       skhd --start-service"
+  macarchy_has borders && echo "       brew services start borders"
+  macarchy_has bar && echo "       brew services start sketchybar"
+fi
+if macarchy_has agent; then
+  next_step 'Open Handy.app once (what `ws --voice` transcribes through):'
+  echo "       - grant Microphone and Accessibility when it prompts"
+  echo "       - pick a model on first run; Parakeet EN is recommended (~700 MB)"
+fi
+if macarchy_has themes; then
+  next_step "Point your apps at the theme. One line each, in YOUR configs; only the apps you use:"
+  cat <<HOOKS
+       Ghostty    ~/.config/ghostty/config
+                    config-file = ?~/.config/theme/current/ghostty
+       kitty      ~/.config/kitty/kitty.conf
+                    include ~/.config/theme/generated/kitty.conf
+       Alacritty  ~/.config/alacritty/alacritty.toml
+                    [general]
+                    import = ["~/.config/theme/generated/alacritty.toml"]
+       iTerm2     Settings > Profiles > "macarchy" > Other Actions > Set as Default
+       Zellij     ~/.config/zellij/config.kdl
+                    theme "current"
+       Neovim     declare the shipped colorscheme plugins with lazy = true
+                    (list in docs/theme-system.md)
+       VS Code    nothing to add: theme-set sets workbench.colorTheme
+       Zed        ~/.config/zed/settings.json
+                    "theme": "Macarchy"
+     Apps you don't have are skipped. Limit theme-set to some of them with
+     MACARCHY_THEME_TARGETS in ~/.config/macarchy/config.
+HOOKS
+fi
+
 cat <<NOTICE
-
-macarchy installed${DRY_RUN:+ (dry run -- nothing above actually ran)}.
-
-MANUAL STEP REQUIRED -- yabai and skhd cannot start without it:
-
-  1. System Settings > Privacy & Security > Accessibility
-     Add and enable BOTH:
-       /opt/homebrew/bin/yabai
-       /opt/homebrew/bin/skhd
-
-  2. Then start the services:
-       yabai --start-service
-       skhd --start-service
-       brew services start borders
-       brew services start sketchybar
-
-  3. Open Handy.app once (it's installed but needs manual setup):
-       - Grant Microphone and Accessibility when it prompts
-         (System Settings > Privacy & Security)
-       - Pick a model on first run -- Parakeet EN is recommended (~700 MB)
-       - Optional: enable "launch at login" in Handy's own settings
-     This is what \`ws --voice\` transcribes through (MACARCHY_HANDY).
-
-One-line hooks to add to your OWN configs (not managed by this repo):
-
-  Ghostty  (~/.config/ghostty/config):
-    config-file = ?~/.config/theme/current/ghostty
-
-  Zellij   (~/.config/zellij/config.kdl):
-    theme "current"
-
-  Neovim   (a plugins file, e.g. lua/plugins/theme-plugins.lua):
-    declare the colorscheme plugins the shipped themes use with lazy = true,
-    so lazy.nvim sees them even when their theme is not the active one:
-    nvim-mini/mini.base16, rebelot/kanagawa.nvim, catppuccin/nvim,
-    folke/tokyonight.nvim, ellisonleao/gruvbox.nvim, EdenEast/nightfox.nvim.
-    See docs/theme-system.md.
 
 Staying current: \`macarchy-update\` pulls, relinks and reloads. It also
 runs at every login (MACARCHY_UPDATE_AT_LOGIN; \`macarchy-update --login off\`
 to stop), logging to ~/Library/Logs/macarchy-update.log.
 
-Re-run this script any time; every step is idempotent. After editing a
-theme's colors.sh or adding/removing a theme, run \`theme-maintain\` instead
-of the whole installer.
+Re-run this script any time; every step is idempotent. Add or drop parts
+with --only / --skip / --remove (./install.sh --list shows them).
 NOTICE

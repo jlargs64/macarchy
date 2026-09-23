@@ -10,7 +10,8 @@
 # 1. git pull --ff-only in the repo this script lives in (refuses to merge or
 #    clobber local edits; commit or stash them first)
 # 2. symlinks every git-tracked file under home/ into $HOME, the same way
-#    install.sh's step_link does, so files added upstream show up
+#    install.sh's step_link does, so files added upstream show up. Only files
+#    of the components you installed (MACARCHY_COMPONENTS) are linked
 # 3. removes symlinks in $HOME that point at repo files deleted upstream
 # 4. reloads only the services whose config changed in the pull
 #
@@ -125,10 +126,15 @@ else
 fi
 
 # 2. Link. Only tracked files, so __pycache__ and other local junk under home/
-# never lands in $HOME.
-echo '==> Linking files into $HOME'
+# never lands in $HOME, and only those of the components you picked.
+# shellcheck disable=SC1091
+. "$REPO/home/.config/macarchy/lib.sh"
+# shellcheck disable=SC1091
+. "$REPO/home/.config/macarchy/components.sh"
+echo "==> Linking files into \$HOME (${MACARCHY_COMPONENTS:-$MACARCHY_ALL_COMPONENTS})"
 linked=0
 while IFS= read -r -d '' rel; do
+  macarchy_has "$(macarchy_component_of "${rel#home/}")" || continue
   src="$REPO/$rel"
   target="$HOME/${rel#home/}"
   [ "$(readlink "$target" 2>/dev/null)" = "$src" ] && continue

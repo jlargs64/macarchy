@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Alacritty: alacritty.toml imports ~/.config/theme/generated/alacritty.toml.
+# Alacritty live-reloads imports; touching the main config covers versions
+# that only watch the top-level file.
+{ command -v alacritty >/dev/null 2>&1 || [ -d /Applications/Alacritty.app ] || [ -d "$HOME/.config/alacritty" ]; } || exit 0
+"$THEME_ROOT/bin/theme-render" alacritty "$THEME_DIR" >"$THEME_OUT/alacritty.toml"
+[ -f "$HOME/.config/alacritty/alacritty.toml" ] && touch "$HOME/.config/alacritty/alacritty.toml"
+exit 0

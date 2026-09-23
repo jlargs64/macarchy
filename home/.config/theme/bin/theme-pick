@@ -9,7 +9,7 @@
 #                 backgrounds; this is what fzf's own --preview window
 #                 shells out to (theme-pick calling itself), but it also
 #                 works standalone
-#   --popup       relaunch the picker in a floating Ghostty window
+#   --popup       relaunch the picker in a floating terminal window (MACARCHY_TERMINAL)
 #   --dry-run     picker mode, but print the chosen theme name instead of
 #                 calling theme-set (for testing)
 #   --rows        print the raw tab-delimited fzf input rows and exit,
@@ -42,7 +42,7 @@ usage: theme-pick [--list | --preview NAME | --popup | --dry-run | --rows | --he
   --preview NAME  print NAME's full palette, nvim colorscheme, and any
                 backgrounds/ filenames (used internally as fzf's preview
                 command)
-  --popup       relaunch the picker in a floating Ghostty window
+  --popup       relaunch the picker in a floating terminal window (MACARCHY_TERMINAL)
   --dry-run     picker mode, but print the chosen theme instead of applying it
   --rows        print the raw fzf input rows and exit, no fzf
   --help        this message
@@ -227,20 +227,10 @@ run_picker() {
 }
 
 popup() {
-  command -v open >/dev/null 2>&1 && [ -d "/Applications/Ghostty.app" ] || {
-    echo "theme-pick: Ghostty.app / open not found, cannot pop up" >&2
-    exit 1
-  }
-  # Same reasoning as macarchy-keys' popup(): override `command` for this one
-  # instance so the picker runs bare and the window closes when it exits.
+  # Opens in MACARCHY_TERMINAL; the window closes when the picker exits.
   local q_self
   q_self="$(printf '%q' "$SELF")"
-  exec open -na Ghostty.app --args \
-    --title=theme-pick \
-    --window-width=100 \
-    --window-height=30 \
-    --quit-after-last-window-closed=true \
-    --command="env MACARCHY_THEMEPICK_POPUP=1 $q_self"
+  exec "$HOME/.config/macarchy/bin/macarchy-popup" theme-pick "env MACARCHY_THEMEPICK_POPUP=1 $q_self"
 }
 
 # In popup mode, float + center our own window (see macarchy-keys' float_self
@@ -252,7 +242,7 @@ float_self() {
     local i id
     for i in $(seq 1 30); do
       id="$(yabai -m query --windows 2>/dev/null |
-        jq -r '[.[] | select(.app=="Ghostty" and .title=="theme-pick")][0].id // empty' 2>/dev/null)"
+        jq -r '[.[] | select(.title=="theme-pick")][0].id // empty' 2>/dev/null)"
       if [ -n "$id" ]; then
         if yabai -m rule --list 2>/dev/null | jq -e 'map(select(.label=="theme-pick")) | length > 0' >/dev/null 2>&1; then
           yabai -m rule --apply theme-pick >/dev/null 2>&1 || true

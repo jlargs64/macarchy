@@ -69,13 +69,14 @@ yabai -m rule --add app="^1Password$"              manage=off
 yabai -m rule --add app="^Raycast$"                manage=off
 yabai -m rule --add app="^Handy$"                  manage=off
 
-# macarchy-keys pops up in its own Ghostty window (alt - /); float it,
-# centered, instead of letting it tile like a normal terminal window.
-yabai -m rule --add label=macarchy-keys app="^Ghostty$" title="^macarchy-keys$" manage=off grid=6:6:1:1:4:4
+# macarchy-keys pops up in its own terminal window (alt - /); float it,
+# centered, instead of letting it tile like a normal terminal window. Matched
+# by title alone, so it works in whichever MACARCHY_TERMINAL opens it.
+yabai -m rule --add label=macarchy-keys title="^macarchy-keys$" manage=off grid=6:6:1:1:4:4
 
-# theme-pick pops up in its own Ghostty window (shift + alt - /); float it,
+# theme-pick pops up in its own terminal window (shift + alt - /); float it,
 # centered, the same way macarchy-keys is floated above.
-yabai -m rule --add label=theme-pick app="^Ghostty$" title="^theme-pick$" manage=off grid=6:6:1:1:4:4
+yabai -m rule --add label=theme-pick title="^theme-pick$" manage=off grid=6:6:1:1:4:4
 
 # Steam's windows are not AXStandardWindow, so yabai cannot tile them at all.
 # Float it explicitly rather than letting it look like a yabai failure.

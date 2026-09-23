@@ -16,11 +16,16 @@ MACARCHY_SPACES="${MACARCHY_SPACES:-5}"
 MACARCHY_RAYCAST_AUTHOR="${MACARCHY_RAYCAST_AUTHOR:-}"
 MACARCHY_WIFI_IFACE="${MACARCHY_WIFI_IFACE:-en0}"
 MACARCHY_UPDATE_AT_LOGIN="${MACARCHY_UPDATE_AT_LOGIN:-true}"
+MACARCHY_THEME_TARGETS="${MACARCHY_THEME_TARGETS:-auto}"
+MACARCHY_TERMINAL="${MACARCHY_TERMINAL:-ghostty}"
+MACARCHY_KEYS_SOURCES="${MACARCHY_KEYS_SOURCES:-skhd ghostty zellij}"
+# MACARCHY_COMPONENTS stays unset unless the config sets it: install.sh
+# treats unset as "not chosen yet" and asks.
 
 # shellcheck disable=SC1091
 MACARCHY_AGENT_MODEL="${MACARCHY_AGENT_MODEL:-$HOME/.local/share/macarchy/models/workspace-agent.cact}"
 MACARCHY_AGENT_EXECUTE="${MACARCHY_AGENT_EXECUTE:-false}"
-MACARCHY_MIC="${MACARCHY_MIC:-:0}"
+MACARCHY_MIC="${MACARCHY_MIC:-:default}"
 MACARCHY_HANDY="${MACARCHY_HANDY:-/Applications/Handy.app/Contents/MacOS/handy}"
 [ -f "$HOME/.config/macarchy/config" ] && . "$HOME/.config/macarchy/config"
 

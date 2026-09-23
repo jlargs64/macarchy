@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# SketchyBar derives its colours from the active theme on reload.
+command -v sketchybar >/dev/null 2>&1 || exit 0
+sketchybar --reload >/dev/null 2>&1 || true

@@ -1,8 +1,10 @@
 # Theme system
 
-One command restyles the whole desktop. `theme-set retro-82` changes Ghostty,
-Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper together, and most of
-it repaints without restarting anything.
+One command restyles the whole desktop. `theme-set retro-82` changes your
+terminal (Ghostty, kitty, Alacritty, iTerm2), editor (VS Code and its forks,
+Zed, Neovim), Zellij, SketchyBar, JankyBorders and the wallpaper together, and
+most of it repaints without restarting anything. Apps you don't have are
+skipped.
 
 This is [Omarchy](https://omarchy.org)'s mechanism ported to macOS.
 
@@ -18,8 +20,13 @@ to re-read its config.
 │   ├── theme-set            switch to a named theme
 │   ├── theme-list           print available themes, alphabetically
 │   ├── theme-next           cycle to the next theme, wrapping
+│   ├── theme-render         print a theme's kitty/alacritty/iterm2/zed config
 │   ├── theme-wallpaper      render a wallpaper from a theme's palette
 │   └── theme-raycast-sync   regenerate the Raycast dropdown from theme-list
+│
+├── hooks/<app>              one script per app; theme-set runs them all
+├── lib/palette.sh           resolves a theme's full 16-colour palette
+├── generated/               kitty.conf, alacritty.toml, ... for the active theme
 │
 ├── current -> themes/retro-82      ← THE symlink. Everything reads through it.
 │
@@ -29,11 +36,21 @@ to re-read its config.
     ├── neovim.lua    a LazyVim plugin spec
     ├── colors.sh     the palette, as shell exports
     ├── borders       JankyBorders settings
+    ├── vscode.json   optional: the matching VS Code theme (name + extension id)
     └── wallpaper.jpg 5120x2880, generated (not committed)
 ```
 
 The indirection is the whole trick: no app knows a theme's name. Each one points
-at `current/<its file>` forever, and only the symlink moves.
+at `current/<its file>` (or `generated/<its file>`) forever, and only the
+symlink moves.
+
+Apps that take an include get a file. kitty, Alacritty, iTerm2 and Zed files
+are not stored per theme: `theme-render` builds them from the theme's
+`ghostty` palette, filling any gap from `colors.sh`, so every theme covers
+every app. A theme can still ship its own `kitty.conf`, `alacritty.toml`,
+`iterm2.json` or `zed.json`, and that file wins. VS Code has no include, so
+its hook switches `workbench.colorTheme` to the marketplace theme named in
+the theme's `vscode.json` (the file Omarchy themes carry).
 
 ## Adding a theme
 
@@ -82,17 +99,54 @@ not always the plugin's name — see the table below.
 
 1. Validates the theme exists (lists the available ones on error).
 2. Repoints `~/.config/theme/current`.
-3. Sources the new `colors.sh`.
-4. `sketchybar --reload`.
-5. `borders active_color=0xff$ACCENT inactive_color=0xff$MUTED`.
-6. `touch ~/.config/zellij/config.kdl` — nudges Zellij's config watcher.
-7. Finds every running Neovim server socket and sends
-   `<Cmd>colorscheme $NVIM_COLORSCHEME<CR>` to each.
-8. Sets the wallpaper via System Events, generating it first if missing.
-9. Asks Ghostty to reload by sending it `cmd+shift+,`.
+3. Sources the new `colors.sh` and `~/.config/macarchy/config`.
+4. Runs every script in `~/.config/theme/hooks/`, or only the ones named in
+   `MACARCHY_THEME_TARGETS`, with the palette and `THEME_NAME`, `THEME_DIR`,
+   `THEME_ROOT` and `THEME_OUT` (`~/.config/theme/generated`) in the
+   environment.
+5. Runs every executable in `~/.config/macarchy/hooks.d/`, your own hooks.
 
-Steps 4 through 9 are all best-effort: a missing or stopped app is skipped, never
-fatal.
+Every hook checks that its app is installed and exits quietly if not. A hook
+that fails prints a warning; it never stops the others.
+
+| Hook | What it does |
+|---|---|
+| `alacritty` | writes `generated/alacritty.toml`, touches `alacritty.toml` |
+| `borders` | `borders active_color=0xff$ACCENT inactive_color=0xff$MUTED` |
+| `ghostty` | `SIGUSR2` to Ghostty, which reloads its config without taking focus |
+| `iterm2` | rewrites the "macarchy" Dynamic Profile |
+| `kitty` | writes `generated/kitty.conf`, `SIGUSR1` to kitty |
+| `neovim` | `<Cmd>colorscheme $NVIM_COLORSCHEME<CR>` to every running server socket |
+| `sketchybar` | `sketchybar --reload` |
+| `vscode` | sets `workbench.colorTheme`, installs the extension in the background |
+| `wallpaper` | sets the wallpaper via System Events, generating it first if missing |
+| `zed` | rewrites `~/.config/zed/themes/macarchy.json` |
+| `zellij` | `touch ~/.config/zellij/config.kdl` to nudge its config watcher |
+
+## Adding an app
+
+A hook is any executable file. Put it in `~/.config/macarchy/hooks.d/` for
+yourself, or in `home/.config/theme/hooks/` to ship it. For example, a hook
+that writes a WezTerm colour scheme:
+
+```sh
+#!/usr/bin/env bash
+# ~/.config/macarchy/hooks.d/wezterm
+[ -d "$HOME/.config/wezterm" ] || exit 0
+. "$THEME_ROOT/lib/palette.sh"
+theme_palette "$THEME_DIR"      # sets P_BG P_FG P_CURSOR P_0 .. P_15 ...
+cat > "$HOME/.config/wezterm/colors/macarchy.toml" <<EOF
+[colors]
+background = "#$P_BG"
+foreground = "#$P_FG"
+ansi    = ["#$P_0", "#$P_1", "#$P_2", "#$P_3", "#$P_4", "#$P_5", "#$P_6", "#$P_7"]
+brights = ["#$P_8", "#$P_9", "#$P_10", "#$P_11", "#$P_12", "#$P_13", "#$P_14", "#$P_15"]
+EOF
+```
+
+Three rules keep hooks well behaved: exit 0 when the app is missing, write
+through symlinks (`cat > file`, not `mv`) since app configs often live in a
+dotfiles repo, and never block (background anything slow).
 
 ## What reloads live, and what does not
 
@@ -103,14 +157,14 @@ fatal.
 | Wallpaper | live, on every Space that already points at the fixed path (see below) |
 | Zellij | live — a running session repaints in place |
 | Neovim | live in every running instance, via `--remote-send` |
-| Ghostty | needs `cmd+shift+,`; `theme-set` sends it, but see below |
+| Ghostty | live (1.2+), via `SIGUSR2` |
+| kitty | live, via `SIGUSR1` |
+| Alacritty | live, through its config watcher |
+| iTerm2 | live in sessions using the "macarchy" profile |
+| VS Code and forks | live; the first switch to a theme may wait for its extension to install |
+| Zed | live in windows set to `"theme": "Macarchy"` |
 
-Ghostty is the one that can need a keypress. `theme-set` activates it and sends
-`cmd+shift+,` via AppleScript, which requires Automation permission
-(System Settings > Privacy & Security > Automation). The first switch pops that
-prompt and **blocks until you answer it**. If the keystroke does not land,
-`theme-set` prints `cmd+shift+, in Ghostty` and you press it yourself. Terminals
-are never killed.
+Terminals are never killed.
 
 ## Wallpapers
 
@@ -190,8 +244,9 @@ starts with whatever wallpaper macOS gives it.
 
 ### catppuccin-mocha, kanagawa-wave
 
-Upstream everywhere — the Ghostty built-in theme, the official Zellij theme
-copied from zellij's repo, the upstream Neovim plugin. Nothing hand-rolled.
+Upstream everywhere — Ghostty's built-in palette (inlined into the `ghostty`
+file so the other terminals can read it), the official Zellij theme copied
+from zellij's repo, the upstream Neovim plugin. Nothing hand-rolled.
 
 ### retro-82
 
@@ -272,6 +327,24 @@ not a per-theme plugin. Current full list:
 { "rose-pine/neovim", name = "rose-pine", lazy = true },
 { "ficd0/ashen.nvim", lazy = true },
 ```
+
+**kitty** — `kitty.conf` has `include ~/.config/theme/generated/kitty.conf`.
+
+**Alacritty** — `alacritty.toml` has
+`[general]` / `import = ["~/.config/theme/generated/alacritty.toml"]`.
+
+**iTerm2** — the hook writes a Dynamic Profile named "macarchy" to
+`~/Library/Application Support/iTerm2/DynamicProfiles/macarchy.json`, with a
+fixed GUID so each switch updates the same profile. Set it as the default
+profile once.
+
+**VS Code, Cursor, VSCodium, Windsurf, Insiders** — nothing to wire. The hook
+edits the `workbench.colorTheme` line of each installed editor's
+`settings.json` in place (comments and the rest of the file are kept) and
+installs the extension from `vscode.json` if it is missing.
+
+**Zed** — `settings.json` has `"theme": "Macarchy"`; the hook rewrites the
+theme file behind that name.
 
 **SketchyBar** — `sketchybarrc` sources the theme palette on its first line, and
 `~/.config/sketchybar/colors.sh` derives every variable the bar and its plugins

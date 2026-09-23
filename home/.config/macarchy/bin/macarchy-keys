@@ -9,7 +9,7 @@
 #   --list       prints the aligned table to stdout, no fzf
 #   --rows       prints the picker's display rows as fzf would see them, no fzf
 #   --markdown   prints a GitHub markdown table grouped by source, then section
-#   --popup      relaunches the picker in a floating Ghostty window
+#   --popup      relaunches the picker in a floating terminal window (MACARCHY_TERMINAL)
 #
 # Which sources are shown is controlled by MACARCHY_KEYS_SOURCES (default:
 # "skhd ghostty zellij"), overridable per invocation with one or more
@@ -53,7 +53,7 @@ usage: macarchy-keys [--list | --markdown | --popup | --help] [--source NAME]...
   --list      print the aligned "source | section | key | description" table
   --markdown  print a GitHub markdown table, grouped by "## source" then
               "### section"
-  --popup     relaunch the picker in a floating Ghostty window
+  --popup     relaunch the picker in a floating terminal window (MACARCHY_TERMINAL)
   --source NAME
               restrict to one source; repeatable, or comma-separated
               (e.g. --source zellij, or --source ghostty,zellij).
@@ -673,31 +673,18 @@ run_picker() {
 }
 
 popup() {
-  command -v open >/dev/null 2>&1 && [ -d "/Applications/Ghostty.app" ] || {
-    echo "macarchy-keys: Ghostty.app / open not found, cannot pop up" >&2
-    exit 1
-  }
-  # Why --command and not -e: on this setup (Ghostty `command = zsh -lc
-  # "zellij -s ..."`) launching with `-e` still spawned the configured zellij
-  # wrapper, leaving an orphaned zellij session behind every popup. Overriding
-  # `command` for this one instance runs the picker bare and the window closes
-  # the moment the script exits. `open -na` goes through LaunchServices, so
-  # SKHDRC is threaded through explicitly instead of relying on inheritance.
-  # $0 may be relative; the new Ghostty process has a different cwd.
+  # macarchy-popup opens MACARCHY_TERMINAL through LaunchServices, so SKHDRC
+  # is threaded through explicitly instead of relying on inheritance. $0 may
+  # be relative; the new terminal process has a different cwd.
   local self q_skhdrc q_self
   self="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
   q_skhdrc="$(printf '%q' "$SKHDRC")"
   q_self="$(printf '%q' "$self")"
-  exec open -na Ghostty.app --args \
-    --title=macarchy-keys \
-    --window-width=100 \
-    --window-height=30 \
-    --quit-after-last-window-closed=true \
-    --command="env SKHDRC=$q_skhdrc MACARCHY_KEYS_POPUP=1 $q_self"
+  exec "$HOME/.config/macarchy/bin/macarchy-popup" macarchy-keys "env SKHDRC=$q_skhdrc MACARCHY_KEYS_POPUP=1 $q_self"
 }
 
 # In popup mode, float + center our own window. yabai evaluates rules when a
-# window is created, but Ghostty applies --title a beat later, so the yabairc
+# window is created, but terminals apply the title a beat later, so the yabairc
 # rule (label macarchy-keys) usually misses. Poll for the titled window and
 # re-apply that rule to it, falling back to a direct toggle if the rule is
 # not loaded (e.g. yabairc not yet re-sourced).
@@ -707,7 +694,7 @@ float_self() {
     local i id
     for i in $(seq 1 30); do
       id="$(yabai -m query --windows 2>/dev/null |
-        jq -r '[.[] | select(.app=="Ghostty" and .title=="macarchy-keys")][0].id // empty' 2>/dev/null)"
+        jq -r '[.[] | select(.title=="macarchy-keys")][0].id // empty' 2>/dev/null)"
       if [ -n "$id" ]; then
         if yabai -m rule --list 2>/dev/null | jq -e 'map(select(.label=="macarchy-keys")) | length > 0' >/dev/null 2>&1; then
           yabai -m rule --apply macarchy-keys >/dev/null 2>&1 || true
