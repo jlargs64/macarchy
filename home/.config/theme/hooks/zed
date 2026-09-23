@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Zed: rewrite ~/.config/zed/themes/macarchy.json. Zed watches its themes
+# directory, so windows set to "theme": "Macarchy" recolour in place.
+{ [ -d "$HOME/.config/zed" ] || [ -d /Applications/Zed.app ]; } || exit 0
+mkdir -p "$HOME/.config/zed/themes"
+"$THEME_ROOT/bin/theme-render" zed "$THEME_DIR" >"$THEME_OUT/zed.json"
+# Write through, not replace: themes/ is often a symlink into a dotfiles repo.
+cat "$THEME_OUT/zed.json" >"$HOME/.config/zed/themes/macarchy.json"

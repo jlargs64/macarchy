@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Ghostty reads ~/.config/theme/current/ghostty through a config-file include.
+# SIGUSR2 reloads config (1.2+) without focusing it, so macOS doesn't jump to
+# the Space holding a Ghostty window.
+pkill -USR2 -x ghostty 2>/dev/null || true

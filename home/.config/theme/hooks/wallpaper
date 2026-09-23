@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Wallpaper: a real background from themes/<name>/backgrounds/ if the theme
+# has any (theme-bg remembers which one), else the palette-generated gradient.
+#
+# macOS stores the wallpaper PER SPACE and AppleScript only reaches the active
+# one, so every Space must be pointed at the shared file once by
+# theme-wallpaper-enroll.
+if [ -d "$THEME_DIR/backgrounds" ] && [ -n "$(ls -A "$THEME_DIR/backgrounds" 2>/dev/null)" ]; then
+  "$THEME_ROOT/bin/theme-bg" apply >/dev/null 2>&1 || true
+  exit 0
+fi
+wp="$THEME_DIR/wallpaper.jpg"
+[ -f "$wp" ] || "$THEME_ROOT/bin/theme-wallpaper" "$THEME_DIR" >/dev/null 2>&1 || true
+[ -f "$wp" ] || exit 0
+cp -f "$wp" "$THEME_ROOT/wallpaper-current.jpg" 2>/dev/null || true
+osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$THEME_ROOT/wallpaper-current.jpg\"" >/dev/null 2>&1 || true
+killall WallpaperAgent >/dev/null 2>&1 || true

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Zellij reads ~/.config/zellij/themes/current.kdl; nudge its config watcher.
+[ -f "$HOME/.config/zellij/config.kdl" ] || exit 0
+touch "$HOME/.config/zellij/config.kdl"

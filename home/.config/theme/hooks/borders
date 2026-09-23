@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# JankyBorders: push the new colours straight to the running instance.
+command -v borders >/dev/null 2>&1 || exit 0
+borders active_color="0xff${ACCENT}" inactive_color="0xff${MUTED}" >/dev/null 2>&1 || true

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# kitty: kitty.conf includes ~/.config/theme/generated/kitty.conf.
+# SIGUSR1 makes every running kitty reload its config.
+{ command -v kitty >/dev/null 2>&1 || [ -d /Applications/kitty.app ] || [ -d "$HOME/.config/kitty" ]; } || exit 0
+"$THEME_ROOT/bin/theme-render" kitty "$THEME_DIR" >"$THEME_OUT/kitty.conf"
+pkill -USR1 -x kitty 2>/dev/null || true

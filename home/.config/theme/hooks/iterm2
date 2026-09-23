@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# iTerm2: rewrite the "macarchy" Dynamic Profile. iTerm2 watches this folder
+# and recolours sessions that use the profile. Make it the default profile
+# once (Settings > Profiles > macarchy > Other Actions > Set as Default).
+dir="$HOME/Library/Application Support/iTerm2"
+[ -d "$dir" ] || exit 0
+mkdir -p "$dir/DynamicProfiles"
+"$THEME_ROOT/bin/theme-render" iterm2 "$THEME_DIR" >"$THEME_OUT/iterm2.json"
+cp -f "$THEME_OUT/iterm2.json" "$dir/DynamicProfiles/macarchy.json"

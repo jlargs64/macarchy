@@ -134,6 +134,9 @@ fetch neovim.lua "$tmpdir/neovim.lua" || {
   HAVE_NVIM_LUA=0
   : >"$tmpdir/neovim.lua"
 }
+# vscode.json is optional upstream; the vscode hook skips themes without one.
+HAVE_VSCODE=1
+fetch vscode.json "$tmpdir/vscode.json" || HAVE_VSCODE=0
 
 # --- TOML parsing (flat `key = "value"` lines, no tables/arrays) ---------
 toml_get() {
@@ -397,7 +400,12 @@ source "$HOME/.config/theme/current/colors.sh"
 active_color=0xff${ACCENT}
 EOF
 
-echo "theme-port: wrote $DEST/{colors.sh,ghostty,zellij.kdl,neovim.lua,borders}"
+if [ "$HAVE_VSCODE" -eq 1 ]; then
+  cp "$tmpdir/vscode.json" "$DEST/vscode.json"
+  echo "theme-port: wrote $DEST/{colors.sh,ghostty,zellij.kdl,neovim.lua,borders,vscode.json}"
+else
+  echo "theme-port: wrote $DEST/{colors.sh,ghostty,zellij.kdl,neovim.lua,borders} (no vscode.json upstream)"
+fi
 echo "theme-port: ACCENT2 <- $ACCENT2_SRC ($ACCENT2); NVIM_COLORSCHEME <- $NVIM_COLORSCHEME; plugin <- ${PLUGIN_REPO:-<none found>}"
 [ "$FELL_BACK_TO_BRANCH" -eq 1 ] && echo "theme-port: NOTE -- fell back to branch $OMARCHY_BRANCH_FALLBACK, not rev $REV, for one or more files"
 exit 0

@@ -35,60 +35,37 @@ ln -sfn "$THEMES_DIR/$name" "$CURRENT"
 
 # shellcheck disable=SC1091
 source "$CURRENT/colors.sh"
+# shellcheck disable=SC1091
+if [ -f "$HOME/.config/macarchy/lib.sh" ]; then . "$HOME/.config/macarchy/lib.sh" || true; fi
 
-# 2. SketchyBar
-if command -v sketchybar >/dev/null 2>&1; then
-  sketchybar --reload >/dev/null 2>&1 || true
+# 2. Hooks: one script per app under $THEME_ROOT/hooks/. Each one checks that
+# its app is installed and exits quietly if not, so "auto" runs them all.
+# MACARCHY_THEME_TARGETS narrows the list (e.g. "ghostty neovim wallpaper").
+# Scripts in ~/.config/macarchy/hooks.d/ are yours and always run, after ours.
+# Hooks get the palette (colors.sh) plus THEME_NAME, THEME_DIR, THEME_ROOT and
+# THEME_OUT, where generated files for include-style apps live.
+export THEME_ROOT THEME_DIR="$THEMES_DIR/$name" THEME_OUT="$THEME_ROOT/generated"
+mkdir -p "$THEME_OUT"
+
+targets="${MACARCHY_THEME_TARGETS:-auto}"
+if [ "$targets" = auto ]; then
+  targets=""
+  for h in "$THEME_ROOT"/hooks/*; do targets="$targets ${h##*/}"; done
 fi
 
-# 3. borders
-if command -v borders >/dev/null 2>&1; then
-  borders active_color="0xff${ACCENT}" inactive_color="0xff${MUTED}" >/dev/null 2>&1 || true
-fi
-
-# 4. zellij — nudge its config watcher
-[ -f "$HOME/.config/zellij/config.kdl" ] && touch "$HOME/.config/zellij/config.kdl"
-
-# 5. running neovim instances
-# nvim puts its server socket under $TMPDIR on macOS and /tmp on Linux.
-# /tmp is a symlink on macOS, so find needs -L to descend into it.
-if command -v nvim >/dev/null 2>&1 && [ -n "${NVIM_COLORSCHEME:-}" ]; then
-  sockdirs=""
-  for d in "${TMPDIR:-}" /tmp /private/tmp; do
-    [ -n "$d" ] && [ -d "$d" ] && sockdirs="$sockdirs $d"
-  done
-  # shellcheck disable=SC2086
-  while IFS= read -r sock; do
-    [ -S "$sock" ] || continue
-    nvim --server "$sock" --remote-send \
-      "<Cmd>silent! colorscheme ${NVIM_COLORSCHEME}<CR>" >/dev/null 2>&1 || true
-  done < <(find -L $sockdirs -maxdepth 3 -name 'nvim.*.0' -type s 2>/dev/null | sort -u)
-fi
-
-# 6. wallpaper
-#
-# Each theme keeps real images in themes/<name>/backgrounds/ (fetched from
-# upstream Omarchy by theme-bg-fetch). theme-bg applies the one remembered for
-# this theme, falling back to the first. If a theme has no backgrounds, fall
-# back to the palette-generated gradient.
-#
-# macOS stores the wallpaper PER SPACE and AppleScript only reaches the active
-# one, so every Space must be pointed at the shared file once by
-# theme-wallpaper-enroll.
-if [ -d "$CURRENT/backgrounds" ] && [ -n "$(ls -A "$CURRENT/backgrounds" 2>/dev/null)" ]; then
-  "$THEME_ROOT/bin/theme-bg" apply >/dev/null 2>&1 || true
-else
-  wp="$CURRENT/wallpaper.jpg"
-  [ -f "$wp" ] || "$THEME_ROOT/bin/theme-wallpaper" "$THEMES_DIR/$name" >/dev/null 2>&1 || true
-  if [ -f "$wp" ]; then
-    cp -f "$wp" "$THEME_ROOT/wallpaper-current.jpg" 2>/dev/null || true
-    osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$THEME_ROOT/wallpaper-current.jpg\"" >/dev/null 2>&1 || true
-    killall WallpaperAgent >/dev/null 2>&1 || true
+run_hook() {
+  [ -x "$1" ] || return 0
+  "$1" "$THEME_DIR" || echo "theme-set: hook ${1##*/} failed (exit $?)" >&2
+}
+for t in $targets; do
+  if [ -e "$THEME_ROOT/hooks/$t" ]; then
+    run_hook "$THEME_ROOT/hooks/$t"
+  else
+    echo "theme-set: no hook named '$t' (MACARCHY_THEME_TARGETS)" >&2
   fi
-fi
-
-# 7. Ghostty — SIGUSR2 reloads config (1.2+) without focusing it,
-# so macOS doesn't jump to the Space holding a Ghostty window.
-pkill -USR2 -x ghostty 2>/dev/null || true
+done
+for h in "$HOME"/.config/macarchy/hooks.d/*; do
+  run_hook "$h"
+done
 
 echo "theme: $name"

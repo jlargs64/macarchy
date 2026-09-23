@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# VS Code and its forks (Cursor, VSCodium, Windsurf, Insiders).
+#
+# A theme opts in with themes/<name>/vscode.json, the same file Omarchy uses:
+#   { "name": "<colour theme label>", "extension": "<marketplace id>" }
+# The hook installs the extension if it is missing (in the background, so
+# theme-set stays fast) and sets "workbench.colorTheme" in settings.json.
+# Editors apply a settings.json change live. Themes without vscode.json leave
+# the editor alone.
+map="$THEME_DIR/vscode.json"
+[ -f "$map" ] || exit 0
+name="$(plutil -extract name raw -o - "$map" 2>/dev/null)" || exit 0
+ext="$(plutil -extract extension raw -o - "$map" 2>/dev/null)" || ext=""
+[ -n "$name" ] || exit 0
+
+S="$HOME/Library/Application Support"
+A="/Applications"
+# user-dir | cli | extensions dir | bundled cli
+flavors="Code|code|$HOME/.vscode/extensions|$A/Visual Studio Code.app/Contents/Resources/app/bin/code
+Code - Insiders|code-insiders|$HOME/.vscode-insiders/extensions|$A/Visual Studio Code - Insiders.app/Contents/Resources/app/bin/code
+Cursor|cursor|$HOME/.cursor/extensions|$A/Cursor.app/Contents/Resources/app/bin/cursor
+VSCodium|codium|$HOME/.vscode-oss/extensions|$A/VSCodium.app/Contents/Resources/app/bin/codium
+Windsurf|windsurf|$HOME/.windsurf/extensions|$A/Windsurf.app/Contents/Resources/app/bin/windsurf"
+
+set_color_theme() { # set_color_theme <settings.json> <label>
+  local f="$1" out
+  if [ ! -s "$f" ] || grep -qE '^[[:space:]]*\{[[:space:]]*\}[[:space:]]*$' "$f"; then
+    out="$(printf '{\n  "workbench.colorTheme": "%s"\n}' "$2")"
+  else
+    out="$(THEME_LABEL="$2" perl -0pe '
+      my $v = $ENV{THEME_LABEL}; $v =~ s/(["\\])/\\$1/g;
+      s/("workbench\.colorTheme"\s*:\s*)"(?:[^"\\]|\\.)*"/$1"$v"/ or s/\{/{\n  "workbench.colorTheme": "$v",/;
+    ' "$f")" || return 0
+  fi
+  # Write through, not replace: settings.json is often a symlink into dotfiles.
+  printf '%s\n' "$out" >"$f"
+}
+
+printf '%s\n' "$flavors" | while IFS='|' read -r dir cli extdir bundled; do
+  [ -d "$S/$dir/User" ] || continue
+  # Extension folders are "<lowercased id>-<version>".
+  installed=""
+  for e in "$extdir/$(printf '%s' "$ext" | tr 'A-Z' 'a-z')"-*; do [ -e "$e" ] && installed=1; done
+  if [ -n "$ext" ] && [ -z "$installed" ]; then
+    command -v "$cli" >/dev/null 2>&1 && bundled="$cli"
+    if [ -x "$bundled" ] || command -v "$bundled" >/dev/null 2>&1; then
+      nohup "$bundled" --install-extension "$ext" >/dev/null 2>&1 &
+    fi
+  fi
+  set_color_theme "$S/$dir/User/settings.json" "$name"
+done

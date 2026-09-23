@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Recolour running Neovim instances over their server sockets.
+# nvim puts its socket under $TMPDIR on macOS and /tmp on Linux. /tmp is a
+# symlink on macOS, so find needs -L to descend into it.
+command -v nvim >/dev/null 2>&1 || exit 0
+[ -n "${NVIM_COLORSCHEME:-}" ] || exit 0
+sockdirs=""
+for d in "${TMPDIR:-}" /tmp /private/tmp; do
+  [ -n "$d" ] && [ -d "$d" ] && sockdirs="$sockdirs $d"
+done
+# shellcheck disable=SC2086
+find -L $sockdirs -maxdepth 3 -name 'nvim.*.0' -type s 2>/dev/null | sort -u | while IFS= read -r sock; do
+  nvim --server "$sock" --remote-send \
+    "<Cmd>silent! colorscheme ${NVIM_COLORSCHEME}<CR>" >/dev/null 2>&1 || true
+done
