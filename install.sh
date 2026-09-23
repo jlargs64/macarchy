@@ -10,7 +10,10 @@
 # formulae, etc).
 set -euo pipefail
 
-[[ "$(uname -s)" == "Darwin" ]] || { echo "macarchy: macOS only" >&2; exit 1; }
+[[ "$(uname -s)" == "Darwin" ]] || {
+  echo "macarchy: macOS only" >&2
+  exit 1
+}
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$SCRIPT_DIR"
@@ -19,10 +22,14 @@ DRY_RUN=0
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
-    -h|--help)
+    -h | --help)
       sed -n '2,10p' "$0"
-      exit 0 ;;
-    *) echo "macarchy: unknown argument: $arg" >&2; exit 2 ;;
+      exit 0
+      ;;
+    *)
+      echo "macarchy: unknown argument: $arg" >&2
+      exit 2
+      ;;
   esac
 done
 
@@ -100,8 +107,8 @@ step_brew() {
   else
     local tmp
     tmp="$(mktemp -t sketchybar-app-font)"
-    if curl -fsSL -o "$tmp" "$SKETCHYBAR_APP_FONT_URL" \
-       && echo "$SKETCHYBAR_APP_FONT_SHA256  $tmp" | shasum -a 256 -c --status; then
+    if curl -fsSL -o "$tmp" "$SKETCHYBAR_APP_FONT_URL" &&
+      echo "$SKETCHYBAR_APP_FONT_SHA256  $tmp" | shasum -a 256 -c --status; then
       mv "$tmp" "$dest"
       echo "  installed: $dest"
     else
@@ -130,7 +137,7 @@ step_defaults() {
 # 3. Link home/ into $HOME
 # -----------------------------------------------------------------------
 step_link() {
-  echo "==> Linking files into \$HOME"
+  echo '==> Linking files into $HOME'
   if command -v stow >/dev/null 2>&1; then
     run stow -t "$HOME" -d "$REPO" home
     return

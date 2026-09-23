@@ -1,0 +1,81 @@
+# pre-commit: https://pre-commit.com. One-time setup, see CONTRIBUTING.md:
+#   pre-commit install        (installs both the pre-commit and commit-msg hooks)
+# CI runs `pre-commit run --all-files`, so a clean local run means a green build.
+# Bump pinned versions with `pre-commit autoupdate`.
+default_install_hook_types: [pre-commit, commit-msg]
+exclude: ^(CHANGELOG\.md|\.agents/|\.claude/|\.pi/|\.hallmark/)   # release-please output; vendored skills
+
+repos:
+  # --- hygiene ----------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks          # catches a home/.local/bin link whose target moved
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: detect-private-key
+
+  # --- secrets ----------------------------------------------------------
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+
+  # --- shell --------------------------------------------------------------
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1-1
+    hooks:
+      - id: shellcheck
+        args: [--severity=warning]
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.14.1-1
+    hooks:
+      - id: shfmt
+        args: [--write, --indent=2, --case-indent, --simplify]
+        exclude: ^home/\.config/yabai/yabairc$   # column-aligned config table; shfmt collapses it
+
+  # --- python (ws agent) --------------------------------------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.8
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  # --- lua (neovim themes) ----------------------------------------------
+  - repo: https://github.com/JohnnyMorganz/StyLua
+    rev: v2.5.2
+    hooks:
+      - id: stylua-github
+
+  # --- github actions -----------------------------------------------------
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+  - repo: https://github.com/woodruffw/zizmor-pre-commit
+    rev: v1.30.1
+    hooks:
+      - id: zizmor
+
+  # --- commit messages ----------------------------------------------------
+  - repo: local
+    hooks:
+      - id: conventional-commit
+        name: conventional commit subject
+        entry: .githooks/commit-msg
+        language: script
+        stages: [commit-msg]

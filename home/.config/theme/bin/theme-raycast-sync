@@ -16,7 +16,7 @@ done < <("$HOME/.config/theme/bin/theme-list")
 author_line=""
 [ -n "${MACARCHY_RAYCAST_AUTHOR:-}" ] && author_line="# @raycast.author ${MACARCHY_RAYCAST_AUTHOR}"
 
-cat > "$OUT" <<RC
+cat >"$OUT" <<RC
 #!/bin/bash
 
 # Required parameters:
@@ -32,8 +32,8 @@ cat > "$OUT" <<RC
 # Documentation:
 # @raycast.description Switch Ghostty, Zellij, Neovim, SketchyBar, borders and wallpaper together.
 RC
-[ -n "$author_line" ] && echo "$author_line" >> "$OUT"
-cat >> "$OUT" <<RC
+[ -n "$author_line" ] && echo "$author_line" >>"$OUT"
+cat >>"$OUT" <<RC
 
 export PATH="\$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 exec "\$HOME/.config/theme/bin/theme-set" "\$1"

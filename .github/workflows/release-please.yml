@@ -21,11 +21,13 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v5
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
       - name: Summary
         if: steps.release.outputs.release_created
-        run: echo "Released ${{ steps.release.outputs.tag_name }}" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: echo "Released $TAG" >> "$GITHUB_STEP_SUMMARY"

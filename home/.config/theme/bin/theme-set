@@ -9,21 +9,24 @@ name="${1:-}"
 
 if [ -z "$name" ]; then
   echo "usage: theme-set <name>" >&2
-  echo "themes:" >&2; "$THEME_ROOT/bin/theme-list" | sed 's/^/  /' >&2
+  echo "themes:" >&2
+  "$THEME_ROOT/bin/theme-list" | sed 's/^/  /' >&2
   exit 2
 fi
 
 # A theme is a plain directory name. Anything path-like would pass the -d
 # check below and then get `source`d, so refuse it outright.
 case "$name" in
-  */*|.*|*[[:space:]]*)
+  */* | .* | *[[:space:]]*)
     echo "theme-set: invalid theme name: $name" >&2
-    exit 1 ;;
+    exit 1
+    ;;
 esac
 
 if [ ! -d "$THEMES_DIR/$name" ]; then
   echo "theme-set: no such theme: $name" >&2
-  echo "themes:" >&2; "$THEME_ROOT/bin/theme-list" | sed 's/^/  /' >&2
+  echo "themes:" >&2
+  "$THEME_ROOT/bin/theme-list" | sed 's/^/  /' >&2
   exit 1
 fi
 

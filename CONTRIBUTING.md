@@ -49,11 +49,47 @@ Scopes in use: `theme`, `windows`, `bar`, `keys`, `agent`, `ws`, `install`,
 PRs are squash-merged, so the PR title is the commit that lands on `main`. CI
 rejects a title that does not parse.
 
-To check commit messages locally before they are pushed:
+The `commit-msg` hook below checks this before the commit is made.
+
+## Hooks
+
+[pre-commit](https://pre-commit.com) runs the same checks as CI on every
+commit. One-time setup per clone:
 
 ```sh
-git config core.hooksPath .githooks
+brew install pre-commit   # or: uv tool install pre-commit
+pre-commit install        # installs the pre-commit and commit-msg hooks
 ```
+
+If you used the old `git config core.hooksPath .githooks`, run
+`git config --unset core.hooksPath` first; `pre-commit install` refuses while
+it is set.
+
+| Area | Tools |
+|---|---|
+| Secrets | `detect-secrets` (against `.secrets.baseline`), `detect-private-key` |
+| Shell | `shellcheck` (warnings and up), `shfmt` (2-space indent) |
+| Python (`ws` agent) | `ruff check` (includes bandit's security rules), `ruff format`; config in `ruff.toml` |
+| Lua (Neovim themes) | `StyLua`; config in `stylua.toml` |
+| GitHub Actions | `actionlint`, `zizmor` (workflow security) |
+| Files | large files, merge markers, broken symlinks, shebang/exec bit, JSON/TOML/YAML syntax, trailing whitespace, final newline |
+| Commit message | Conventional Commit subject (`.githooks/commit-msg`) |
+
+Formatters fix files in place and fail the commit; `git add` the changes and
+commit again. Run everything by hand with `pre-commit run --all-files`.
+
+**detect-secrets false positive.** Git SHAs and checksums look like secrets.
+Mark a new one as reviewed with:
+
+```sh
+detect-secrets scan --baseline .secrets.baseline
+detect-secrets audit .secrets.baseline   # answer "n" (not a secret) for each
+```
+
+Commit the updated `.secrets.baseline` with the change. A real secret never
+goes in the baseline; take it out of the file.
+
+**Updating hook versions:** `pre-commit autoupdate`, then commit the config.
 
 ## Releases
 
@@ -64,5 +100,7 @@ tags `vx.y.z` and publishes the GitHub release with the same notes.
 
 ## CI
 
-Every push and PR runs shellcheck (errors only), a Python syntax check of the
-agent, and actionlint on the workflows.
+Every push and PR runs `pre-commit run --all-files`, so the table above is
+exactly what CI checks. Pushes to `main` also warn about commit subjects that
+are not Conventional Commits. Actions are pinned to commit SHAs; Dependabot
+bumps them monthly.

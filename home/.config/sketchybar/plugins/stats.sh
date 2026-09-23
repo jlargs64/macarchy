@@ -21,8 +21,8 @@ source "$CONFIG_DIR/colors.sh" 2>/dev/null
 source "$CONFIG_DIR/plugins/hover.sh"
 
 # ----- CPU: two samples, one second apart, usage = 100 - idle ---------------
-CPU=$(top -l 2 -n 0 -s 1 2>/dev/null \
-  | awk '/CPU usage/ { idle = $(NF-1); sub(/%/, "", idle) } END { printf "%d", 100 - idle }')
+CPU=$(top -l 2 -n 0 -s 1 2>/dev/null |
+  awk '/CPU usage/ { idle = $(NF-1); sub(/%/, "", idle) } END { printf "%d", 100 - idle }')
 [ -z "$CPU" ] && CPU=0
 
 # ----- Memory: Activity Monitor's "Memory Used" -----------------------------

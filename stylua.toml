@@ -1,0 +1,4 @@
+# StyLua: formatter for the neovim theme files. Matches their existing style.
+indent_type = "Spaces"
+indent_width = 2
+column_width = 120

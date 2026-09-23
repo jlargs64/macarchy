@@ -2,6 +2,9 @@
 # Launcher: runs ws.py inside the macarchy agent venv (created by install.sh).
 VENV="${MACARCHY_VENV:-$HOME/.local/share/macarchy/venv}"
 PY="$VENV/bin/python"
-[ -x "$PY" ] || { echo "ws: venv missing at $VENV; run macarchy/install.sh (agent step)" >&2; exit 1; }
+[ -x "$PY" ] || {
+  echo "ws: venv missing at $VENV; run macarchy/install.sh (agent step)" >&2
+  exit 1
+}
 export NEEDLE_TELEMETRY="${NEEDLE_TELEMETRY:-0}"
 exec "$PY" "$(dirname "$(readlink -f "$0")")/ws.py" "$@"

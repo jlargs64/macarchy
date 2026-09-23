@@ -4,20 +4,56 @@ The same functions feed three places: the training-data generator (schemas),
 the fine-tune JSONL (`tools` field), and the runtime (`needle.Needle(tools=...)`).
 Bodies only record the call; execution happens after validation in the runner.
 """
-from typing import Literal, Optional
+
+from typing import Literal
+
 import needle
 from needle.agent.tools import build_schema
 
 # ----- vocabulary -----------------------------------------------------------
-APPS = ["Ghostty", "Helium", "Chrome", "Safari", "Slack", "Discord", "Obsidian",
-        "Finder", "Notes", "Spotify", "Music", "Mail", "Messages", "Code", "Cursor",
-        "Zed", "Figma", "Xcode", "Preview", "Calendar", "Linear", "Notion", "Zoom"]
-APP_ALIASES = {"the terminal": "Ghostty", "terminal": "Ghostty", "my terminal": "Ghostty",
-               "the browser": "Helium", "browser": "Helium", "vscode": "Code",
-               "vs code": "Code", "the editor": "Code"}
+APPS = [
+    "Ghostty",
+    "Helium",
+    "Chrome",
+    "Safari",
+    "Slack",
+    "Discord",
+    "Obsidian",
+    "Finder",
+    "Notes",
+    "Spotify",
+    "Music",
+    "Mail",
+    "Messages",
+    "Code",
+    "Cursor",
+    "Zed",
+    "Figma",
+    "Xcode",
+    "Preview",
+    "Calendar",
+    "Linear",
+    "Notion",
+    "Zoom",
+]
+APP_ALIASES = {
+    "the terminal": "Ghostty",
+    "terminal": "Ghostty",
+    "my terminal": "Ghostty",
+    "the browser": "Helium",
+    "browser": "Helium",
+    "vscode": "Code",
+    "vs code": "Code",
+    "the editor": "Code",
+}
 THEMES = ["catppuccin-mocha", "kanagawa-wave", "retro-82"]
-THEME_ALIASES = {"catppuccin": "catppuccin-mocha", "mocha": "catppuccin-mocha",
-                 "kanagawa": "kanagawa-wave", "retro": "retro-82", "the 82 one": "retro-82"}
+THEME_ALIASES = {
+    "catppuccin": "catppuccin-mocha",
+    "mocha": "catppuccin-mocha",
+    "kanagawa": "kanagawa-wave",
+    "retro": "retro-82",
+    "the 82 one": "retro-82",
+}
 SPACES = [1, 2, 3, 4, 5]
 DIRECTIONS = ["west", "east", "north", "south"]
 DIR_ALIASES = {"left": "west", "right": "east", "up": "north", "down": "south"}
@@ -56,7 +92,7 @@ def launch_app(app: str):
 
 
 @needle.tool
-def send_to_space(space: int, app: Optional[str] = None):
+def send_to_space(space: int, app: str | None = None):
     """Send a window to a numbered Space (desktop).
     Args:
         space: Space number 1-5
@@ -75,7 +111,7 @@ def focus_space(space: int):
 
 
 @needle.tool
-def warp_window(direction: Direction, app: Optional[str] = None):
+def warp_window(direction: Direction, app: str | None = None):
     """Warp (swap) a window one tile in a compass direction.
     Args:
         direction: west, east, north or south
@@ -126,7 +162,7 @@ def next_theme():
 
 # ----- terminal multiplexer (zellij) ----------------------------------------
 @needle.tool
-def zellij_new_tab(name: Optional[str] = None):
+def zellij_new_tab(name: str | None = None):
     """Open a new terminal tab.
     Args:
         name: tab title; omit if none
@@ -152,12 +188,25 @@ def zellij_split_pane(direction: SplitDir):
     return _rec("zellij_split_pane", direction=direction)
 
 
-TOOLS = [focus_window, launch_app, send_to_space, focus_space, warp_window,
-         toggle_window, set_layout, balance_windows, set_theme, next_theme,
-         zellij_new_tab, zellij_go_to_tab, zellij_split_pane]
+TOOLS = [
+    focus_window,
+    launch_app,
+    send_to_space,
+    focus_space,
+    warp_window,
+    toggle_window,
+    set_layout,
+    balance_windows,
+    set_theme,
+    next_theme,
+    zellij_new_tab,
+    zellij_go_to_tab,
+    zellij_split_pane,
+]
 SCHEMAS = [build_schema(getattr(t, "__wrapped__", t)) for t in TOOLS]
 SYSTEM = "macOS desktop control: windows, Spaces, theme, terminal tabs."
 
 if __name__ == "__main__":
     import json
+
     print(json.dumps(SCHEMAS, indent=1))

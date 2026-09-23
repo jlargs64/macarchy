@@ -21,18 +21,31 @@ if [ "$SENDER" = "mouse.clicked" ]; then
   exit 0
 fi
 
-[ -x "$AV" ] || { sketchybar --set "$NAME" drawing=off; exit 0; }   # not built: see ~/.config/macarchy/swift/build
+[ -x "$AV" ] || {
+  sketchybar --set "$NAME" drawing=off
+  exit 0
+} # not built: see ~/.config/macarchy/swift/build
 STATE="$("$AV" 2>/dev/null)"
 
 case "$NAME" in
   mic)
-    ON="${STATE#*mic=}"; ON="${ON:0:1}"
-    ICON="󰍬"; COLOR="$YELLOW"; LABEL="Microphone in use"
-    if ws_listening; then ON=1; COLOR="$RED"; LABEL="ws listening… alt-w again to run"; fi
+    ON="${STATE#*mic=}"
+    ON="${ON:0:1}"
+    ICON="󰍬"
+    COLOR="$YELLOW"
+    LABEL="Microphone in use"
+    if ws_listening; then
+      ON=1
+      COLOR="$RED"
+      LABEL="ws listening… alt-w again to run"
+    fi
     ;;
   cam)
-    ON="${STATE#*cam=}"; ON="${ON:0:1}"
-    ICON="󰄀"; COLOR="$GREEN"; LABEL="Camera in use"
+    ON="${STATE#*cam=}"
+    ON="${ON:0:1}"
+    ICON="󰄀"
+    COLOR="$GREEN"
+    LABEL="Camera in use"
     ;;
 esac
 

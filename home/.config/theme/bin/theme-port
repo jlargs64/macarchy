@@ -46,14 +46,32 @@ ALLOW_LIGHT=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --out) OUT_DIR="${2:-}"; shift 2 ;;
-    --rev) REV="${2:-}"; shift 2 ;;
-    --src) SRC_DIR="${2:-}"; shift 2 ;;
-    --allow-light) ALLOW_LIGHT=1; shift ;;
-    -h|--help) usage ;;
-    -*) echo "theme-port: unknown flag: $1" >&2; usage ;;
+    --out)
+      OUT_DIR="${2:-}"
+      shift 2
+      ;;
+    --rev)
+      REV="${2:-}"
+      shift 2
+      ;;
+    --src)
+      SRC_DIR="${2:-}"
+      shift 2
+      ;;
+    --allow-light)
+      ALLOW_LIGHT=1
+      shift
+      ;;
+    -h | --help) usage ;;
+    -*)
+      echo "theme-port: unknown flag: $1" >&2
+      usage
+      ;;
     *)
-      if [ -z "$NAME" ]; then NAME="$1"; else echo "theme-port: unexpected argument: $1" >&2; usage; fi
+      if [ -z "$NAME" ]; then NAME="$1"; else
+        echo "theme-port: unexpected argument: $1" >&2
+        usage
+      fi
       shift
       ;;
   esac
@@ -114,7 +132,7 @@ HAVE_NVIM_LUA=1
 fetch neovim.lua "$tmpdir/neovim.lua" || {
   echo "theme-port: no neovim.lua upstream for '$NAME' ($SOURCE_DESC); NVIM_COLORSCHEME/plugin will need manual fill-in" >&2
   HAVE_NVIM_LUA=0
-  : > "$tmpdir/neovim.lua"
+  : >"$tmpdir/neovim.lua"
 }
 
 # --- TOML parsing (flat `key = "value"` lines, no tables/arrays) ---------
@@ -155,8 +173,9 @@ BRIGHT_MAGENTA="$(get_hex bright_magenta)"
 [ -n "$BRIGHT_MAGENTA" ] || BRIGHT_MAGENTA="$MAGENTA"
 
 for kv in "BG:$BG" "FG:$FG" "ACCENT:$ACCENT" "MUTED:$MUTED" "RED:$RED" "GREEN:$GREEN" \
-          "YELLOW:$YELLOW" "BLUE:$BLUE" "MAGENTA:$MAGENTA" "CYAN:$CYAN"; do
-  k="${kv%%:*}"; v="${kv#*:}"
+  "YELLOW:$YELLOW" "BLUE:$BLUE" "MAGENTA:$MAGENTA" "CYAN:$CYAN"; do
+  k="${kv%%:*}"
+  v="${kv#*:}"
   if [ -z "$v" ]; then
     echo "theme-port: colors.toml for '$NAME' is missing a value this contract needs ($k)" >&2
     exit 1
@@ -168,10 +187,15 @@ done
 # that dependency entirely; $((16#xx)) is POSIX ksh-style arithmetic.)
 hexdist() {
   # hexdist <hexA> <hexB> -> squared RGB distance (integer)
-  a="$1"; b="$2"
-  r1=$((16#${a:0:2})); g1=$((16#${a:2:2})); b1=$((16#${a:4:2}))
-  r2=$((16#${b:0:2})); g2=$((16#${b:2:2})); b2=$((16#${b:4:2}))
-  printf '%d\n' $(( (r1-r2)*(r1-r2) + (g1-g2)*(g1-g2) + (b1-b2)*(b1-b2) ))
+  a="$1"
+  b="$2"
+  r1=$((16#${a:0:2}))
+  g1=$((16#${a:2:2}))
+  b1=$((16#${a:4:2}))
+  r2=$((16#${b:0:2}))
+  g2=$((16#${b:2:2}))
+  b2=$((16#${b:4:2}))
+  printf '%d\n' $(((r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2)))
 }
 
 darken15() {
@@ -179,10 +203,12 @@ darken15() {
   # hand-authored 0-7 ANSI dim slots -- see theme-system.md). Integer math:
   # *17/20 == *0.85, +10 before the /20 rounds instead of truncating.
   h="$1"
-  r=$((16#${h:0:2})); g=$((16#${h:2:2})); b=$((16#${h:4:2}))
-  r=$(( (r*17 + 10) / 20 ))
-  g=$(( (g*17 + 10) / 20 ))
-  b=$(( (b*17 + 10) / 20 ))
+  r=$((16#${h:0:2}))
+  g=$((16#${h:2:2}))
+  b=$((16#${h:4:2}))
+  r=$(((r * 17 + 10) / 20))
+  g=$(((g * 17 + 10) / 20))
+  b=$(((b * 17 + 10) / 20))
   printf '%02x%02x%02x\n' "$r" "$g" "$b"
 }
 
@@ -196,11 +222,14 @@ darken15() {
 D_BLUE="$(hexdist "$ACCENT" "$BLUE")"
 D_CYAN="$(hexdist "$ACCENT" "$CYAN")"
 D_MAGENTA="$(hexdist "$ACCENT" "$MAGENTA")"
-ACCENT2="$BRIGHT_BLUE"; ACCENT2_SRC="bright_blue"
+ACCENT2="$BRIGHT_BLUE"
+ACCENT2_SRC="bright_blue"
 if [ "$D_CYAN" -gt "$D_BLUE" ] && [ "$D_CYAN" -gt "$D_MAGENTA" ]; then
-  ACCENT2="$BRIGHT_CYAN"; ACCENT2_SRC="bright_cyan"
+  ACCENT2="$BRIGHT_CYAN"
+  ACCENT2_SRC="bright_cyan"
 elif [ "$D_MAGENTA" -gt "$D_BLUE" ] && [ "$D_MAGENTA" -gt "$D_CYAN" ]; then
-  ACCENT2="$BRIGHT_MAGENTA"; ACCENT2_SRC="bright_magenta"
+  ACCENT2="$BRIGHT_MAGENTA"
+  ACCENT2_SRC="bright_magenta"
 fi
 
 # --- neovim.lua: pull the plugin repo + LazyVim colorscheme name ----------
@@ -208,10 +237,10 @@ PLUGIN_REPO=""
 NVIM_COLORSCHEME=""
 OPTS_BLOCK=""
 if [ "$HAVE_NVIM_LUA" -eq 1 ]; then
-  PLUGIN_REPO="$(grep -oE '"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"' "$tmpdir/neovim.lua" \
-    | tr -d '"' | grep -v '^LazyVim/LazyVim$' | head -n1 || true)"
-  NVIM_COLORSCHEME="$(grep -oE 'colorscheme[[:space:]]*=[[:space:]]*"[^"]+"' "$tmpdir/neovim.lua" \
-    | sed -E 's/.*"([^"]+)"/\1/' | head -n1 || true)"
+  PLUGIN_REPO="$(grep -oE '"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"' "$tmpdir/neovim.lua" |
+    tr -d '"' | grep -v '^LazyVim/LazyVim$' | head -n1 || true)"
+  NVIM_COLORSCHEME="$(grep -oE 'colorscheme[[:space:]]*=[[:space:]]*"[^"]+"' "$tmpdir/neovim.lua" |
+    sed -E 's/.*"([^"]+)"/\1/' | head -n1 || true)"
   # best-effort: capture a brace-balanced `opts = { ... }` block that belongs
   # to the colorscheme plugin (i.e. appears before the LazyVim/LazyVim entry).
   OPTS_BLOCK="$(awk '
@@ -265,7 +294,7 @@ PROVENANCE_NOTE=" @ ${REV_SHORT}"
 [ -n "$SRC_DIR" ] && PROVENANCE_NOTE="$PROVENANCE_NOTE (via local --src checkout, not curl)"
 
 # --- colors.sh -------------------------------------------------------------
-cat > "$DEST/colors.sh" <<EOF
+cat >"$DEST/colors.sh" <<EOF
 # $NAME palette (0x/# free hex) -- ported from Omarchy
 # $PROVENANCE_BASE/colors.toml$PROVENANCE_NOTE
 export THEME_NAME=$NAME
@@ -289,7 +318,7 @@ EOF
 # uses: slots 0-7 are BG/RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG at 85% of their
 # channel values (BG itself is left verbatim, it's already the darkest),
 # slots 8-15 are MUTED followed by the canonical RED..CYAN and FG verbatim.
-cat > "$DEST/ghostty" <<EOF
+cat >"$DEST/ghostty" <<EOF
 # $NAME -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
 background = $BG
 foreground = $FG
@@ -322,7 +351,7 @@ EOF
 # Simple fg/bg/named-color theme (same shape retro-82 uses), not the verbose
 # upstream-Zellij-repo format kanagawa-wave/catppuccin-mocha use, since these
 # ported palettes aren't in zellij's own theme collection.
-cat > "$DEST/zellij.kdl" <<EOF
+cat >"$DEST/zellij.kdl" <<EOF
 themes {
     current {
         fg "#$FG"
@@ -348,7 +377,7 @@ EOF
   if [ -n "$PLUGIN_REPO" ]; then
     echo "    \"$PLUGIN_REPO\","
   else
-    echo "    \"TODO/fill-in-colorscheme-plugin\", -- theme-port could not parse a plugin repo from upstream neovim.lua"
+    echo '    "TODO/fill-in-colorscheme-plugin", -- theme-port could not parse a plugin repo from upstream neovim.lua'
   fi
   echo "    lazy = false,"
   echo "    priority = 1000,"
@@ -358,12 +387,12 @@ EOF
   echo "  },"
   echo "  { \"LazyVim/LazyVim\", opts = { colorscheme = \"$NVIM_COLORSCHEME\" } },"
   echo "}"
-} > "$DEST/neovim.lua"
+} >"$DEST/neovim.lua"
 
 # --- borders -----------------------------------------------------------
 # Identical across every theme -- borders always reads colors.sh via the
 # `current` symlink, so there's nothing theme-specific to port.
-cat > "$DEST/borders" <<'EOF'
+cat >"$DEST/borders" <<'EOF'
 source "$HOME/.config/theme/current/colors.sh"
 active_color=0xff${ACCENT}
 EOF

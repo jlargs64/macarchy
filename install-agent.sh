@@ -87,15 +87,23 @@ EOF
 AGENT=""
 for arg in "$@"; do
   case "$arg" in
-    -h|--help) usage; exit 0 ;;
-    --list) list_agents; exit 0 ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    --list)
+      list_agents
+      exit 0
+      ;;
     --print) PRINT_ONLY=1 ;;
-    claude|codex|pi|opencode|gemini|copilot|cursor|amp)
-      AGENT="$arg" ;;
+    claude | codex | pi | opencode | gemini | copilot | cursor | amp)
+      AGENT="$arg"
+      ;;
     *)
       echo "install-agent.sh: unknown argument: $arg" >&2
       usage >&2
-      exit 2 ;;
+      exit 2
+      ;;
   esac
 done
 PRINT_ONLY="${PRINT_ONLY:-0}"
@@ -107,7 +115,7 @@ PRINT_ONLY="${PRINT_ONLY:-0}"
 # useful, so we fall back to curl in that case.
 SELF_DIR=""
 if [ -f "$0" ]; then
-  SELF_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd -P || true)"
+  SELF_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" 2>/dev/null && pwd -P || true)"
 fi
 
 PROMPT_FILE=""
@@ -152,9 +160,11 @@ if [ -z "$AGENT" ]; then
   case $# in
     0)
       install_hints
-      exit 1 ;;
+      exit 1
+      ;;
     1)
-      AGENT="$1" ;;
+      AGENT="$1"
+      ;;
     *)
       echo "Several agent CLIs found on PATH. Pick one:"
       i=1
@@ -169,8 +179,8 @@ if [ -z "$AGENT" ]; then
         echo "  sh -s -- claude" >&2
         exit 1
       fi
-      printf "> " > /dev/tty
-      read -r choice < /dev/tty
+      printf "> " >/dev/tty
+      read -r choice </dev/tty
       i=1
       for a in $FOUND; do
         if [ "$i" = "$choice" ]; then
@@ -194,7 +204,7 @@ if [ ! -r /dev/tty ]; then
   echo "Run this in a real terminal (not inside another non-interactive pipe)." >&2
   exit 1
 fi
-exec < /dev/tty
+exec </dev/tty
 
 echo "macarchy agentic install"
 echo "  agent:  $AGENT"

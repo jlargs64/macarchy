@@ -113,25 +113,32 @@ split_code_comment() {
   for ((i = 0; i < len; i++)); do
     c="${line:i:1}"
     if [ "$esc" -eq 1 ]; then
-      esc=0; prev="$c"; continue
+      esc=0
+      prev="$c"
+      continue
     fi
     if [ "$in_d" -eq 1 ]; then
       case "$c" in
         '\') esc=1 ;;
         '"') in_d=0 ;;
       esac
-      prev="$c"; continue
+      prev="$c"
+      continue
     fi
     if [ "$in_s" -eq 1 ]; then
       [ "$c" = "'" ] && in_s=0
-      prev="$c"; continue
+      prev="$c"
+      continue
     fi
     case "$c" in
       "'") in_s=1 ;;
       '"') in_d=1 ;;
       '#')
         case "$prev" in
-          ' '|$'\t') pos=$i; break ;;
+          ' ' | $'\t')
+            pos=$i
+            break
+            ;;
         esac
         ;;
     esac
@@ -149,7 +156,10 @@ split_code_comment() {
 # Emit TSV records: skhd \t section \t key \t description \t command
 parse_skhdrc() {
   local file="$1"
-  [ -r "$file" ] || { echo "macarchy-keys: cannot read $file" >&2; return 1; }
+  [ -r "$file" ] || {
+    echo "macarchy-keys: cannot read $file" >&2
+    return 1
+  }
 
   local section="" pending="" line
   # A trailing comment that is only a "mods - key" hint (e.g. "alt - [")
@@ -169,14 +179,14 @@ parse_skhdrc() {
     fi
 
     # section header: "# ----- Name ---..."
-    if [[ "$line" =~ ^#[[:space:]]*-{3,} ]]; then
+    if [[ $line =~ ^#[[:space:]]*-{3,} ]]; then
       section="$(printf '%s' "$line" | sed -E 's/^#[[:space:]]*-+[[:space:]]*//; s/[[:space:]]*-+[[:space:]]*$//')"
       pending=""
       continue
     fi
 
     # plain comment line: accumulate for "comment directly above" fallback
-    if [[ "$line" =~ ^#(.*)$ ]]; then
+    if [[ $line =~ ^#(.*)$ ]]; then
       local ctext
       ctext="$(trim "${BASH_REMATCH[1]}")"
       if [ -z "$pending" ]; then pending="$ctext"; else pending="$pending $ctext"; fi
@@ -188,7 +198,10 @@ parse_skhdrc() {
     local trimmed
     trimmed="$(trim "$line")"
     case "$trimmed" in
-      .blacklist*|.load*|.define*|::*) pending=""; continue ;;
+      .blacklist* | .load* | .define* | ::*)
+        pending=""
+        continue
+        ;;
     esac
 
     # strip a trailing "# comment" (quote-aware: a '#' inside '...' or
@@ -200,14 +213,14 @@ parse_skhdrc() {
 
     # skhd mode binding: "mode_name < mods - key : command"
     local mode="" rest="$code"
-    if [[ "$code" =~ $mode_re ]]; then
+    if [[ $code =~ $mode_re ]]; then
       mode="${BASH_REMATCH[1]}"
       rest="$(trim "${BASH_REMATCH[2]}")"
     fi
 
     # not a "MODS - KEY : COMMAND" line (e.g. a blacklist app-name entry) --
     # skip it gracefully rather than emitting garbage.
-    if [[ "$rest" != *" : "* ]]; then
+    if [[ $rest != *" : "* ]]; then
       pending=""
       continue
     fi
@@ -218,7 +231,7 @@ parse_skhdrc() {
     mods_key="$(trim "$mods_key")"
     cmd="$(trim "$cmd")"
 
-    if [[ "$mods_key" == *" - "* ]]; then
+    if [[ $mods_key == *" - "* ]]; then
       mods="${mods_key% - *}"
       key="${mods_key##* - }"
     else
@@ -231,7 +244,7 @@ parse_skhdrc() {
 
     desc=""
     if [ -n "$trailing" ]; then
-      if [[ "$trailing" =~ $hint_re ]]; then
+      if [[ $trailing =~ $hint_re ]]; then
         desc="$(trim "${BASH_REMATCH[2]}")"
       else
         desc="$trailing"
@@ -242,7 +255,7 @@ parse_skhdrc() {
 
     printf '%s\t%s\t%s\t%s\t%s\n' "skhd" "$section" "$key_field" "$desc" "$cmd"
     pending=""
-  done < "$file"
+  done <"$file"
 }
 
 # ---------------------------------------------------------------------------
@@ -254,7 +267,7 @@ parse_skhdrc() {
 # "resize split left 10", "reload_config" -> "reload config".
 humanize_ghostty_action() {
   local action="$1" name args
-  if [[ "$action" == *:* ]]; then
+  if [[ $action == *:* ]]; then
     name="${action%%:*}"
     args="${action#*:}"
     args="${args//,/ }"
@@ -282,13 +295,16 @@ format_ghostty_key() {
   IFS="$old_ifs"
   for step in "$@"; do
     step="$(trim "$step")"
-    if [[ "$step" == *+* ]]; then
+    if [[ $step == *+* ]]; then
       mods="${step%+*}"
       key="${step##*+}"
       mods="${mods//+/ + }"
       step="$mods - $key"
     fi
-    if [ "$first" -eq 1 ]; then out="$step"; first=0; else out="$out > $step"; fi
+    if [ "$first" -eq 1 ]; then
+      out="$step"
+      first=0
+    else out="$out > $step"; fi
   done
   printf '%s' "$out"
 }
@@ -309,14 +325,14 @@ parse_ghostty() {
     fi
 
     # section header: "# ----- Name ---..." (same style as skhd's)
-    if [[ "$line" =~ ^#[[:space:]]*-{3,} ]]; then
+    if [[ $line =~ ^#[[:space:]]*-{3,} ]]; then
       section="$(printf '%s' "$line" | sed -E 's/^#[[:space:]]*-+[[:space:]]*//; s/[[:space:]]*-+[[:space:]]*$//')"
       pending=""
       continue
     fi
 
     # plain comment line: accumulate for "comment directly above" fallback
-    if [[ "$line" =~ ^#(.*)$ ]]; then
+    if [[ $line =~ ^#(.*)$ ]]; then
       local ctext
       ctext="$(trim "${BASH_REMATCH[1]}")"
       if [ -z "$pending" ]; then pending="$ctext"; else pending="$pending $ctext"; fi
@@ -326,7 +342,7 @@ parse_ghostty() {
     local trimmed value trigger action global_flag=0 desc key_field
     trimmed="$(trim "$line")"
 
-    if [[ "$trimmed" =~ ^keybind[[:space:]]*=[[:space:]]*(.*)$ ]]; then
+    if [[ $trimmed =~ ^keybind[[:space:]]*=[[:space:]]*(.*)$ ]]; then
       value="$(trim "${BASH_REMATCH[1]}")"
     else
       # not a keybind line (font-family, window-padding-x, etc.) -- any
@@ -340,7 +356,7 @@ parse_ghostty() {
       continue
     fi
 
-    if [[ "$value" != *=* ]]; then
+    if [[ $value != *=* ]]; then
       pending=""
       continue
     fi
@@ -349,9 +365,18 @@ parse_ghostty() {
     action="${value#*=}"
 
     case "$trigger" in
-      unconsumed:*) trigger="${trigger#unconsumed:}"; global_flag=1 ;;
-      global:*) trigger="${trigger#global:}"; global_flag=1 ;;
-      all:*) trigger="${trigger#all:}"; global_flag=1 ;;
+      unconsumed:*)
+        trigger="${trigger#unconsumed:}"
+        global_flag=1
+        ;;
+      global:*)
+        trigger="${trigger#global:}"
+        global_flag=1
+        ;;
+      all:*)
+        trigger="${trigger#all:}"
+        global_flag=1
+        ;;
     esac
 
     key_field="$(format_ghostty_key "$trigger")"
@@ -362,7 +387,7 @@ parse_ghostty() {
 
     printf '%s\t%s\t%s\t%s\t%s\n' "ghostty" "$section" "$key_field" "$desc" "$action"
     pending=""
-  done < "$file"
+  done <"$file"
 }
 
 # ---------------------------------------------------------------------------
@@ -505,7 +530,7 @@ resolve_sources() {
   else
     for s in ${want[@]+"${want[@]}"}; do
       local -a parts
-      IFS=',' read -r -a parts <<< "$s"
+      IFS=',' read -r -a parts <<<"$s"
       for p in ${parts[@]+"${parts[@]}"}; do
         p="$(trim "$p")"
         [ -n "$p" ] && result+=("$p")
@@ -515,11 +540,17 @@ resolve_sources() {
 
   for s in ${result[@]+"${result[@]}"}; do
     case "$s" in
-      skhd|ghostty|zellij) : ;;
-      *) echo "macarchy-keys: unknown source: $s (expected skhd, ghostty, or zellij)" >&2; exit 2 ;;
+      skhd | ghostty | zellij) : ;;
+      *)
+        echo "macarchy-keys: unknown source: $s (expected skhd, ghostty, or zellij)" >&2
+        exit 2
+        ;;
     esac
   done
-  [ "${#result[@]}" -gt 0 ] || { echo "macarchy-keys: no sources selected" >&2; exit 2; }
+  [ "${#result[@]}" -gt 0 ] || {
+    echo "macarchy-keys: no sources selected" >&2
+    exit 2
+  }
 
   ACTIVE_SOURCES=(${result[@]+"${result[@]}"})
 }
@@ -561,7 +592,7 @@ print_markdown() {
       printf '| Keys | Action |\n'
       printf '|---|---|\n'
       printf '%s\n' "$src_tsv" | awk -F '\t' -v s="$section" '$2 == s { printf "| `%s` | %s |\n", $3, $4 }'
-    done <<< "$sections"
+    done <<<"$sections"
   done
 }
 
@@ -589,7 +620,10 @@ build_fzf_rows() {
 }
 
 run_picker() {
-  command -v fzf >/dev/null 2>&1 || { echo "macarchy-keys: fzf is required (brew install fzf)" >&2; exit 1; }
+  command -v fzf >/dev/null 2>&1 || {
+    echo "macarchy-keys: fzf is required (brew install fzf)" >&2
+    exit 1
+  }
 
   [ "${MACARCHY_KEYS_POPUP:-0}" = 1 ] && float_self
   # In the popup, macOS `login` has just printed "Last login: ..." above us;
@@ -672,8 +706,8 @@ float_self() {
   (
     local i id
     for i in $(seq 1 30); do
-      id="$(yabai -m query --windows 2>/dev/null \
-        | jq -r '[.[] | select(.app=="Ghostty" and .title=="macarchy-keys")][0].id // empty' 2>/dev/null)"
+      id="$(yabai -m query --windows 2>/dev/null |
+        jq -r '[.[] | select(.app=="Ghostty" and .title=="macarchy-keys")][0].id // empty' 2>/dev/null)"
       if [ -n "$id" ]; then
         if yabai -m rule --list 2>/dev/null | jq -e 'map(select(.label=="macarchy-keys")) | length > 0' >/dev/null 2>&1; then
           yabai -m rule --apply macarchy-keys >/dev/null 2>&1 || true
@@ -694,18 +728,45 @@ main() {
 
   while [ $# -gt 0 ]; do
     case "$1" in
-      ""|-) shift ;;
-      --list) mode="list"; shift ;;
-      --markdown) mode="markdown"; shift ;;
-      --popup) mode="popup"; shift ;;
-      --rows) mode="rows"; shift ;;
-      -h|--help) mode="help"; shift ;;
+      "" | -) shift ;;
+      --list)
+        mode="list"
+        shift
+        ;;
+      --markdown)
+        mode="markdown"
+        shift
+        ;;
+      --popup)
+        mode="popup"
+        shift
+        ;;
+      --rows)
+        mode="rows"
+        shift
+        ;;
+      -h | --help)
+        mode="help"
+        shift
+        ;;
       --source)
-        [ $# -ge 2 ] || { echo "macarchy-keys: --source requires a value" >&2; usage >&2; exit 2; }
-        source_args+=("$2"); shift 2 ;;
+        [ $# -ge 2 ] || {
+          echo "macarchy-keys: --source requires a value" >&2
+          usage >&2
+          exit 2
+        }
+        source_args+=("$2")
+        shift 2
+        ;;
       --source=*)
-        source_args+=("${1#--source=}"); shift ;;
-      *) echo "macarchy-keys: unknown argument: $1" >&2; usage >&2; exit 2 ;;
+        source_args+=("${1#--source=}")
+        shift
+        ;;
+      *)
+        echo "macarchy-keys: unknown argument: $1" >&2
+        usage >&2
+        exit 2
+        ;;
     esac
   done
 
