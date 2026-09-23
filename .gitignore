@@ -6,3 +6,10 @@ __pycache__/
 
 # launch notes, local only
 docs/launch.md
+
+# personal agent skills, installed globally in ~/.agents/skills
+.agents/
+.claude/skills/
+.pi/skills/
+.hallmark/
+skills-lock.json
