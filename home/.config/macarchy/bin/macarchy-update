@@ -30,7 +30,7 @@ REPO="$(macarchy_stable_repo "$REPO")"
 # A Homebrew install has no .git: `brew upgrade macarchy` replaces the files,
 # and this script only relinks. Anything else without .git is a mistake.
 BREW_INSTALL=0
-if [ ! -d "$REPO/.git" ]; then
+if [ ! -e "$REPO/.git" ]; then
   case "$REPO" in
     */opt/macarchy/libexec) BREW_INSTALL=1 ;;
     *)

@@ -97,7 +97,7 @@ macarchy_stable_repo() {
 # <repo>. Tracked files in a git checkout (local junk such as __pycache__
 # never lands in $HOME); everything in a tarball or Homebrew install.
 macarchy_repo_files() {
-  if [ -d "$1/.git" ]; then
+  if [ -e "$1/.git" ]; then
     git -C "$1" ls-files home
   else
     (cd "$1" && find home \( -type f -o -type l \) -print | LC_ALL=C sort)
@@ -112,7 +112,12 @@ macarchy_is_our_link() {
   [ -L "$1" ] || return 1
   dest="$(readlink "$1")"
   case "$dest" in "$2"/home/*) return 0 ;; esac
-  real="$(cd "$2" 2>/dev/null && pwd -P)" || return 1
+  # the resolved repo path is the same for every call; work it out once
+  if [ "${_MACARCHY_REAL_OF:-}" != "$2" ]; then
+    _MACARCHY_REAL="$(cd "$2" 2>/dev/null && pwd -P)" || return 1
+    _MACARCHY_REAL_OF="$2"
+  fi
+  real="$_MACARCHY_REAL"
   case "$dest" in "$real"/home/*) return 0 ;; esac
   return 1
 }

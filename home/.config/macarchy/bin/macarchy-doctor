@@ -76,7 +76,7 @@ need_running() {
 }
 
 version() {
-  if [ -d "$REPO/.git" ]; then
+  if [ -e "$REPO/.git" ]; then
     git -C "$REPO" describe --tags --match 'v[0-9]*' --always 2>/dev/null
   elif [ -f "$REPO/version.txt" ]; then
     echo "v$(cat "$REPO/version.txt")"
@@ -85,7 +85,7 @@ version() {
   fi
 }
 
-if [ -d "$REPO/.git" ]; then how="git checkout $(tilde "$REPO")"; else how="$(tilde "$REPO")"; fi
+if [ -e "$REPO/.git" ]; then how="git checkout $(tilde "$REPO")"; else how="$(tilde "$REPO")"; fi
 case "$REPO" in */opt/macarchy/libexec) how="Homebrew" ;; esac
 [ "$QUIET" = 1 ] || echo "macarchy-doctor: $(version) ($how)"
 [ "$QUIET" = 1 ] || echo "components: ${MACARCHY_COMPONENTS:-$MACARCHY_ALL_COMPONENTS}"
@@ -116,7 +116,7 @@ if [ -f "$HOME/.config/macarchy/config" ]; then
 else
   warn "no ~/.config/macarchy/config; built-in defaults apply" "cp $(tilde "$REPO")/home/.config/macarchy/config.example ~/.config/macarchy/config"
 fi
-if [ -d "$REPO/.git" ]; then
+if [ -e "$REPO/.git" ]; then
   dirty="$(git -C "$REPO" status --porcelain --untracked-files=no 2>/dev/null | wc -l | tr -d ' ')"
   if [ "$dirty" = 0 ]; then
     ok "checkout has no local edits"
