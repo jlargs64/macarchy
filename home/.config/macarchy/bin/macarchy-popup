@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# macarchy-popup <title> <command> -- run a shell command in a new, titled
+# terminal window that closes when the command exits.
+#
+# The terminal is MACARCHY_TERMINAL (ghostty kitty alacritty iterm2 wezterm).
+# yabai's rules float windows by title, so any of them works with the
+# theme-pick and macarchy-keys popups. <command> is one string, already
+# shell-quoted by the caller; it runs under /bin/sh. `open -na` goes through
+# LaunchServices, so pass environment the command needs inside <command>
+# (env VAR=... prog), not by inheritance.
+set -euo pipefail
+
+# shellcheck disable=SC1091
+if [ -f "$HOME/.config/macarchy/lib.sh" ]; then . "$HOME/.config/macarchy/lib.sh" || true; fi
+
+title="${1:?usage: macarchy-popup <title> <command>}"
+cmd="${2:?usage: macarchy-popup <title> <command>}"
+cols=100 rows=30
+term="${MACARCHY_TERMINAL:-ghostty}"
+
+need_app() {
+  [ -d "/Applications/$1.app" ] || [ -d "$HOME/Applications/$1.app" ] || {
+    echo "macarchy-popup: $1.app not found (MACARCHY_TERMINAL=$term)" >&2
+    exit 1
+  }
+}
+
+# Terminals without a --title flag get it by escape sequence (OSC 2).
+titled="printf '\\033]2;%s\\007' '$title'; $cmd"
+
+case "$term" in
+  ghostty)
+    need_app Ghostty
+    # --command, not -e: -e still runs a configured `command =` wrapper (e.g.
+    # a zellij session), leaving an orphan behind every popup.
+    exec open -na Ghostty.app --args \
+      --title="$title" --window-width=$cols --window-height=$rows \
+      --quit-after-last-window-closed=true \
+      --command="$cmd"
+    ;;
+  kitty)
+    need_app kitty
+    exec open -na kitty.app --args \
+      --title "$title" -o remember_window_size=no \
+      -o initial_window_width=${cols}c -o initial_window_height=${rows}c \
+      /bin/sh -c "$cmd"
+    ;;
+  alacritty)
+    need_app Alacritty
+    exec open -na Alacritty.app --args \
+      --title "$title" -o window.dimensions.columns=$cols -o window.dimensions.lines=$rows \
+      -e /bin/sh -c "$cmd"
+    ;;
+  wezterm)
+    need_app WezTerm
+    exec open -na WezTerm.app --args \
+      start --always-new-process -- /bin/sh -c "$titled"
+    ;;
+  iterm2)
+    need_app iTerm
+    # iTerm2's `command` is split on spaces, not parsed by a shell, so hand it
+    # one /bin/sh -c with the whole command quoted inside.
+    q="$(printf '%s' "$titled" | sed "s/'/'\\\\''/g")"
+    exec osascript \
+      -e 'on run argv' \
+      -e 'tell application "iTerm2" to create window with default profile command (item 1 of argv)' \
+      -e 'end run' \
+      "/bin/sh -c '$q'" >/dev/null
+    ;;
+  *)
+    echo "macarchy-popup: unknown MACARCHY_TERMINAL '$term' (ghostty kitty alacritty iterm2 wezterm)" >&2
+    exit 2
+    ;;
+esac
