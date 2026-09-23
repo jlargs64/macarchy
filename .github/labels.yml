@@ -5,94 +5,94 @@
 
 # type: what kind of change
 - name: "type: bug"
-  color: d73a4a
+  color: "d73a4a"
   description: Something is broken
   aliases: [bug]
 - name: "type: feature"
-  color: a2eeef
+  color: "a2eeef"
   description: New behaviour or a change to existing behaviour
   aliases: [enhancement]
 - name: "type: theme"
-  color: c5def5
+  color: "c5def5"
   description: A new theme, a port from Omarchy, or a palette fix
 - name: "type: docs"
-  color: 0075ca
+  color: "0075ca"
   description: README, docs/ or the site copy
   aliases: [documentation]
 - name: "type: chore"
-  color: ededed
+  color: "ededed"
   description: CI, release tooling, dependencies
 
 # area: which part of macarchy
 - name: "area: theming"
-  color: 5319e7
+  color: "5319e7"
   description: theme-set, theme-port, theme-pick, wallpapers
 - name: "area: windows"
-  color: 5319e7
+  color: "5319e7"
   description: yabai, skhd, JankyBorders, Spaces
 - name: "area: bar"
-  color: 5319e7
+  color: "5319e7"
   description: SketchyBar and its plugins
 - name: "area: agent"
-  color: 5319e7
+  color: "5319e7"
   description: ws, voice control, the Needle model, Handy
 - name: "area: install"
-  color: 5319e7
+  color: "5319e7"
   description: install.sh, install-agent.sh, macarchy-update
 - name: "area: site"
-  color: 5319e7
+  color: "5319e7"
   description: The GitHub Pages site under site/
 
 # status: where the issue is in triage
 - name: "status: needs triage"
-  color: fbca04
+  color: "fbca04"
   description: New, not looked at yet
 - name: "status: needs info"
-  color: fef2c0
+  color: "fef2c0"
   description: Waiting on the reporter; closes after 21 days of silence
   aliases: [question]
 - name: "status: accepted"
-  color: 0e8a16
+  color: "0e8a16"
   description: Confirmed and in scope; a fix or PR is welcome
 - name: "status: blocked"
-  color: b60205
+  color: "b60205"
   description: Waiting on an upstream tool or a macOS change
 
 # resolution: why it was closed without a change
 - name: "resolution: duplicate"
-  color: cfd3d7
+  color: "cfd3d7"
   description: Already tracked in another issue
   aliases: [duplicate]
 - name: "resolution: out of scope"
-  color: cfd3d7
+  color: "cfd3d7"
   description: Outside what macarchy themes or manages; see README Scope
   aliases: [wontfix]
 - name: "resolution: invalid"
-  color: cfd3d7
+  color: "cfd3d7"
   description: Not a macarchy problem, or not reproducible
   aliases: [invalid]
 
 # GitHub surfaces these two names to new contributors; keep them verbatim.
 - name: good first issue
-  color: 7057ff
+  color: "7057ff"
   description: Small and self-contained
 - name: help wanted
   color: "008672"
   description: Open to a PR from anyone
 
 - name: accessibility
-  color: f143ab
+  color: "f143ab"
   description: Barrier affecting people with disabilities
 
 # Managed by release-please; do not rename.
 - name: "autorelease: pending"
-  color: ededed
+  color: "ededed"
   description: Release PR not merged yet
 - name: "autorelease: tagged"
-  color: ededed
+  color: "ededed"
   description: Release PR merged and tagged
 
 # Added by the stale workflow to "needs info" issues nobody answered.
 - name: stale
-  color: ededed
+  color: "ededed"
   description: No reply from the reporter in 14 days; closes in 7
