@@ -415,6 +415,10 @@ def main(argv):
         else:
             lines.append("would " + shlex.join(cmd))
         results.append({"call": call, "cmd": cmd})
+    # yabai has no signal for a window changing spaces, so the bar's space
+    # indicators would keep showing the old occupancy; nudge them ourselves.
+    if execute_mode and results:
+        subprocess.run(["sketchybar", "--trigger", "yabai_window_change"], capture_output=True)
     if a.json:
         print(json.dumps({"text": text, "reasoning": why, "calls": calls, "commands": [r["cmd"] for r in results]}, indent=1))
     else:
