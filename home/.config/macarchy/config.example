@@ -27,6 +27,12 @@ MACARCHY_RAYCAST_AUTHOR=""
 # if yours differs.
 MACARCHY_WIFI_IFACE=en0
 
+# true: install.sh sets up a LaunchAgent that runs `macarchy-update` at every
+# login (fast-forward pull, relink, reload; log in
+# ~/Library/Logs/macarchy-update.log). Toggle later with
+# `macarchy-update --login on|off`.
+MACARCHY_UPDATE_AT_LOGIN=true
+
 # Hotkey sources macarchy-keys shows in its which-key picker, space-separated.
 # One or more of: skhd ghostty zellij. Override per invocation with
 # `macarchy-keys --source <name>`. A listed source whose config file doesn't

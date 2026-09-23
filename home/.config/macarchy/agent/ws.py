@@ -185,9 +185,17 @@ def infer(text, model, wins=()):
     return calls, r.get("reasoning", "")
 
 
+def cap_apps(text, wins=()):
+    """Capitalise app names. Lowercase "messages" or "music" reads as a common noun and the model refuses."""
+    names = sorted({w["app"] for w in wins} | set(T.APPS), key=len, reverse=True)
+    for n in names:
+        text = re.sub(rf"\b{re.escape(n)}\b", n, text, flags=re.I)
+    return text
+
+
 def plan(text, model, wins=()):
     """Whole sentence vs per-clause; keep whichever yields more valid calls."""
-    text = text.strip().rstrip(".!")
+    text = cap_apps(text.strip().rstrip(".!"), wins)
     words = set(re.findall(r"[a-z0-9-]+", text.lower()))
     if not words & VOCAB:
         return [], "no workspace vocabulary in the request"

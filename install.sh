@@ -245,6 +245,15 @@ step_build() {
   fi
 }
 
+step_login_update() {
+  echo "==> Update at login (MACARCHY_UPDATE_AT_LOGIN=$MACARCHY_UPDATE_AT_LOGIN)"
+  if [ "$MACARCHY_UPDATE_AT_LOGIN" = true ]; then
+    run "$REPO/home/.config/macarchy/bin/macarchy-update" --login on
+  else
+    run "$REPO/home/.config/macarchy/bin/macarchy-update" --login off
+  fi
+}
+
 step_optional_integrations() {
   echo "==> Optional integrations"
   if [ -d "$HOME/.config/zellij" ]; then
@@ -269,6 +278,7 @@ step_theme_assets
 step_config
 step_agent
 step_build
+step_login_update
 step_optional_integrations
 
 cat <<NOTICE

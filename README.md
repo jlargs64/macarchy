@@ -141,7 +141,9 @@ anything.
 To stay current, run `macarchy-update`. It pulls (fast-forward only), links any
 files added upstream, removes links to files deleted upstream, and reloads only
 the services whose config changed. It tells you when `install.sh` itself changed
-and needs a re-run for new packages.
+and needs a re-run for new packages. `install.sh` also sets it to run at every
+login and posts a notification when it pulls something; turn that off with
+`macarchy-update --login off` or `MACARCHY_UPDATE_AT_LOGIN=false`.
 
 To skip the packages/defaults and only link files:
 
