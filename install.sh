@@ -320,6 +320,10 @@ One-line hooks to add to your OWN configs (not managed by this repo):
     folke/tokyonight.nvim, ellisonleao/gruvbox.nvim, EdenEast/nightfox.nvim.
     See docs/theme-system.md.
 
+Staying current: \`macarchy-update\` pulls, relinks and reloads. It also
+runs at every login (MACARCHY_UPDATE_AT_LOGIN; \`macarchy-update --login off\`
+to stop), logging to ~/Library/Logs/macarchy-update.log.
+
 Re-run this script any time; every step is idempotent. After editing a
 theme's colors.sh or adding/removing a theme, run \`theme-maintain\` instead
 of the whole installer.

@@ -138,12 +138,9 @@ writes `~/.config/macarchy/config` from the example. It is idempotent, so
 re-running is safe. `./install.sh --dry-run` prints every action without changing
 anything.
 
-To stay current, run `macarchy-update`. It pulls (fast-forward only), links any
-files added upstream, removes links to files deleted upstream, and reloads only
-the services whose config changed. It tells you when `install.sh` itself changed
-and needs a re-run for new packages. `install.sh` also sets it to run at every
-login and posts a notification when it pulls something; turn that off with
-`macarchy-update --login off` or `MACARCHY_UPDATE_AT_LOGIN=false`.
+After that, `macarchy-update` keeps the checkout and `$HOME` in sync, and
+`install.sh` sets it to run at every login. See
+[Staying up to date](#staying-up-to-date).
 
 To skip the packages/defaults and only link files:
 
@@ -228,7 +225,8 @@ macarchy in as a tagged archive instead of a git submodule. Add to your
 `stripComponents = 2` strips `macarchy-0.1.0/home/` off every archive path, so
 `home/.config/theme/...` in the tag lands at `.config/theme/...` in your
 target. Bump the tag in all eight `url`s together when you pull a new
-macarchy release.
+macarchy release. (`macarchy-update` needs a git checkout, so it does not
+apply here; bumping the tag is the chezmoi equivalent.)
 
 chezmoi will not run `install.sh` for you. It only writes files. After the
 first `chezmoi apply`, run `~/.config/theme/bin/theme-maintain` once by hand
@@ -249,6 +247,7 @@ MACARCHY_FONT="Hack Nerd Font"    # SketchyBar icon/label font
 MACARCHY_SPACES=5                 # how many Space indicators the bar renders (1-9)
 MACARCHY_RAYCAST_AUTHOR=""        # @raycast.author line; blank omits it
 MACARCHY_WIFI_IFACE=en0           # interface the wifi bar plugin reads
+MACARCHY_UPDATE_AT_LOGIN=true     # install.sh sets up macarchy-update to run at login
 ```
 
 The example file also carries `MACARCHY_KEYS_SOURCES` and the `ws` agent
@@ -256,6 +255,43 @@ settings (`MACARCHY_AGENT_MODEL`, `MACARCHY_AGENT_EXECUTE`, `MACARCHY_MIC`,
 `MACARCHY_HANDY`), each with a comment. Edit the file and re-run `theme-set`
 or `theme-raycast-sync`, or restart SketchyBar, as relevant. Nothing needs a
 full reinstall.
+
+## Staying up to date
+
+Every file under `home/` is a symlink into the checkout, so an edit that
+`git pull` brings in is live right away. A bare pull misses three things:
+files added upstream (nothing links them), links to files deleted upstream
+(they dangle), and running services (they keep the old config until
+reloaded). `macarchy-update` handles all three:
+
+```sh
+macarchy-update              # pull, relink, prune, reload what changed
+macarchy-update --no-pull    # relink and reload everything without pulling (restarts yabai)
+macarchy-update --login on   # run at every login (install.sh does this by default)
+macarchy-update --login off  # stop running at login
+```
+
+1. `git pull --ff-only` in the checkout it lives in. It never merges; if
+   local edits conflict with upstream, it stops and you commit or stash
+   them first.
+2. Links every git-tracked file under `home/` into `$HOME`. A real file
+   where a link should be is left alone and reported, never overwritten.
+3. Removes symlinks in `~/.config` and `~/.local/bin` that point at repo
+   files that no longer exist.
+4. Reloads only what the pull touched: SketchyBar, skhd, yabai, borders,
+   and re-applies the current theme if anything under `.config/theme/`
+   changed.
+5. If `install.sh` changed, it prints a reminder to re-run it. It never
+   installs Homebrew packages itself.
+
+**At login.** `--login on` writes a LaunchAgent to
+`~/Library/LaunchAgents/macarchy.update.plist`. At login it waits up to a
+minute for the network, runs the steps above, and posts a macOS
+notification when it pulls something or fails. Runs where nothing changed
+stay quiet. Every run is logged to `~/Library/Logs/macarchy-update.log`,
+the first place to look when a notification says it failed (usually local
+edits blocking the fast-forward, or no network). `install.sh` turns it on or
+off to match `MACARCHY_UPDATE_AT_LOGIN`.
 
 ## Hooking in your own configs
 
