@@ -9,13 +9,30 @@ out="$dir/wallpaper.jpg"
 source "$dir/colors.sh"
 
 case "$THEME_NAME" in
-  retro-82)        TOP=0b0a0f; BOT=221c2e; SCAN=1 ;;
-  kanagawa-wave)   TOP=1f1f28; BOT=2a2a3c; SCAN=0 ;;
-  catppuccin-mocha) TOP=1e1e2e; BOT=302d45; SCAN=0 ;;
-  *)               TOP="$BG";  BOT="$MUTED"; SCAN=0 ;;
+  retro-82)
+    TOP=0b0a0f
+    BOT=221c2e
+    SCAN=1
+    ;;
+  kanagawa-wave)
+    TOP=1f1f28
+    BOT=2a2a3c
+    SCAN=0
+    ;;
+  catppuccin-mocha)
+    TOP=1e1e2e
+    BOT=302d45
+    SCAN=0
+    ;;
+  *)
+    TOP="$BG"
+    BOT="$MUTED"
+    SCAN=0
+    ;;
 esac
 
-W=5120; H=2880
+W=5120
+H=2880
 png="$(mktemp -t wallpaper).png"
 
 if command -v magick >/dev/null 2>&1; then
@@ -23,13 +40,13 @@ if command -v magick >/dev/null 2>&1; then
     # Vertical gradient, then darken every 4th row to fake CRT scanlines:
     # build a 4-row tile whose first row is 35% black and the rest transparent,
     # tile it to full size, and composite it over the gradient.
-    magick -size ${W}x${H} gradient:"#${TOP}"-"#${BOT}" \
+    magick -size ${W}x${H} "gradient:#${TOP}-#${BOT}" \
       \( -size ${W}x4 xc:none -fill "rgba(0,0,0,0.35)" \
-         -draw "rectangle 0,0 ${W},0" -write mpr:sl +delete \) \
+      -draw "rectangle 0,0 ${W},0" -write mpr:sl +delete \) \
       \( -size ${W}x${H} tile:mpr:sl \) \
       -compose over -composite "$png"
   else
-    magick -size ${W}x${H} gradient:"#${TOP}"-"#${BOT}" "$png"
+    magick -size ${W}x${H} "gradient:#${TOP}-#${BOT}" "$png"
   fi
 elif python3 -c 'import PIL' >/dev/null 2>&1; then
   TOP="$TOP" BOT="$BOT" SCAN="$SCAN" W="$W" H="$H" PNG="$png" python3 <<'PY'
@@ -52,7 +69,7 @@ col.resize((w, h), Image.NEAREST).save(os.environ["PNG"])
 PY
 else
   # last resort: solid background via sips
-  python3 - "$png" "$TOP" "$W" "$H" <<'PY' 2>/dev/null || { echo "theme-wallpaper: no image backend" >&2; exit 1; }
+  python3 - "$png" "$TOP" "$W" "$H" <<'PY' 2>/dev/null || {
 import sys, struct, zlib
 png, top, w, h = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
 rgb = bytes(int(top[i:i+2], 16) for i in (0, 2, 4))
@@ -67,6 +84,9 @@ open(png, "wb").write(
     + chunk(b"IEND", b"")
 )
 PY
+    echo "theme-wallpaper: no image backend" >&2
+    exit 1
+  }
 fi
 
 sips -s format jpeg -s formatOptions 85 "$png" --out "$out" >/dev/null

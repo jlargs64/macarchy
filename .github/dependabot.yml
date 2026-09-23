@@ -4,6 +4,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7   # let a new release age a week before proposing it
     labels: ["type: chore"]
     commit-message:
       prefix: ci

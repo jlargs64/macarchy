@@ -16,3 +16,7 @@
 ^/\.release-please-manifest\.json
 ^/\.shellcheckrc
 ^/\.githooks
+^/\.pre-commit-config\.yaml
+^/\.secrets\.baseline
+^/ruff\.toml
+^/stylua\.toml

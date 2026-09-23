@@ -1,0 +1,18 @@
+# ruff: lint + format for the ws agent (home/.config/macarchy/agent).
+target-version = "py311"
+line-length = 120
+
+[lint]
+# E/W pycodestyle, F pyflakes, I isort, B bugbear, UP pyupgrade,
+# S bandit (security)
+select = ["E", "W", "F", "I", "B", "UP", "S"]
+ignore = [
+  "E501",  # long lines: ruff format wraps code; what is left is strings and comments
+  "E741",  # `l` as a loop variable is fine here
+  "S603",  # subprocess without shell=True: the agent runs yabai/sketchybar by design
+  "S607",  # ...by name from PATH, same reason
+  "S110",  # try/except/pass: the WAV repair in ws.py is best-effort on purpose
+]
+
+[lint.per-file-ignores]
+"home/.config/macarchy/agent/finetune/*" = ["S311"]  # random for synthetic training data, not crypto

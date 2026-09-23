@@ -1,7 +1,8 @@
 name: Triage
 
 on:
-  pull_request_target:
+  # Needed to label fork PRs; safe because no job checks out the PR's code.
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
     types: [opened, synchronize, reopened]
   issue_comment:
     types: [created]
@@ -16,7 +17,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/labeler@v7
+      - uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13 # v7.0.0
         with:
           sync-labels: true
 

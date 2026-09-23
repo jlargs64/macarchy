@@ -1,9 +1,11 @@
 name: PR title
 
 # PRs are squash-merged, so the title becomes the commit on main and the
-# changelog line. Reject titles release-please cannot parse.
+# changelog line. Reject titles release-please cannot parse. Plain
+# pull_request is enough: the check only reads the title, so it needs no
+# write token even on forks.
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, edited, synchronize, reopened]
 
 permissions:
@@ -13,7 +15,7 @@ jobs:
   conventional:
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@v6
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
