@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# sync-venv — build or refresh the ws venv from uv.lock. Run by install.sh,
+# by macarchy-update when pyproject.toml or uv.lock changes, and by the ws
+# launcher when the venv is missing. uv fetches Python 3.11 itself if needed.
+set -euo pipefail
+command -v uv >/dev/null 2>&1 || {
+  echo "ws: uv not found; brew install uv" >&2
+  exit 1
+}
+UV_PROJECT_ENVIRONMENT="${MACARCHY_VENV:-$HOME/.local/share/macarchy/venv}" \
+  exec uv sync --locked --quiet --project "$(dirname "$(realpath "$0")")" "$@"

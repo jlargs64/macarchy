@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Launcher: runs ws.py inside the macarchy agent venv (created by install.sh).
+# Launcher: runs ws.py inside the macarchy agent venv, which sync-venv builds
+# from uv.lock. Runs the venv's python directly so a hotkey press never waits
+# on uv; only a missing venv costs a one-time sync.
+HERE="$(dirname "$(readlink -f "$0")")"
 VENV="${MACARCHY_VENV:-$HOME/.local/share/macarchy/venv}"
 PY="$VENV/bin/python"
-[ -x "$PY" ] || {
-  echo "ws: venv missing at $VENV; run macarchy/install.sh (agent step)" >&2
-  exit 1
-}
+if [ ! -x "$PY" ]; then
+  echo "ws: building the venv at $VENV (one time)..." >&2
+  "$HERE/sync-venv" || exit 1
+fi
 export NEEDLE_TELEMETRY="${NEEDLE_TELEMETRY:-0}"
-exec "$PY" "$(dirname "$(readlink -f "$0")")/ws.py" "$@"
+exec "$PY" "$HERE/ws.py" "$@"

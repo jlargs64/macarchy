@@ -54,6 +54,8 @@ live session. With several Ghostty windows open that is a guess.
 home/.config/macarchy/agent/tools.py      the 13 tools; schemas for training AND runtime come from here
 home/.config/macarchy/agent/ws.py         runner
 home/.config/macarchy/agent/ws            launcher (uses ~/.local/share/macarchy/venv)
+home/.config/macarchy/agent/pyproject.toml  dependencies; uv.lock pins them, .python-version pins 3.11
+home/.config/macarchy/agent/sync-venv     `uv sync --locked` into that venv (install.sh, macarchy-update, ws)
 home/.config/macarchy/agent/finetune/     data generator, eval, how to train
 ~/.local/share/macarchy/models/workspace-agent.cact   the model (not in git; install.sh downloads or you copy it)
 ```

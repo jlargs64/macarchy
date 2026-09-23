@@ -183,6 +183,11 @@ if touched home/.config/theme/ && [ -e "$HOME/.config/theme/current" ]; then
   # re-applies the active theme, which reloads the bar, borders, Ghostty, nvim
   "$HOME/.config/theme/bin/theme-set" "$(basename "$(readlink "$HOME/.config/theme/current")")" >/dev/null && echo "  theme" && reloaded=1
 fi
+if { touched home/.config/macarchy/agent/pyproject.toml || touched home/.config/macarchy/agent/uv.lock; } &&
+  [ -x "$HOME/.local/share/macarchy/venv/bin/python" ]; then
+  # new ws dependencies; only for installs that already have the agent venv
+  "$REPO/home/.config/macarchy/agent/sync-venv" && echo "  ws venv" && reloaded=1
+fi
 [ "$reloaded" = 1 ] || echo "  nothing to reload"
 
 if touched install.sh; then

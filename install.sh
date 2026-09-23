@@ -158,7 +158,7 @@ macarchy_has wm && BREW_FORMULAE+=(jq koekeishiya/formulae/yabai koekeishiya/for
 macarchy_has bar && BREW_FORMULAE+=(jq FelixKratz/formulae/sketchybar) && BREW_CASKS+=(font-hack-nerd-font)
 macarchy_has borders && BREW_FORMULAE+=(FelixKratz/formulae/borders)
 macarchy_has keys && BREW_FORMULAE+=(fzf)
-macarchy_has agent && BREW_CASKS+=(handy)
+macarchy_has agent && BREW_FORMULAE+=(uv) && BREW_CASKS+=(handy)
 
 # Pinned release + sha256 for the per-app glyph font used by the SketchyBar
 # Space indicators. A moved tag or tampered asset is refused, not installed.
@@ -368,15 +368,13 @@ save_components() {
 # -----------------------------------------------------------------------
 step_agent() {
   macarchy_has agent || return 0
-  # Workspace agent (`ws`): a venv with the Needle runtime and the fine-tuned model.
-  local venv="$HOME/.local/share/macarchy/venv" models="$HOME/.local/share/macarchy/models"
+  # Workspace agent (`ws`): a uv-managed venv (agent/uv.lock) with the Needle
+  # runtime, plus the fine-tuned model.
+  local models="$HOME/.local/share/macarchy/models"
   local model="${MACARCHY_AGENT_MODEL:-$models/workspace-agent.cact}"
   echo "==> Workspace agent (ws): venv + model"
   run mkdir -p "$models"
-  if [ ! -x "$venv/bin/python" ]; then
-    run python3 -m venv "$venv"
-  fi
-  run "$venv/bin/pip" install -q cactus-needle
+  run "$REPO/home/.config/macarchy/agent/sync-venv"
   if [ ! -f "$model" ]; then
     if [ -n "${MACARCHY_AGENT_MODEL_URL:-}" ]; then
       run curl -fsSL "$MACARCHY_AGENT_MODEL_URL" -o "$model"
