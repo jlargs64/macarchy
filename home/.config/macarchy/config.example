@@ -10,6 +10,22 @@
 # One of the names under ~/.config/theme/themes/.
 MACARCHY_DEFAULT_THEME=retro-82
 
+# Apps theme-set restyles. "auto" runs every hook in ~/.config/theme/hooks/
+# and each one skips an app you don't have installed. Or list just the ones
+# you want: ghostty kitty alacritty iterm2 zellij neovim vscode zed
+# sketchybar borders wallpaper. Your own scripts in
+# ~/.config/macarchy/hooks.d/ always run too.
+MACARCHY_THEME_TARGETS=auto
+
+# Terminal the floating popups (theme-pick, macarchy-keys) open in.
+# One of: ghostty kitty alacritty iterm2 wezterm
+MACARCHY_TERMINAL=ghostty
+
+# Which parts of macarchy install.sh and macarchy-update manage, from:
+# themes wm bar borders keys agent. install.sh writes this line for you (it
+# asks on the first run); leave it unset to mean all of them.
+# MACARCHY_COMPONENTS="themes wm bar borders keys agent"
+
 # Font used by sketchybarrc and the space.sh plugin. Must be installed and
 # resolvable by SketchyBar as "<font>:<style>:<size>".
 MACARCHY_FONT="Hack Nerd Font"
