@@ -9,3 +9,10 @@
 ^/\.github
 ^/site
 ^/\.hallmark
+^/CHANGELOG\.md
+^/CONTRIBUTING\.md
+^/version\.txt
+^/release-please-config\.json
+^/\.release-please-manifest\.json
+^/\.shellcheckrc
+^/\.githooks

@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # Every tracked *.sh plus every tracked file with a sh/bash shebang.
+      # home/.local/bin holds symlinks to the real scripts, so skip links.
+      - name: shellcheck (errors only)
+        run: |
+          { git ls-files '*.sh'
+            git ls-files -z | xargs -0 grep -lIE '^#!.*\b(ba)?sh\b' 2>/dev/null || true
+          } | sort -u | while read -r f; do [ -L "$f" ] || echo "$f"; done > scripts.txt
+          echo "Checking $(wc -l < scripts.txt) scripts"
+          xargs shellcheck -S error < scripts.txt
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Byte-compile the agent
+        run: git ls-files -z '*.py' | xargs -0 python -m py_compile
+
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: actionlint
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color
+
+  # Pushes straight to main cannot be rejected after the fact, so this only
+  # warns. release-please ignores commits it cannot parse, which means a
+  # non-conventional commit is missing from the changelog.
+  commits:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Conventional Commit subjects
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then range="$AFTER~1..$AFTER"; else range="$BEFORE..$AFTER"; fi
+          re='^(feat|fix|perf|refactor|docs|style|test|build|ci|chore|revert)(\([a-z0-9._-]+\))?!?: .+'
+          bad=0
+          while IFS= read -r line; do
+            sha="${line%% *}"; subject="${line#* }"
+            case "$subject" in "Merge "*|"chore(main): release"*) continue ;; esac
+            if ! printf '%s' "$subject" | grep -qE "$re"; then
+              echo "::warning title=Not a Conventional Commit::$sha $subject (left out of the changelog)"
+              bad=1
+            fi
+          done < <(git log --format='%h %s' "$range")
+          [ "$bad" = 0 ] && echo "All commit subjects parse."
+          exit 0

@@ -1,0 +1,2 @@
+# macOS scripts; sourced files (themes/*/colors.sh) carry no shebang.
+shell=bash

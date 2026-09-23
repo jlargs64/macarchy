@@ -1,0 +1,31 @@
+name: Stale
+
+# Only issues waiting on the reporter go stale. Accepted work and PRs never
+# expire just for being old.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          only-issue-labels: "status: needs info"
+          days-before-issue-stale: 14
+          days-before-issue-close: 7
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          stale-issue-label: stale
+          close-issue-reason: not_planned
+          stale-issue-message: >
+            This issue is waiting on details from the reporter and has had no
+            reply for 14 days. It closes in 7 more days. Reply to keep it open.
+          close-issue-message: >
+            Closing for lack of a reply. Comment with the missing details and
+            it will be reopened.

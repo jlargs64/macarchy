@@ -1,0 +1,38 @@
+name: Theme request or theme bug
+description: Port a theme, add a new one, or fix colours in an existing one
+labels: ["type: theme", "status: needs triage"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Request
+      options:
+        - Port an Omarchy theme
+        - New theme (not in Omarchy)
+        - Fix colours in an existing theme
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Theme name
+      placeholder: rose-pine-moon
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Upstream palette or Omarchy theme URL
+  - type: dropdown
+    id: brightness
+    attributes:
+      label: Dark or light
+      description: Light themes need a manual check of bar and border colours before they ship.
+      options: [Dark, Light]
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: For a colour bug, name the app (Ghostty, Zellij, Neovim, SketchyBar, borders, wallpaper) and attach a screenshot.

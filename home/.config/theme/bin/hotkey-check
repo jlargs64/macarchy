@@ -26,7 +26,7 @@ keyname() { # macOS virtual keycode -> skhd key name
   case "$1" in
     0) echo a;; 1) echo s;; 2) echo d;; 3) echo f;; 4) echo h;; 5) echo g;; 6) echo z;; 7) echo x;; 8) echo c;; 9) echo v;;
     11) echo b;; 12) echo q;; 13) echo w;; 14) echo e;; 15) echo r;; 16) echo y;; 17) echo t;; 18) echo 1;; 19) echo 2;; 20) echo 3;;
-    21) echo 4;; 22) echo 6;; 23) echo 5;; 24) echo =;; 25) echo 9;; 26) echo 7;; 27) echo -;; 28) echo 8;; 29) echo 0;;
+    21) echo 4;; 22) echo 6;; 23) echo 5;; 24) echo "=";; 25) echo 9;; 26) echo 7;; 27) echo -;; 28) echo 8;; 29) echo 0;;
     31) echo o;; 32) echo u;; 34) echo i;; 35) echo p;; 36) echo return;; 37) echo l;; 38) echo j;; 40) echo k;; 45) echo n;; 46) echo m;;
     48) echo tab;; 49) echo space;; 51) echo delete;; 53) echo escape;; 96) echo f5;; 97) echo f6;; 98) echo f7;; 99) echo f3;;
     100) echo f8;; 101) echo f9;; 103) echo f11;; 109) echo f10;; 111) echo f12;; 118) echo f4;; 120) echo f2;; 122) echo f1;;

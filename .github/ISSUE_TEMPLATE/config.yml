@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: What macarchy does and does not cover
+    url: https://github.com/jlargs64/macarchy#scope
+    about: Other terminals, editors and browsers are out of scope. Check here before asking for one.
+  - name: Window management limits (yabai without SIP changes)
+    url: https://github.com/jlargs64/macarchy/blob/main/docs/window-management.md
+    about: Some yabai features need the scripting addition, which macarchy does not install.

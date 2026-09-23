@@ -1,0 +1,28 @@
+# Path -> label rules for pull requests (actions/labeler).
+"area: theming":
+  - changed-files:
+      - any-glob-to-any-file: ["home/.config/theme/**", "home/.config/raycast/**"]
+"type: theme":
+  - changed-files:
+      - any-glob-to-any-file: ["home/.config/theme/themes/**"]
+"area: windows":
+  - changed-files:
+      - any-glob-to-any-file: ["home/.config/yabai/**", "home/.config/skhd/**", "home/.config/borders/**"]
+"area: bar":
+  - changed-files:
+      - any-glob-to-any-file: ["home/.config/sketchybar/**"]
+"area: agent":
+  - changed-files:
+      - any-glob-to-any-file: ["home/.config/macarchy/agent/**", "home/.config/macarchy/swift/**", "install-agent.sh", "AGENT-INSTALL.md"]
+"area: install":
+  - changed-files:
+      - any-glob-to-any-file: ["install.sh", "install-agent.sh", "home/.config/macarchy/bin/macarchy-update", "home/.config/macarchy/lib.sh", "home/.config/macarchy/config.example"]
+"area: site":
+  - changed-files:
+      - any-glob-to-any-file: ["site/**"]
+"type: docs":
+  - changed-files:
+      - any-glob-to-any-file: ["README.md", "docs/**", "CONTRIBUTING.md"]
+"type: chore":
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", "release-please-config.json", ".release-please-manifest.json", ".shellcheckrc"]

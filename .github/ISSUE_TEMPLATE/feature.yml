@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest a change to how macarchy behaves
+labels: ["type: feature", "status: needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        macarchy is one person's config and themes only the tools it ships with.
+        Requests to theme another terminal, editor or browser are out of scope; see the README's Scope section.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do and what gets in the way. Describe the problem before the fix.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Hotkey, command, bar item, whatever you have in mind.
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Contribution
+      options:
+        - label: I would open a PR for this if it is accepted

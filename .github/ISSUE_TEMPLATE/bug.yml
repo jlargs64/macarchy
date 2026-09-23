@@ -1,0 +1,65 @@
+name: Bug report
+description: Something in macarchy is broken
+labels: ["type: bug", "status: needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One bug per issue. Run `macarchy-update` first; the bug may already be fixed.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Theming (theme-set, theme-port, theme-pick, wallpaper)
+        - Windows (yabai, skhd, borders, Spaces)
+        - Bar (SketchyBar)
+        - Agent (ws, voice, Handy)
+        - Install or update (install.sh, macarchy-update)
+        - Site
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+      placeholder: "`theme-set nord` changed Ghostty but the bar kept the old colours."
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. theme-set tokyo-night
+        2. theme-set nord
+        3. Bar is still tokyo-night
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Command output or logs
+      description: Terminal output, or the tail of ~/Library/Logs/macarchy-update.log. Pasted as code automatically.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: macarchy version
+      description: "`git -C <your macarchy checkout> describe --tags --always`"
+      placeholder: v0.1.0-3-g1437400
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and chip
+      placeholder: macOS 27.0, M3 Pro
+    validations:
+      required: true
+  - type: input
+    id: theme
+    attributes:
+      label: Active theme
+      description: "`basename \"$(dirname \"$(readlink ~/.config/theme/current/colors.sh)\")\"`"
