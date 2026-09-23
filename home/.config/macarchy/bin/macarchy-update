@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# macarchy-update — pull the latest macarchy and bring $HOME in line with it.
+#
+# Usage:
+#   macarchy-update             pull, relink, reload whatever changed
+#   macarchy-update --no-pull   skip the pull; just relink and reload everything
+#
+# 1. git pull --ff-only in the repo this script lives in (refuses to merge or
+#    clobber local edits; commit or stash them first)
+# 2. symlinks every git-tracked file under home/ into $HOME, the same way
+#    install.sh's step_link does, so files added upstream show up
+# 3. removes symlinks in $HOME that point at repo files deleted upstream
+# 4. reloads only the services whose config changed in the pull
+#
+# Edits to files that were already linked are live the moment git pulls them;
+# steps 2-4 cover what a bare pull does not. Brew packages are not touched: if
+# install.sh changed, it says so and you re-run ./install.sh yourself.
+set -euo pipefail
+
+# This file is reached through a symlink in $HOME, so resolve it back into the
+# repo: home/.config/macarchy/bin/macarchy-update -> four levels up.
+REPO="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../.." && pwd)"
+[ -d "$REPO/.git" ] || { echo "macarchy-update: $REPO is not a git checkout" >&2; exit 1; }
+
+PULL=1
+for arg in "$@"; do
+  case "$arg" in
+    --no-pull) PULL=0 ;;
+    -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
+    *) echo "macarchy-update: unknown argument: $arg" >&2; exit 2 ;;
+  esac
+done
+
+# 1. Pull
+old="$(git -C "$REPO" rev-parse HEAD)"
+if [ "$PULL" = 1 ]; then
+  echo "==> Pulling $REPO"
+  git -C "$REPO" pull --ff-only
+fi
+new="$(git -C "$REPO" rev-parse HEAD)"
+
+if [ "$PULL" = 1 ] && [ "$old" = "$new" ]; then
+  changed=""
+else
+  # --no-pull has no range to diff, so treat everything as changed
+  if [ "$PULL" = 1 ]; then
+    changed="$(git -C "$REPO" diff --name-only "$old" "$new")"
+  else
+    changed="$(git -C "$REPO" ls-files)"
+  fi
+fi
+
+# 2. Link. Only tracked files, so __pycache__ and other local junk under home/
+# never lands in $HOME.
+echo "==> Linking files into \$HOME"
+linked=0
+while IFS= read -r -d '' rel; do
+  src="$REPO/$rel"
+  target="$HOME/${rel#home/}"
+  [ "$(readlink "$target" 2>/dev/null)" = "$src" ] && continue
+  if [ -e "$target" ] && [ ! -L "$target" ]; then
+    echo "  skip: $target is a real file, not a link (move it aside to take the repo version)" >&2
+    continue
+  fi
+  mkdir -p "$(dirname "$target")"
+  ln -sfn "$src" "$target"
+  echo "  + ${target/#$HOME/~}"
+  linked=$((linked + 1))
+done < <(git -C "$REPO" ls-files -z home)
+
+# 3. Prune links to files that no longer exist in the repo
+pruned=0
+while IFS= read -r -d '' link; do
+  dest="$(readlink "$link")"
+  case "$dest" in
+    "$REPO"/home/*) [ -e "$dest" ] || [ -L "$dest" ] || { rm "$link"; echo "  - ${link/#$HOME/~}"; pruned=$((pruned + 1)); } ;;
+  esac
+done < <(find "$HOME/.config" "$HOME/.local/bin" -maxdepth 6 -type l -print0 2>/dev/null)
+echo "  $linked linked, $pruned pruned"
+
+# 4. Reload what changed
+touched() { grep -q "^$1" <<<"$changed"; }
+
+echo "==> Reloading"
+reloaded=0
+if touched home/.config/sketchybar/ && command -v sketchybar >/dev/null 2>&1; then
+  sketchybar --reload && echo "  sketchybar" && reloaded=1
+fi
+if touched home/.config/skhd/ && command -v skhd >/dev/null 2>&1; then
+  skhd --reload && echo "  skhd" && reloaded=1
+fi
+if touched home/.config/yabai/ && command -v yabai >/dev/null 2>&1; then
+  yabai --restart-service && echo "  yabai" && reloaded=1
+fi
+if touched home/.config/borders/ && command -v brew >/dev/null 2>&1; then
+  brew services restart borders >/dev/null && echo "  borders" && reloaded=1
+fi
+if touched home/.config/theme/ && [ -e "$HOME/.config/theme/current" ]; then
+  # re-applies the active theme, which reloads the bar, borders, Ghostty, nvim
+  "$HOME/.config/theme/bin/theme-set" "$(basename "$(readlink "$HOME/.config/theme/current")")" >/dev/null && echo "  theme" && reloaded=1
+fi
+[ "$reloaded" = 1 ] || echo "  nothing to reload"
+
+if touched install.sh; then
+  echo
+  echo "install.sh changed upstream (new packages or setup steps). Run: $REPO/install.sh"
+fi
+
+if [ "$PULL" = 1 ] && [ "$old" = "$new" ]; then
+  echo "Already up to date."
+else
+  echo "Updated ${old:0:7} -> ${new:0:7}"
+fi

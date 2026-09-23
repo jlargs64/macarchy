@@ -138,6 +138,11 @@ writes `~/.config/macarchy/config` from the example. It is idempotent, so
 re-running is safe. `./install.sh --dry-run` prints every action without changing
 anything.
 
+To stay current, run `macarchy-update`. It pulls (fast-forward only), links any
+files added upstream, removes links to files deleted upstream, and reloads only
+the services whose config changed. It tells you when `install.sh` itself changed
+and needs a re-run for new packages.
+
 To skip the packages/defaults and only link files:
 
 ```sh
@@ -303,8 +308,8 @@ home/                       mirrors $HOME; `stow -t "$HOME" home`
   .config/yabai/            tiling WM
   .config/borders/          focused-window border
   .config/raycast/scripts/  Raycast script commands
-  .config/macarchy/         config.example + lib.sh (the shared config loader) + bin/ (macarchy-keys)
-  .local/bin/                theme-* and macarchy-keys on PATH, symlinked into .config/theme/bin and .config/macarchy/bin
+  .config/macarchy/         config.example + lib.sh (the shared config loader) + bin/ (macarchy-keys, macarchy-update)
+  .local/bin/                theme-*, macarchy-keys and macarchy-update on PATH, symlinked into .config/theme/bin and .config/macarchy/bin
 install.sh                  installer (see above)
 docs/                        long-form documentation
 ```
