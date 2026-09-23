@@ -17,16 +17,23 @@ set -euo pipefail
 THEME_ROOT="$HOME/.config/theme"
 FIXED="$THEME_ROOT/wallpaper-current.jpg"
 
-[ -L "$THEME_ROOT/current" ] || { echo "no theme selected; run theme-set first" >&2; exit 1; }
+[ -L "$THEME_ROOT/current" ] || {
+  echo "no theme selected; run theme-set first" >&2
+  exit 1
+}
 cp -f "$THEME_ROOT/current/wallpaper.jpg" "$FIXED"
 
 if ! command -v yabai >/dev/null 2>&1; then
-  echo "theme-wallpaper-enroll: needs yabai to enumerate Spaces" >&2; exit 1
+  echo "theme-wallpaper-enroll: needs yabai to enumerate Spaces" >&2
+  exit 1
 fi
 
 count=$(yabai -m query --spaces 2>/dev/null | jq 'length')
 start=$(yabai -m query --spaces 2>/dev/null | jq -r '.[] | select(."has-focus") | .index')
-[ -z "$count" ] && { echo "could not query Spaces" >&2; exit 1; }
+[ -z "$count" ] && {
+  echo "could not query Spaces" >&2
+  exit 1
+}
 [ "$count" -gt 9 ] && count=9
 
 # macOS key codes for the digits 1..9
@@ -43,7 +50,8 @@ setwp() {
 echo "enrolling $count Space(s)..."
 i=1
 while [ "$i" -le "$count" ]; do
-  goto "$i"; setwp
+  goto "$i"
+  setwp
   echo "  Space $i"
   i=$((i + 1))
 done

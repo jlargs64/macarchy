@@ -10,8 +10,14 @@
 source "$HOME/.config/theme/current/colors.sh"
 
 # Snapshot the raw palette first, so deriving never reads an already-prefixed value.
-_bg=$BG; _fg=$FG; _muted=$MUTED
-_red=$RED; _green=$GREEN; _yellow=$YELLOW; _blue=$BLUE; _magenta=$MAGENTA
+_bg=$BG
+_fg=$FG
+_muted=$MUTED
+_red=$RED
+_green=$GREEN
+_yellow=$YELLOW
+_blue=$BLUE
+_magenta=$MAGENTA
 
 # Base palette
 export BLACK=0xff${_bg}

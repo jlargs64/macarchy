@@ -6,6 +6,12 @@
 # Source this after $NAME and $SENDER are set. It exits the plugin on hover
 # events so the caller never recomputes its value just for a mouse move.
 case "$SENDER" in
-  mouse.entered) sketchybar --set "$NAME" label.drawing=on;  exit 0 ;;
-  mouse.exited)  sketchybar --set "$NAME" label.drawing=off; exit 0 ;;
+  mouse.entered)
+    sketchybar --set "$NAME" label.drawing=on
+    exit 0
+    ;;
+  mouse.exited)
+    sketchybar --set "$NAME" label.drawing=off
+    exit 0
+    ;;
 esac

@@ -12,5 +12,5 @@ fi
 mkdir -p "$OUT"
 for name in overlay avstate; do
   echo "  swiftc $name.swift -> $OUT/macarchy-$name"
-  xcrun swiftc -O -o "$OUT/macarchy-$name" "$SRC/$name.swift"   # xcrun sets SDKROOT; a bare toolchain path cannot find the stdlib
+  xcrun swiftc -O -o "$OUT/macarchy-$name" "$SRC/$name.swift" # xcrun sets SDKROOT; a bare toolchain path cannot find the stdlib
 done

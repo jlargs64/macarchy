@@ -5,8 +5,8 @@ return {
     lazy = false,
     priority = 1000,
     opts = {
-			flavour = "latte",
-		},
+      flavour = "latte",
+    },
   },
   { "LazyVim/LazyVim", opts = { colorscheme = "catppuccin-latte" } },
 }

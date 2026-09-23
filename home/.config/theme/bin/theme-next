@@ -7,7 +7,10 @@ themes=()
 while IFS= read -r t; do
   themes+=("$t")
 done < <("$THEME_ROOT/bin/theme-list")
-[ "${#themes[@]}" -gt 0 ] || { echo "theme-next: no themes" >&2; exit 1; }
+[ "${#themes[@]}" -gt 0 ] || {
+  echo "theme-next: no themes" >&2
+  exit 1
+}
 
 cur=""
 link="$(readlink "$THEME_ROOT/current" 2>/dev/null || true)"
@@ -17,7 +20,7 @@ next="${themes[0]}"
 i=0
 while [ "$i" -lt "${#themes[@]}" ]; do
   if [ "${themes[$i]}" = "$cur" ]; then
-    next="${themes[$(( (i + 1) % ${#themes[@]} ))]}"
+    next="${themes[$(((i + 1) % ${#themes[@]}))]}"
     break
   fi
   i=$((i + 1))

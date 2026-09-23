@@ -20,7 +20,7 @@ if [ "$IS_MUTED" = "true" ] || [ "${VOLUME:-0}" -eq 0 ]; then
   COLOR="$FG_DIM"
 else
   case "$VOLUME" in
-    [6-9][0-9]|100) ICON="" ;;
+    [6-9][0-9] | 100) ICON="" ;;
     [3-5][0-9]) ICON="" ;;
     *) ICON="" ;;
   esac

@@ -35,8 +35,8 @@ FOCUSED=""
 if [ "${SENDER:-}" = "space_change" ] && [ -n "${SELECTED:-}" ]; then
   [ "$SELECTED" = "true" ] && FOCUSED="$SID" || FOCUSED="not-$SID"
 elif command -v yabai >/dev/null 2>&1; then
-  FOCUSED="$(yabai -m query --spaces 2>/dev/null \
-    | jq -r 'map(select(."has-focus" == true)) | .[0].index // empty' 2>/dev/null)"
+  FOCUSED="$(yabai -m query --spaces 2>/dev/null |
+    jq -r 'map(select(."has-focus" == true)) | .[0].index // empty' 2>/dev/null)"
 fi
 
 if [ -n "$FOCUSED" ]; then
@@ -49,8 +49,8 @@ fi
 # ----- does this space have windows? ---------------------------------------
 WINDOWS=""
 if command -v yabai >/dev/null 2>&1; then
-  WINDOWS="$(yabai -m query --windows --space "$SID" 2>/dev/null \
-    | jq -r 'map(select(."is-minimized" == false)) | length' 2>/dev/null)"
+  WINDOWS="$(yabai -m query --windows --space "$SID" 2>/dev/null |
+    jq -r 'map(select(."is-minimized" == false)) | length' 2>/dev/null)"
 fi
 
 # ----- render ---------------------------------------------------------------

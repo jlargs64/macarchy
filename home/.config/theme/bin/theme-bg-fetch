@@ -26,7 +26,10 @@ OMARCHY_FALLBACK_REF="quattro"
 RAW="https://raw.githubusercontent.com/$OMARCHY_OWNER/$OMARCHY_REV/themes"
 RAW_FALLBACK="https://raw.githubusercontent.com/$OMARCHY_OWNER/$OMARCHY_FALLBACK_REF/themes"
 
-command -v magick >/dev/null 2>&1 || { echo "theme-bg-fetch: needs imagemagick" >&2; exit 1; }
+command -v magick >/dev/null 2>&1 || {
+  echo "theme-bg-fetch: needs imagemagick" >&2
+  exit 1
+}
 
 # "<local theme>|<n>|<upstream theme>/<file>|<local name>"
 MAP="

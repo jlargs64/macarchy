@@ -270,4 +270,3 @@ defaults delete com.apple.dock expose-animation-duration
 defaults delete com.apple.dock workspaces-edge-delay
 killall Dock
 ```
-

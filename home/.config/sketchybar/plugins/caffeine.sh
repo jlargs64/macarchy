@@ -33,7 +33,7 @@ if [ "$SENDER" = "mouse.clicked" ]; then
     rm -f "$PIDFILE"
   else
     nohup caffeinate -dims >/dev/null 2>&1 &
-    echo $! > "$PIDFILE"
+    echo $! >"$PIDFILE"
   fi
 fi
 
