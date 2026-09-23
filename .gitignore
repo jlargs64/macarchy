@@ -3,6 +3,7 @@
 finetune/data.jsonl
 finetune/ckpt*/
 __pycache__/
+.venv/
 
 # launch notes, local only
 docs/launch.md

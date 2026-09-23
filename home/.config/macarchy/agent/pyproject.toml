@@ -1,0 +1,16 @@
+# The ws workspace agent. uv manages the Python and the venv:
+#   runtime   install.sh / macarchy-update run `uv sync --locked` into
+#             ~/.local/share/macarchy/venv (UV_PROJECT_ENVIRONMENT)
+#   training  `uv sync --group train` here, see finetune/README.md
+[project]
+name = "macarchy-ws"
+version = "0.0.0"
+description = "Natural-language yabai/SketchyBar control on an on-device Needle model"
+requires-python = ">=3.11"
+dependencies = ["cactus-needle>=3.0.4,<4"]
+
+[dependency-groups]
+train = ["cactus-needle[train]>=3.0.4,<4"]
+
+[tool.uv]
+package = false   # scripts, not an installable package

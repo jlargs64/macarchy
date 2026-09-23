@@ -55,6 +55,13 @@ repos:
         args: [--fix]
       - id: ruff-format
 
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.12.18
+    hooks:
+      - id: uv-lock   # uv.lock must match agent/pyproject.toml
+        args: [--project, home/.config/macarchy/agent]
+        files: ^home/\.config/macarchy/agent/(pyproject\.toml|uv\.lock)$
+
   # --- lua (neovim themes) ----------------------------------------------
   - repo: https://github.com/JohnnyMorganz/StyLua
     rev: v2.5.2
