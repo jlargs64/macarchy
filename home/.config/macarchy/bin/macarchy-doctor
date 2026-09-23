@@ -1,0 +1,262 @@
+#!/usr/bin/env bash
+# macarchy-doctor — check that macarchy is installed and running the way it should.
+#
+# Usage:
+#   macarchy-doctor           check everything you installed, print a fix for each problem
+#   macarchy-doctor --quiet   print only warnings and failures
+#
+# Read-only: it never changes a file, starts a service or installs a package.
+# Each problem comes with the command that fixes it.
+#
+# Checks only the components in MACARCHY_COMPONENTS. Exit status is 0 when
+# nothing failed (warnings allowed) and 1 when something did, so it also
+# works in scripts: `macarchy-doctor --quiet || open-an-issue`.
+# shellcheck disable=SC2088 # "~/..." in messages is display text, never expanded
+set -uo pipefail
+
+REPO="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../.." && pwd)"
+# shellcheck disable=SC1091
+. "$REPO/home/.config/macarchy/components.sh"
+REPO="$(macarchy_stable_repo "$REPO")"
+# shellcheck disable=SC1091
+. "$REPO/home/.config/macarchy/lib.sh"
+
+QUIET=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -q | --quiet) QUIET=1 ;;
+    -h | --help)
+      sed -n '2,13p' "$0"
+      exit 0
+      ;;
+    *)
+      echo "macarchy-doctor: unknown argument: $1" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+  C_OK=$'\033[32m' C_WARN=$'\033[33m' C_FAIL=$'\033[31m' C_DIM=$'\033[2m' C_OFF=$'\033[0m'
+else
+  C_OK="" C_WARN="" C_FAIL="" C_DIM="" C_OFF=""
+fi
+
+N_OK=0 N_WARN=0 N_FAIL=0
+ok() {
+  N_OK=$((N_OK + 1))
+  [ "$QUIET" = 1 ] || printf '  %sok%s    %s\n' "$C_OK" "$C_OFF" "$1"
+}
+# warn|fail <message> [fix command]
+warn() {
+  N_WARN=$((N_WARN + 1))
+  printf '  %swarn%s  %s\n' "$C_WARN" "$C_OFF" "$1"
+  [ -z "${2:-}" ] || printf '        %sfix: %s%s\n' "$C_DIM" "$2" "$C_OFF"
+}
+fail() {
+  N_FAIL=$((N_FAIL + 1))
+  printf '  %sFAIL%s  %s\n' "$C_FAIL" "$C_OFF" "$1"
+  [ -z "${2:-}" ] || printf '        %sfix: %s%s\n' "$C_DIM" "$2" "$C_OFF"
+}
+section() { [ "$QUIET" = 1 ] || printf '\n%s\n' "$1"; }
+
+have() { command -v "$1" >/dev/null 2>&1; }
+running() { pgrep -x -u "$(id -u)" "$1" >/dev/null 2>&1; }
+tilde() { echo "${1/#$HOME/~}"; }
+
+# need_cmd <command> <brew package> -- installed, or fail with the brew line
+need_cmd() {
+  if have "$1"; then ok "$1 installed"; else fail "$1 not installed" "brew install $2"; fi
+}
+
+# need_running <process> <what> <start command>
+need_running() {
+  if running "$1"; then ok "$2 running"; else fail "$2 not running" "$3"; fi
+}
+
+version() {
+  if [ -e "$REPO/.git" ]; then
+    git -C "$REPO" describe --tags --match 'v[0-9]*' --always 2>/dev/null
+  elif [ -f "$REPO/version.txt" ]; then
+    echo "v$(cat "$REPO/version.txt")"
+  else
+    echo unknown
+  fi
+}
+
+if [ -e "$REPO/.git" ]; then how="git checkout $(tilde "$REPO")"; else how="$(tilde "$REPO")"; fi
+case "$REPO" in */opt/macarchy/libexec) how="Homebrew" ;; esac
+[ "$QUIET" = 1 ] || echo "macarchy-doctor: $(version) ($how)"
+[ "$QUIET" = 1 ] || echo "components: ${MACARCHY_COMPONENTS:-$MACARCHY_ALL_COMPONENTS}"
+
+# -----------------------------------------------------------------------
+section "System"
+if have sw_vers; then
+  os="$(sw_vers -productVersion 2>/dev/null)"
+  arch="$(uname -m)"
+  [ "$(sysctl -in hw.optional.arm64 2>/dev/null)" = 1 ] && arch=arm64
+  ok "macOS $os on $arch"
+  if [ "$(sysctl -in sysctl.proc_translated 2>/dev/null)" = 1 ]; then
+    warn "this shell runs under Rosetta (x86_64), so arm64 Homebrew refuses to install" "open your terminal without 'Open using Rosetta', or prefix brew with: arch -arm64"
+  fi
+else
+  fail "not macOS ($(uname -s)); macarchy only runs on macOS"
+fi
+if have brew; then ok "Homebrew at $(command -v brew)"; else fail "Homebrew not found" 'install from https://brew.sh, then re-run ./install.sh'; fi
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ok "~/.local/bin is on PATH" ;;
+  *) fail "~/.local/bin is not on PATH, so theme-set, macarchy-update and friends are not found" "echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.zprofile" ;;
+esac
+
+# -----------------------------------------------------------------------
+section "Install"
+if [ -f "$HOME/.config/macarchy/config" ]; then
+  ok "config at ~/.config/macarchy/config"
+else
+  warn "no ~/.config/macarchy/config; built-in defaults apply" "cp $(tilde "$REPO")/home/.config/macarchy/config.example ~/.config/macarchy/config"
+fi
+if [ -e "$REPO/.git" ]; then
+  dirty="$(git -C "$REPO" status --porcelain --untracked-files=no 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$dirty" = 0 ]; then
+    ok "checkout has no local edits"
+  else
+    warn "checkout has $dirty locally edited file(s); macarchy-update refuses to pull over them" "git -C $(tilde "$REPO") stash"
+  fi
+fi
+
+# Every repo file of an installed component should be a link to the repo.
+missing="" blocked="" elsewhere="" n_missing=0 n_blocked=0 n_elsewhere=0 n_good=0
+while IFS= read -r rel; do
+  rel="${rel#home/}"
+  macarchy_has "$(macarchy_component_of "$rel")" || continue
+  target="$HOME/$rel"
+  if macarchy_is_our_link "$target" "$REPO"; then
+    n_good=$((n_good + 1))
+  elif [ -L "$target" ]; then
+    n_elsewhere=$((n_elsewhere + 1))
+    elsewhere="$elsewhere $(tilde "$target")"
+  elif [ -e "$target" ]; then
+    n_blocked=$((n_blocked + 1))
+    blocked="$blocked $(tilde "$target")"
+  else
+    n_missing=$((n_missing + 1))
+    missing="$missing $(tilde "$target")"
+  fi
+done < <(macarchy_repo_files "$REPO")
+
+first5() { echo "$1" | tr ' ' '\n' | sed '/^$/d' | head -5 | tr '\n' ' '; }
+[ "$n_good" -gt 0 ] && ok "$n_good files linked into \$HOME"
+[ "$n_missing" = 0 ] || fail "$n_missing file(s) not linked: $(first5 "$missing")" "macarchy-update --no-pull"
+[ "$n_blocked" = 0 ] || warn "$n_blocked real file(s) sit where a link should be, so the repo version is ignored: $(first5 "$blocked")" "move each aside (mv FILE FILE.mine), then macarchy-update --no-pull"
+[ "$n_elsewhere" = 0 ] || warn "$n_elsewhere link(s) point somewhere other than this repo (another checkout or dotfiles manager?): $(first5 "$elsewhere")" "remove them, then macarchy-update --no-pull"
+
+stale=0
+while IFS= read -r -d '' link; do
+  macarchy_is_our_link "$link" "$REPO" || continue
+  [ -e "$link" ] || stale=$((stale + 1))
+done < <(find "$HOME/.config" "$HOME/.local/bin" -maxdepth 6 -type l -print0 2>/dev/null)
+if [ "$stale" = 0 ]; then ok "no dangling links into the repo"; else warn "$stale dangling link(s) into the repo (files deleted upstream)" "macarchy-update --no-pull"; fi
+
+plist="$HOME/Library/LaunchAgents/macarchy.update.plist"
+loaded=0
+launchctl print "gui/$(id -u)/macarchy.update" >/dev/null 2>&1 && loaded=1
+if [ "$MACARCHY_UPDATE_AT_LOGIN" = true ]; then
+  if [ -f "$plist" ] && [ "$loaded" = 1 ]; then
+    ok "update-at-login agent loaded"
+  else
+    warn "MACARCHY_UPDATE_AT_LOGIN=true but the login agent is not loaded" "macarchy-update --login on"
+  fi
+elif [ -f "$plist" ] || [ "$loaded" = 1 ]; then
+  warn "MACARCHY_UPDATE_AT_LOGIN=false but the login agent is still installed" "macarchy-update --login off"
+fi
+
+# -----------------------------------------------------------------------
+if macarchy_has themes; then
+  section "Themes"
+  current="$HOME/.config/theme/current"
+  if [ -L "$current" ] && [ -f "$current/colors.sh" ]; then
+    name="$(basename "$(readlink "$current")")"
+    ok "active theme: $name"
+    for f in colors.sh ghostty zellij.kdl neovim.lua borders; do
+      [ -f "$current/$f" ] || fail "theme $name has no $f" "theme-set $MACARCHY_DEFAULT_THEME"
+    done
+  elif [ -L "$current" ]; then
+    fail "~/.config/theme/current points at a theme that does not exist ($(readlink "$current"))" "theme-set $MACARCHY_DEFAULT_THEME"
+  else
+    fail "no active theme (~/.config/theme/current missing)" "theme-set $MACARCHY_DEFAULT_THEME"
+  fi
+  if have magick || have convert; then ok "imagemagick installed"; else fail "imagemagick not installed; wallpapers cannot be generated" "brew install imagemagick"; fi
+  need_cmd fzf fzf
+  n_bg="$(find "$HOME/.config/theme/themes" -path '*/backgrounds/*' -type f 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$n_bg" -gt 0 ]; then ok "$n_bg theme backgrounds fetched"; else warn "no theme backgrounds fetched; wallpapers fall back to flat colour" "theme-bg-fetch"; fi
+fi
+
+if macarchy_has wm; then
+  section "Window management"
+  need_cmd yabai koekeishiya/formulae/yabai
+  need_cmd skhd koekeishiya/formulae/skhd
+  if running yabai; then
+    if yabai -m query --displays >/dev/null 2>&1; then
+      ok "yabai running and answering"
+    else
+      fail "yabai is running but not answering queries, usually missing Accessibility" "System Settings > Privacy & Security > Accessibility: enable $(command -v yabai || echo yabai), then yabai --restart-service"
+    fi
+  else
+    fail "yabai not running" "yabai --start-service"
+  fi
+  need_running skhd skhd "skhd --start-service (and enable it under Privacy & Security > Accessibility)"
+  if [ "$(defaults read com.apple.dock mru-spaces 2>/dev/null)" = 0 ]; then
+    ok "Spaces keep their order (mru-spaces off)"
+  else
+    warn "macOS reorders Spaces by recent use, so space numbers drift" "defaults write com.apple.dock mru-spaces -bool false && killall Dock"
+  fi
+fi
+
+if macarchy_has bar; then
+  section "Status bar"
+  need_cmd sketchybar FelixKratz/formulae/sketchybar
+  need_running sketchybar SketchyBar "brew services start sketchybar"
+  font_file() { find "$HOME/Library/Fonts" /Library/Fonts -maxdepth 1 -iname "$1" 2>/dev/null | grep -q .; }
+  font_glob="*$(echo "$MACARCHY_FONT" | sed 's/ Nerd Font//; s/ /*/g')*Nerd*"
+  if font_file "$font_glob"; then ok "font $MACARCHY_FONT installed"; else fail "font $MACARCHY_FONT not found; bar glyphs render as boxes" "brew install --cask font-hack-nerd-font"; fi
+  if [ -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ]; then ok "sketchybar-app-font installed"; else warn "sketchybar-app-font missing; Space indicators show no app icons" "re-run ./install.sh --only bar"; fi
+fi
+
+if macarchy_has borders; then
+  section "Borders"
+  need_cmd borders FelixKratz/formulae/borders
+  need_running borders JankyBorders "brew services start borders"
+fi
+
+if macarchy_has keys; then
+  section "Hotkey popup"
+  need_cmd fzf fzf
+  case "$MACARCHY_TERMINAL" in
+    ghostty) app=Ghostty ;; kitty) app=kitty ;; alacritty) app=Alacritty ;; iterm2) app=iTerm ;; wezterm) app=WezTerm ;; *) app="" ;;
+  esac
+  if [ -n "$app" ] && [ -d "/Applications/$app.app" ]; then
+    ok "popup terminal $MACARCHY_TERMINAL installed"
+  else
+    fail "MACARCHY_TERMINAL=$MACARCHY_TERMINAL but /Applications/${app:-?}.app not found; popups cannot open" "set MACARCHY_TERMINAL in ~/.config/macarchy/config to a terminal you have"
+  fi
+fi
+
+if macarchy_has agent; then
+  section "Workspace agent"
+  need_cmd uv uv
+  if [ -x "$HOME/.local/share/macarchy/venv/bin/python" ]; then ok "ws venv built"; else fail "ws venv missing" "$(tilde "$REPO")/home/.config/macarchy/agent/sync-venv"; fi
+  if [ -f "$MACARCHY_AGENT_MODEL" ]; then ok "fine-tuned model present"; else warn "no fine-tuned model at $(tilde "$MACARCHY_AGENT_MODEL"); ws uses base Needle 3 (weaker)" "see home/.config/macarchy/agent/finetune/README.md"; fi
+  if [ -x "$MACARCHY_HANDY" ]; then ok "Handy installed"; else warn "Handy not found; ws --voice cannot transcribe" "brew install --cask handy"; fi
+  if [ -x "$HOME/.local/share/macarchy/bin/macarchy-overlay" ]; then ok "Swift helpers built"; else warn "Swift helpers not built; ws --voice falls back to notifications" "xcode-select --install; $(tilde "$REPO")/home/.config/macarchy/swift/build"; fi
+fi
+
+# -----------------------------------------------------------------------
+echo
+summary="$N_OK ok, $N_WARN warning(s), $N_FAIL failure(s)"
+if [ "$N_FAIL" -gt 0 ]; then
+  echo "${C_FAIL}$summary${C_OFF}"
+  exit 1
+fi
+[ "$QUIET" = 1 ] && [ "$N_WARN" = 0 ] && exit 0
+echo "${C_OK}$summary${C_OFF}"

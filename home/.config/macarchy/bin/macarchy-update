@@ -23,10 +23,22 @@ set -euo pipefail
 # This file is reached through a symlink in $HOME, so resolve it back into the
 # repo: home/.config/macarchy/bin/macarchy-update -> four levels up.
 REPO="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../.." && pwd)"
-[ -d "$REPO/.git" ] || {
-  echo "macarchy-update: $REPO is not a git checkout" >&2
-  exit 1
-}
+# shellcheck disable=SC1091
+. "$REPO/home/.config/macarchy/components.sh"
+REPO="$(macarchy_stable_repo "$REPO")"
+
+# A Homebrew install has no .git: `brew upgrade macarchy` replaces the files,
+# and this script only relinks. Anything else without .git is a mistake.
+BREW_INSTALL=0
+if [ ! -e "$REPO/.git" ]; then
+  case "$REPO" in
+    */opt/macarchy/libexec) BREW_INSTALL=1 ;;
+    *)
+      echo "macarchy-update: $REPO is not a git checkout" >&2
+      exit 1
+      ;;
+  esac
+fi
 
 LABEL=macarchy.update
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
@@ -96,10 +108,15 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+if [ "$BREW_INSTALL" = 1 ] && [ "$PULL" = 1 ]; then
+  echo "macarchy-update: installed with Homebrew; relinking only (brew upgrade macarchy fetches new versions)"
+  PULL=0
+fi
+
 if [ "$AT_LOGIN" = 1 ]; then
   echo "--- $(date '+%F %T')"
   # Wi-Fi is often still joining at login; give it up to a minute.
-  for _ in $(seq 30); do
+  [ "$BREW_INSTALL" = 1 ] || for _ in $(seq 30); do
     git -C "$REPO" ls-remote -q origin HEAD >/dev/null 2>&1 && break
     sleep 2
   done
@@ -107,12 +124,13 @@ if [ "$AT_LOGIN" = 1 ]; then
 fi
 
 # 1. Pull
-old="$(git -C "$REPO" rev-parse HEAD)"
+rev() { if [ "$BREW_INSTALL" = 1 ]; then cat "$REPO/version.txt"; else git -C "$REPO" rev-parse HEAD; fi; }
+old="$(rev)"
 if [ "$PULL" = 1 ]; then
   echo "==> Pulling $REPO"
   git -C "$REPO" pull --ff-only
 fi
-new="$(git -C "$REPO" rev-parse HEAD)"
+new="$(rev)"
 
 if [ "$PULL" = 1 ] && [ "$old" = "$new" ]; then
   changed=""
@@ -121,7 +139,7 @@ else
   if [ "$PULL" = 1 ]; then
     changed="$(git -C "$REPO" diff --name-only "$old" "$new")"
   else
-    changed="$(git -C "$REPO" ls-files)"
+    changed="$(macarchy_repo_files "$REPO")"
   fi
 fi
 
@@ -129,11 +147,9 @@ fi
 # never lands in $HOME, and only those of the components you picked.
 # shellcheck disable=SC1091
 . "$REPO/home/.config/macarchy/lib.sh"
-# shellcheck disable=SC1091
-. "$REPO/home/.config/macarchy/components.sh"
 echo "==> Linking files into \$HOME (${MACARCHY_COMPONENTS:-$MACARCHY_ALL_COMPONENTS})"
 linked=0
-while IFS= read -r -d '' rel; do
+while IFS= read -r rel; do
   macarchy_has "$(macarchy_component_of "${rel#home/}")" || continue
   src="$REPO/$rel"
   target="$HOME/${rel#home/}"
@@ -146,19 +162,16 @@ while IFS= read -r -d '' rel; do
   ln -sfn "$src" "$target"
   echo "  + ${target/#$HOME/~}"
   linked=$((linked + 1))
-done < <(git -C "$REPO" ls-files -z home)
+done < <(macarchy_repo_files "$REPO")
 
 # 3. Prune links to files that no longer exist in the repo
 pruned=0
 while IFS= read -r -d '' link; do
-  dest="$(readlink "$link")"
-  case "$dest" in
-    "$REPO"/home/*) [ -e "$dest" ] || [ -L "$dest" ] || {
-      rm "$link"
-      echo "  - ${link/#$HOME/~}"
-      pruned=$((pruned + 1))
-    } ;;
-  esac
+  macarchy_is_our_link "$link" "$REPO" || continue
+  [ -e "$link" ] && continue
+  rm "$link"
+  echo "  - ${link/#$HOME/~}"
+  pruned=$((pruned + 1))
 done < <(find "$HOME/.config" "$HOME/.local/bin" -maxdepth 6 -type l -print0 2>/dev/null)
 echo "  $linked linked, $pruned pruned"
 
@@ -199,5 +212,5 @@ if [ "$PULL" = 1 ] && [ "$old" = "$new" ]; then
   echo "Already up to date."
 else
   echo "Updated ${old:0:7} -> ${new:0:7}"
-  [ "$AT_LOGIN" = 1 ] && notify "Updated to ${new:0:7}"
+  if [ "$AT_LOGIN" = 1 ]; then notify "Updated to ${new:0:7}"; fi
 fi

@@ -81,3 +81,43 @@ macarchy_resolve_components() {
   done
   echo "${out# }"
 }
+
+# macarchy_stable_repo <dir> -> the path links into $HOME should use.
+# A Homebrew install lives in .../Cellar/macarchy/<version>/libexec, which
+# disappears on the next `brew upgrade`; its opt/ symlink does not, so links
+# go through that instead. A git checkout is returned unchanged.
+macarchy_stable_repo() {
+  case "$1" in
+    */Cellar/macarchy/*/libexec) echo "${1%%/Cellar/*}/opt/macarchy/libexec" ;;
+    *) echo "$1" ;;
+  esac
+}
+
+# macarchy_repo_files <repo> -> files under home/, one per line, relative to
+# <repo>. Tracked files in a git checkout (local junk such as __pycache__
+# never lands in $HOME); everything in a tarball or Homebrew install.
+macarchy_repo_files() {
+  if [ -e "$1/.git" ]; then
+    git -C "$1" ls-files home
+  else
+    (cd "$1" && find home \( -type f -o -type l \) -print | LC_ALL=C sort)
+  fi
+}
+
+# macarchy_is_our_link <path> <repo> -- is <path> a symlink into <repo>/home?
+# Checks both the given repo path and its fully resolved form, so a link made
+# through Homebrew's opt/ path and one made through Cellar/ both count.
+macarchy_is_our_link() {
+  local dest real
+  [ -L "$1" ] || return 1
+  dest="$(readlink "$1")"
+  case "$dest" in "$2"/home/*) return 0 ;; esac
+  # the resolved repo path is the same for every call; work it out once
+  if [ "${_MACARCHY_REAL_OF:-}" != "$2" ]; then
+    _MACARCHY_REAL="$(cd "$2" 2>/dev/null && pwd -P)" || return 1
+    _MACARCHY_REAL_OF="$2"
+  fi
+  real="$_MACARCHY_REAL"
+  case "$dest" in "$real"/home/*) return 0 ;; esac
+  return 1
+}
