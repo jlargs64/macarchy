@@ -199,5 +199,5 @@ if [ "$PULL" = 1 ] && [ "$old" = "$new" ]; then
   echo "Already up to date."
 else
   echo "Updated ${old:0:7} -> ${new:0:7}"
-  [ "$AT_LOGIN" = 1 ] && notify "Updated to ${new:0:7}"
+  if [ "$AT_LOGIN" = 1 ]; then notify "Updated to ${new:0:7}"; fi
 fi
