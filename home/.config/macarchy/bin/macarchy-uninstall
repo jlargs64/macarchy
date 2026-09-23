@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+# macarchy-uninstall — take macarchy back out of $HOME.
+#
+# Usage:
+#   macarchy-uninstall             remove every link, restore what they replaced
+#   macarchy-uninstall --dry-run   print what would happen, change nothing
+#   macarchy-uninstall --services  also stop yabai, skhd, SketchyBar and JankyBorders
+#   macarchy-uninstall --brew      also stop them and brew uninstall what install.sh added
+#   macarchy-uninstall --defaults  also delete the Dock/Spaces defaults install.sh wrote
+#   macarchy-uninstall --purge     also delete your config, generated files and the ws venv
+#   macarchy-uninstall --all       every option above
+#   macarchy-uninstall --yes       do not ask first (needed when not run in a terminal)
+#
+# Always:
+#   - removes every symlink in ~/.config and ~/.local/bin that points into
+#     this repo, and puts back any <file>.pre-macarchy install.sh moved aside
+#   - removes the theme links install.sh made in your Zellij and Neovim configs
+#   - removes the update-at-login LaunchAgent
+#   - deletes directories that are empty once the links are gone
+# Leaves the repo itself alone; delete it yourself afterwards if you want.
+# Your ~/.config/macarchy/config survives unless you pass --purge.
+set -euo pipefail
+
+REPO="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../../../.." && pwd)"
+# shellcheck disable=SC1091
+. "$REPO/home/.config/macarchy/components.sh"
+REPO="$(macarchy_stable_repo "$REPO")"
+
+DRY_RUN=0 YES=0 SERVICES=0 BREW=0 DEFAULTS=0 PURGE=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -n | --dry-run) DRY_RUN=1 ;;
+    -y | --yes) YES=1 ;;
+    --services) SERVICES=1 ;;
+    --brew) BREW=1 SERVICES=1 ;;
+    --defaults) DEFAULTS=1 ;;
+    --purge) PURGE=1 ;;
+    --all) SERVICES=1 BREW=1 DEFAULTS=1 PURGE=1 ;;
+    -h | --help)
+      sed -n '2,21p' "$0"
+      exit 0
+      ;;
+    *)
+      echo "macarchy-uninstall: unknown argument: $1" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+run() {
+  echo "+ $*"
+  [ "$DRY_RUN" = 1 ] || "$@"
+}
+tilde() { echo "${1/#$HOME/~}"; }
+
+if [ "$DRY_RUN" = 0 ] && [ "$YES" = 0 ]; then
+  if [ ! -t 0 ]; then
+    echo "macarchy-uninstall: not a terminal; pass --yes to confirm, or --dry-run to preview" >&2
+    exit 2
+  fi
+  extra=""
+  [ "$SERVICES" = 1 ] && extra="$extra, stop services"
+  [ "$BREW" = 1 ] && extra="$extra, brew uninstall packages"
+  [ "$DEFAULTS" = 1 ] && extra="$extra, reset Dock defaults"
+  [ "$PURGE" = 1 ] && extra="$extra, DELETE config and generated files"
+  read -r -p "Remove macarchy's links from $(tilde "$HOME")$extra? [y/N] " ans || ans=""
+  case "$ans" in [yY]*) ;; *)
+    echo "nothing changed"
+    exit 1
+    ;;
+  esac
+fi
+
+# 1. Services first, while their binaries and configs still exist.
+if [ "$SERVICES" = 1 ]; then
+  echo "==> Stopping services"
+  command -v yabai >/dev/null 2>&1 && run yabai --stop-service || true
+  command -v skhd >/dev/null 2>&1 && run skhd --stop-service || true
+  if command -v brew >/dev/null 2>&1; then
+    for s in sketchybar borders; do
+      brew services list 2>/dev/null | grep -q "^$s " && run brew services stop "$s" || true
+    done
+  fi
+fi
+
+# 2. The login agent
+echo "==> Update-at-login agent"
+plist="$HOME/Library/LaunchAgents/macarchy.update.plist"
+if [ "$DRY_RUN" = 1 ]; then
+  echo "+ launchctl bootout gui/$(id -u)/macarchy.update"
+else
+  launchctl bootout "gui/$(id -u)/macarchy.update" 2>/dev/null || true
+fi
+[ -f "$plist" ] && run rm "$plist"
+
+# 3. Links into the repo, wherever they are. Found by walking $HOME rather than
+# the repo's file list, so links to files deleted upstream go too.
+echo "==> Removing links into $(tilde "$REPO")"
+removed=0 restored=0 dirs=""
+while IFS= read -r -d '' link; do
+  macarchy_is_our_link "$link" "$REPO" || continue
+  run rm "$link"
+  removed=$((removed + 1))
+  if [ -e "$link.pre-macarchy" ] || [ -L "$link.pre-macarchy" ]; then
+    run mv "$link.pre-macarchy" "$link"
+    restored=$((restored + 1))
+  fi
+  dirs="$dirs$(dirname "$link")"$'\n'
+done < <(find "$HOME/.config" "$HOME/.local/bin" -type l -print0 2>/dev/null)
+
+# Links install.sh made that point at ~/.config/theme/current, not the repo.
+for link in "$HOME/.config/theme/current" \
+  "$HOME/.config/zellij/themes/current.kdl" \
+  "$HOME/.config/nvim/lua/plugins/theme.lua"; do
+  case "$(readlink "$link" 2>/dev/null)" in
+    "$HOME"/.config/theme/*)
+      run rm "$link"
+      removed=$((removed + 1))
+      ;;
+  esac
+done
+echo "  $removed removed, $restored restored from .pre-macarchy"
+
+# 4. Directories left empty. Deepest first, and never above ~/.config or
+# ~/.local/bin themselves.
+if [ -n "$dirs" ]; then
+  while IFS= read -r d; do
+    while [ -n "$d" ] && [ "$d" != "$HOME/.config" ] && [ "$d" != "$HOME/.local/bin" ] && [ "$d" != "$HOME" ]; do
+      if [ "$DRY_RUN" = 0 ]; then
+        rmdir "$d" 2>/dev/null || break
+      fi
+      d="$(dirname "$d")"
+    done
+  done < <(printf '%s' "$dirs" | LC_ALL=C sort -ru)
+fi
+
+# 5. Dock defaults install.sh wrote (step_defaults)
+if [ "$DEFAULTS" = 1 ]; then
+  echo "==> Resetting Dock and window defaults"
+  run defaults delete com.apple.dock expose-animation-duration 2>/dev/null || true
+  run defaults delete com.apple.dock workspaces-edge-delay 2>/dev/null || true
+  run defaults delete com.apple.dock mru-spaces 2>/dev/null || true
+  run defaults delete NSGlobalDomain NSWindowResizeTime 2>/dev/null || true
+  run killall Dock || true
+fi
+
+# 6. Brew packages install.sh added. Taps' formulae and the fonts only; jq,
+# fzf, imagemagick and uv are common enough that other tools may need them.
+if [ "$BREW" = 1 ] && command -v brew >/dev/null 2>&1; then
+  echo "==> Homebrew packages"
+  for f in yabai skhd sketchybar borders; do
+    brew list --formula "$f" >/dev/null 2>&1 && run brew uninstall --formula "$f" || true
+  done
+  for c in handy font-hack-nerd-font; do
+    brew list --cask "$c" >/dev/null 2>&1 && run brew uninstall --cask "$c" || true
+  done
+  [ -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ] && run rm "$HOME/Library/Fonts/sketchybar-app-font.ttf"
+  echo "  kept jq, fzf, imagemagick and uv (other tools use them): brew uninstall them yourself if not"
+fi
+
+# 7. Everything macarchy generated or you configured
+if [ "$PURGE" = 1 ]; then
+  echo "==> Purging config and generated files"
+  for d in "$HOME/.config/macarchy" "$HOME/.config/theme" "$HOME/.local/share/macarchy"; do
+    [ -e "$d" ] && run rm -rf "$d"
+  done
+  [ -f "$HOME/.config/raycast/scripts/theme-set.sh" ] && run rm "$HOME/.config/raycast/scripts/theme-set.sh"
+  [ -f "$HOME/Library/Logs/macarchy-update.log" ] && run rm "$HOME/Library/Logs/macarchy-update.log"
+fi
+
+echo
+[ "$DRY_RUN" = 1 ] && echo "dry run: nothing above actually ran"
+echo 'macarchy is out of $HOME.'
+[ "$SERVICES" = 1 ] || echo "  yabai, skhd, SketchyBar and JankyBorders keep running until logout: --services stops them"
+[ "$PURGE" = 1 ] || echo "  kept ~/.config/macarchy/config and generated theme files: --purge deletes them"
+echo "  remove the include lines you added to your Ghostty, kitty, Alacritty, Zellij or Zed configs"
+echo "  the repo is still at $(tilde "$REPO")"
