@@ -13,7 +13,18 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools import APP_ALIASES, APPS, DIR_ALIASES, DIRECTIONS, SCHEMAS, SPACES, SYSTEM, THEME_ALIASES, THEMES
+from tools import (
+    APP_ALIASES,
+    APPS,
+    BG_ALIASES,
+    DIR_ALIASES,
+    DIRECTIONS,
+    SCHEMAS,
+    SPACES,
+    SYSTEM,
+    THEME_ALIASES,
+    THEMES,
+)
 
 R = random.Random(42)
 NUM_WORDS = {
@@ -30,7 +41,7 @@ NUM_WORDS = {
 PREFIX = ["", "", "", "", "please ", "hey, ", "ok ", "yo ", "quick, "]
 VERB_PREFIX = ["can you ", "could you ", "go ahead and ", "would you ", "i need you to "]
 IMPERATIVE = re.compile(
-    r"^(focus|switch|go|bring|show|jump|pull|give|put|open|launch|start|fire|boot|run|move|send|stick|throw|take|shove|push|swap|warp|shift|float|make|untile|toggle|pop|let|unfloat|tile|fullscreen|full|zoom|maximi[sz]e|unzoom|flip|rotate|change|stack|set|use|disable|turn|stop|balance|equalize|even|resize|cycle|apply|split|add|create|spin|try|flip)\b"
+    r"^(focus|switch|go|bring|show|jump|pull|give|put|open|launch|start|fire|boot|run|move|send|stick|throw|take|shove|push|swap|warp|shift|float|make|untile|toggle|pop|let|unfloat|tile|fullscreen|full|zoom|maximi[sz]e|unzoom|flip|rotate|change|stack|set|use|disable|turn|stop|balance|equalize|even|resize|cycle|apply|split|add|create|spin|try|flip|center|centre|uncenter|pick|choose|browse)\b"
 )
 ORD = {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "fifth", 6: "sixth", 7: "seventh", 8: "eighth", 9: "ninth"}
 SUFFIX = ["", "", "", "", " please", " for me", " now", " thanks", " real quick"]
@@ -295,6 +306,44 @@ def g_toggle_window():
     return ex(q, f"toggle_window state={s!r} from '{q}'", [{"name": "toggle_window", "arguments": {"state": s}}])
 
 
+def g_center_window():
+    if R.random() < 0.5:
+        subj = R.choice(["this window", "this", "the window", "the current window", "it", "the focused window"])
+        q = R.choice(
+            [
+                f"center {subj}",
+                f"centre {subj}",
+                f"put {subj} in the middle",
+                f"center {subj} on the screen",
+                f"uncenter {subj}",
+                f"toggle centering on {subj}",
+                f"give {subj} the centered column",
+                f"stop centering {subj}",
+                f"put {subj} back in its tile",
+                "center",
+                "toggle center",
+                "centered column",
+            ]
+        )
+        return ex(
+            q, f"center_window from '{q}'; no app -> focused window", [{"name": "center_window", "arguments": {}}]
+        )
+    a, app = app_mention(R.choice(APPS))
+    q = R.choice(
+        [
+            f"center {a}",
+            f"centre {a}",
+            f"put {a} in the middle",
+            f"center {a} on the screen",
+            f"give {a} the centered column",
+            f"{a} in the middle",
+            f"uncenter {a}",
+            f"put {a} back in its tile",
+        ]
+    )
+    return ex(q, f"center_window app={app!r} from '{a}'", [{"name": "center_window", "arguments": {"app": app}}])
+
+
 def g_set_layout():
     l = R.choice(["bsp", "stack", "float"])
     q = {
@@ -411,6 +460,128 @@ def g_next_theme():
         ]
     )
     return ex(q, "next_theme; no specific theme named", [{"name": "next_theme", "arguments": {}}])
+
+
+BG_NAMES = [
+    "mountains",
+    "forest",
+    "ocean",
+    "night",
+    "city",
+    "desert",
+    "lake",
+    "nebula",
+    "waves",
+    "sunset",
+    "dunes",
+    "canyon",
+    "misty",
+    "river",
+    "snow",
+    "coast",
+    "meadow",
+    "moon",
+    "storm",
+    "fog",
+]
+
+
+def g_set_background():
+    bg = R.choice(["background", "background", "wallpaper", "wallpaper", "backdrop", "desktop picture"])
+    kind = R.choices(["next", "prev", "number", "name"], weights=[4, 2, 3, 5])[0]
+    if kind == "next":
+        q = R.choice(
+            [
+                f"next {bg}",
+                f"switch to the next {bg}",
+                f"cycle the {bg}",
+                f"change the {bg}",
+                f"different {bg}",
+                f"another {bg}",
+                f"{bg} next",
+                f"give me a new {bg}",
+                f"flip the {bg}",
+                f"rotate the {bg}",
+                f"try the next {bg}",
+            ]
+        )
+        return ex(
+            q, f"set_background choice='next' from '{q}'", [{"name": "set_background", "arguments": {"choice": "next"}}]
+        )
+    if kind == "prev":
+        pm = R.choice(["prev", "previous", "last"])
+        q = R.choice(
+            [
+                f"{pm} {bg}",
+                f"go back to the {pm} {bg}",
+                f"switch to the {pm} {bg}",
+                f"{bg} back one",
+                f"put the {pm} {bg} back",
+                f"back to the {pm} {bg}",
+            ]
+        )
+        c = BG_ALIASES.get(pm, pm)
+        return ex(
+            q, f"set_background choice={c!r} from '{pm}'", [{"name": "set_background", "arguments": {"choice": c}}]
+        )
+    if kind == "number":
+        i = R.choice(range(1, 10))
+        im = R.choice(NUM_WORDS[i])
+        q = R.choice(
+            [
+                f"{bg} {im}",
+                f"set the {bg} to {im}",
+                f"switch to {bg} {im}",
+                f"use {bg} number {im}",
+                f"{bg} number {im}",
+                f"the {ORD[i]} {bg}",
+                f"switch to the {ORD[i]} {bg}",
+                f"pick {bg} {im}",
+                f"go to {bg} {im}",
+            ]
+        )
+        return ex(
+            q,
+            f"set_background choice={str(i)!r} from '{im}'",
+            [{"name": "set_background", "arguments": {"choice": str(i)}}],
+        )
+    n = R.choice(BG_NAMES)
+    q = R.choice(
+        [
+            f"set the {bg} to {n}",
+            f"switch to the {n} {bg}",
+            f"use the {n} {bg}",
+            f"{n} {bg}",
+            f"put on the {n} {bg}",
+            f"{bg} {n}",
+            f"change the {bg} to {n}",
+            f"give me the {n} {bg}",
+            f"the {n} one as the {bg}",
+            f"make the {bg} the {n} one",
+        ]
+    )
+    return ex(q, f"set_background choice={n!r} from '{n}'", [{"name": "set_background", "arguments": {"choice": n}}])
+
+
+def g_pick_background():
+    bg = R.choice(["background", "background", "wallpaper", "wallpaper", "backdrop"])
+    q = R.choice(
+        [
+            f"pick a {bg}",
+            f"choose a {bg}",
+            f"open the {bg} picker",
+            f"show me the {bg}s",
+            f"let me pick a {bg}",
+            f"browse {bg}s",
+            f"{bg} picker",
+            f"pick a new {bg}",
+            f"choose a different {bg}",
+            f"which {bg}s are there",
+            f"let me choose the {bg}",
+            f"show me the {bg} options",
+        ]
+    )
+    return ex(q, "pick_background; no choice named", [{"name": "pick_background", "arguments": {}}])
 
 
 TAB_NAMES = [
@@ -540,15 +711,18 @@ SINGLE = [
     g_focus_space,
     g_warp_window,
     g_toggle_window,
+    g_center_window,
     g_set_layout,
     g_balance,
     g_set_theme,
     g_next_theme,
+    g_set_background,
+    g_pick_background,
     g_new_tab,
     g_go_to_tab,
     g_split_pane,
 ]
-WEIGHTS = [11, 10, 13, 10, 8, 6, 7, 3, 9, 3, 8, 8, 5]
+WEIGHTS = [11, 10, 13, 10, 8, 6, 6, 7, 3, 9, 3, 8, 3, 8, 8, 5]
 
 # ----- refusals -------------------------------------------------------------
 REFUSALS = [
