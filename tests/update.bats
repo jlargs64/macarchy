@@ -85,3 +85,57 @@ fake_brew() {
   [ "$status" -eq 1 ]
   [[ $output == *"is not a git checkout"* ]]
 }
+
+# stub_tags <tag...> -- git answers ls-remote with these tags (none: it fails,
+# as when offline) and passes everything else to the real git.
+stub_tags() {
+  export TAGS="$BATS_TEST_TMPDIR/tags"
+  : >"$TAGS"
+  for t in "$@"; do printf '0000000\trefs/tags/%s\n' "$t" >>"$TAGS"; done
+  # shellcheck disable=SC2016
+  stub git 'for a; do [ "$a" = ls-remote ] && { [ -s "$TAGS" ] && exec cat "$TAGS"; exit 128; }; done
+exec /usr/bin/git "$@"'
+}
+
+@test "--check exits 0 when the installed release is the latest tag" {
+  v="$(cat "$REPO/version.txt")"
+  stub_tags v0.0.1 "v$v"
+  update --check
+  [ "$status" -eq 0 ]
+  [[ $output == *"installed: v$v"* ]]
+  [[ $output == *"latest: v$v"* ]]
+  grep -q "ls-remote --tags --refs origin" "$STUB_LOG"
+}
+
+@test "--check exits 10 and names the newer release, comparing numerically" {
+  stub_tags v9.0.0 v10.0.0 v10.0.0-rc1
+  update --check
+  [ "$status" -eq 10 ]
+  [[ $output == *"latest: v10.0.0"* ]]
+}
+
+@test "--check changes nothing and pulls nothing" {
+  write_config themes
+  stub_tags v99.0.0
+  update --check
+  [ "$status" -eq 10 ]
+  [ ! -e "$HOME/.local/bin/theme-set" ]
+  [ "$(grep -c pull "$STUB_LOG")" = 0 ]
+}
+
+@test "--check exits 1 when the releases cannot be listed" {
+  stub_tags
+  update --check
+  [ "$status" -eq 1 ]
+  [[ $output == *"could not list releases"* ]]
+}
+
+@test "Homebrew: --check asks GitHub, since the install has no remote" {
+  fake_brew 1.0.0
+  stub_tags v1.0.0 v1.1.0
+  run "$PREFIX/opt/macarchy/libexec/home/.config/macarchy/bin/macarchy-update" --check
+  [ "$status" -eq 10 ]
+  [[ $output == *"installed: v1.0.0"* ]]
+  [[ $output == *"latest: v1.1.0"* ]]
+  grep -q "ls-remote --tags --refs https://github.com/jlargs64/macarchy.git" "$STUB_LOG"
+}
