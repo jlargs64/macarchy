@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # theme-wallpaper <theme-dir> — generate wallpaper.jpg from the theme palette if missing.
-# Uses ImageMagick when available, otherwise Python/Pillow, otherwise a solid sips fill.
+# A theme that ships its own wallpaper.py (Pillow; args: OUT W H) gets that
+# scene. Otherwise a gradient: ImageMagick when available, then Python/Pillow,
+# then a solid sips fill.
 set -euo pipefail
 dir="${1:?usage: theme-wallpaper <theme-dir>}"
 out="$dir/wallpaper.jpg"
@@ -35,7 +37,10 @@ W=5120
 H=2880
 png="$(mktemp -t wallpaper).png"
 
-if command -v magick >/dev/null 2>&1; then
+if [ -f "$dir/wallpaper.py" ] && python3 -c 'import PIL' >/dev/null 2>&1 &&
+  python3 "$dir/wallpaper.py" "$png" "$W" "$H"; then
+  :
+elif command -v magick >/dev/null 2>&1; then
   if [ "$SCAN" = 1 ]; then
     # Vertical gradient, then darken every 4th row to fake CRT scanlines:
     # build a 4-row tile whose first row is 35% black and the rest transparent,

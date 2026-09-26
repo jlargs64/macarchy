@@ -17,6 +17,7 @@ const pagePath = resolve(here, "../index.html");
 // Themes that were not made with theme-port, and how their card labels them.
 const LABELS = {
   "retro-82": "custom · 1982 arcade CRT",
+  "hollow": "custom · Sleepy Hollow in October",
   "kanagawa-wave": "upstream",
   "catppuccin-mocha": "upstream",
 };

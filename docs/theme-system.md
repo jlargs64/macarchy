@@ -216,7 +216,10 @@ and back keeps the image you picked.
 If a theme has no `backgrounds/` directory, `theme-set` falls back to
 `wallpaper.jpg` — a gradient generated from that theme's own palette by
 `theme-wallpaper` (retro-82's gets faint CRT scanlines). That is the fallback
-now, not the default.
+now, not the default. A theme can ship its own `wallpaper.py` instead: a
+Pillow script called as `wallpaper.py OUT W H`, which `theme-wallpaper` runs
+in place of the gradient when Pillow is installed. hollow uses this for its
+harvest-moon scene.
 
 Backgrounds are ~19 MB and are **not** committed. `theme-bg-fetch` runs as part
 of `install.sh` (and of `theme-maintain`) and skips whatever already exists.
@@ -289,6 +292,26 @@ Everything is derived from those 16 values:
 - **Wallpaper** — a `0b0a0f → 221c2e` gradient with every 4th row darkened 35%,
   for faint scanlines.
 
+### hollow
+
+Custom. Sleepy Hollow in late October: a charred-bark background, pumpkin
+orange accent, candle-flame yellow, dried-blood red, moss green, moonlit-fog
+blue, witch violet and ghost sage.
+
+```
+00 16110f  01 201915  02 3a2c22  03 7a6552
+04 8a7560  05 e8d5b5  06 f2e4c8  07 fbf1dc
+08 b8412f  09 e8772e  0A f0b54a  0B 8f9d4c
+0C 82a898  0D 6d8ca3  0E a878c2  0F 8a4b2a
+```
+
+Ghostty, Zellij and Neovim are derived the same way as retro-82 (Neovim via
+`nvim-hollow/colors/hollow.lua` on `mini.base16`). The wallpaper is
+`themes/hollow/wallpaper.py`: a harvest moon behind thin cloud, bats, bare
+trees on a fogged ridge, a lit jack-o'-lantern and falling leaves. It is
+seeded, so every machine renders the same picture, and the moon, trees and
+pumpkin sit inside the band a 21:9 display keeps.
+
 ## Per-app wiring
 
 Each app was wired once. None of it needs touching again.
@@ -320,8 +343,8 @@ every switch and the first switch to a theme has to clone its plugin. The
 active theme's spec re-declares the same repo with `lazy = false` and a
 priority; lazy.nvim merges the two.
 
-The seven themes that drive `nvim-mini/mini.base16` locally (`ethereal`,
-`last-horizon`, `lupine`, `miasma`, `ristretto`, `vantablack`, `white` — see
+The eight themes that drive `nvim-mini/mini.base16` locally (`ethereal`,
+`hollow`, `last-horizon`, `lupine`, `miasma`, `ristretto`, `vantablack`, `white` — see
 [omarchy-port.md](omarchy-port.md)) only need the one `mini.base16` entry,
 not a per-theme plugin. Current full list:
 
@@ -417,6 +440,7 @@ only the reported name differs.
 | catppuccin-mocha | `catppuccin-mocha` | `catppuccin-mocha` |
 | kanagawa-wave | `kanagawa-wave` | `kanagawa` |
 | retro-82 | `retro82` | `retro82` |
+| hollow | `hollow` | `hollow` |
 
 **Neovim's server socket is not in `/tmp` on macOS.** It is under `$TMPDIR`
 (`/var/folders/...`). And `/tmp` is itself a symlink, so `find /tmp` needs `-L`

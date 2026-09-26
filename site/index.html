@@ -84,7 +84,7 @@
         <p>If your terminal is Kitty or your editor is VS Code, nothing here restyles it today. A theme directory has no file for those apps, so a switch leaves them alone. The mechanism is <a href="https://omarchy.org">Omarchy</a>’s and could drive more apps; that is the plan below. Your Ghostty, Zellij and Neovim configs stay yours, since macarchy hooks in with one line each.</p>
       </div>
       <dl class="facts">
-        <div><dt>Theming</dt><dd>22 themes, 5 of them light. <code>theme-set</code>, <code>theme-pick</code>, <code>theme-next</code>, <code>theme-bg</code>, <code>theme-port</code>. <a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">docs/theme-system.md</a></dd></div>
+        <div><dt>Theming</dt><dd>23 themes, 5 of them light. <code>theme-set</code>, <code>theme-pick</code>, <code>theme-next</code>, <code>theme-bg</code>, <code>theme-port</code>. <a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">docs/theme-system.md</a></dd></div>
         <div><dt>Windows</dt><dd>yabai + skhd + SketchyBar + JankyBorders over native Spaces. No scripting addition, no <code>csrutil</code>. <a href="https://github.com/jlargs64/macarchy/blob/main/docs/window-management.md">docs/window-management.md</a></dd></div>
         <div><dt>Hotkey discovery</dt><dd><code>macarchy-keys</code>: a which-key style popup on <kbd>alt</kbd>+<kbd>/</kbd>. Descriptions come from the <code># comments</code> in skhdrc.</dd></div>
         <div><dt>Raycast</dt><dd>A generated “Set Theme” script command. <code>theme-raycast-sync</code> regenerates it.</dd></div>
@@ -154,12 +154,13 @@
     <div class="wrap">
       <div class="sec-head">
         <h2 id="themes-title"><a href="#themes">Pick a theme, change everything</a></h2>
-        <p>Every app reads its colours from <code>~/.config/theme/current</code>, a symlink. Switching repoints it and nudges each app; no app knows a theme’s name. 22 ship, 5 of them light. Pick one here and this page repaints the same way.</p>
+        <p>Every app reads its colours from <code>~/.config/theme/current</code>, a symlink. Switching repoints it and nudges each app; no app knows a theme’s name. 23 ship, 5 of them light. Pick one here and this page repaints the same way.</p>
         <a class="btn sec-head__cta" href="https://github.com/jlargs64/macarchy/blob/main/docs/omarchy-port.md">Port another</a>
       </div>
       <ul class="themes" aria-label="Themes that ship with macarchy">
         <!-- themes:start -->
         <li><button class="theme-card" type="button" data-set-theme="retro-82" data-mode="dark" aria-pressed="true"><span class="theme-card__swatch" data-pal="retro-82" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">retro-82</span><span class="theme-card__src">custom · 1982 arcade CRT</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="hollow" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="hollow" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">hollow</span><span class="theme-card__src">custom · Sleepy Hollow in October</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="kanagawa-wave" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="kanagawa-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">kanagawa-wave</span><span class="theme-card__src">upstream</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="catppuccin-mocha" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="catppuccin-mocha" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">catppuccin-mocha</span><span class="theme-card__src">upstream</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="ethereal" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="ethereal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">ethereal</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>

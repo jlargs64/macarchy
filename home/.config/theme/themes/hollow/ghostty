@@ -1,0 +1,26 @@
+# hollow -- custom (16-slot ANSI derived from colors.sh, see theme-port)
+background = 16110f
+foreground = e8d5b5
+cursor-color = e8772e
+cursor-text = 16110f
+selection-background = 3a2c22
+selection-foreground = e8d5b5
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#16110f
+palette = 1=#9c3728
+palette = 2=#7a8541
+palette = 3=#cc9a3f
+palette = 4=#5d778b
+palette = 5=#8f66a5
+palette = 6=#6e8f81
+palette = 7=#c5b59a
+palette = 8=#6b5747
+palette = 9=#b8412f
+palette = 10=#8f9d4c
+palette = 11=#f0b54a
+palette = 12=#6d8ca3
+palette = 13=#a878c2
+palette = 14=#82a898
+palette = 15=#e8d5b5
