@@ -55,6 +55,20 @@ MACARCHY_UPDATE_AT_LOGIN=true
 # exist (e.g. no Ghostty installed) is skipped silently.
 MACARCHY_KEYS_SOURCES="skhd ghostty zellij"
 
+# --- layout: gaps, padding, bar, border (pixels) ---
+# Read by yabairc, bordersrc and sketchybarrc. After editing:
+#   yabai --restart-service; brew services restart borders; sketchybar --reload
+# (or shift + alt - r for yabai and the bar).
+MACARCHY_GAP=8               # gap between tiled windows
+MACARCHY_PADDING_TOP=8       # gap under the bar
+MACARCHY_PADDING_BOTTOM=20   # bigger than the rest so the border clears the screen edge
+MACARCHY_PADDING_LEFT=8
+MACARCHY_PADDING_RIGHT=8
+MACARCHY_BAR_HEIGHT=32       # SketchyBar strip; 32 is the MacBook notch height, and
+                             # yabai reserves this much at the top of every display
+MACARCHY_BORDER_WIDTH=6      # JankyBorders focus border, drawn outside the window
+MACARCHY_BORDER_STYLE=round  # round or square
+
 # --- centered column on wide displays (macarchy-center, alt - c) ---
 # Width of the column a lone or alt - c window is centered in, as an aspect
 # ratio relative to the display height ("16:10" -> 2304px on a 3440x1440

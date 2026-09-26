@@ -11,8 +11,14 @@
 #   * window shadows/opacity toggles on some macOS versions
 # Tiling, resizing, focus and layout all work fine without it.
 #
+# Gaps, padding and the bar strip come from ~/.config/macarchy/config
+# (MACARCHY_GAP, MACARCHY_PADDING_*, MACARCHY_BAR_HEIGHT); defaults in lib.sh.
+#
 # Restart after editing:  yabai --restart-service
 # =============================================================================
+
+# shellcheck disable=SC1091
+[ -f "$HOME/.config/macarchy/lib.sh" ] && . "$HOME/.config/macarchy/lib.sh"
 
 # ----- global layout --------------------------------------------------------
 yabai -m config layout                      bsp
@@ -21,21 +27,21 @@ yabai -m config auto_balance                off
 yabai -m config split_ratio                 0.50
 
 # ----- gaps and padding -----------------------------------------------------
-# SketchyBar is a 32pt strip at the top of every display (sketchybarrc). On a
-# MacBook that is exactly the notch strip, which yabai excludes on its own. An
-# external display has no notch and (with the menu bar auto-hidden) no excluded
-# strip at all, so windows would cover the bar. external_bar reserves 32pt on
-# every display; on the notch display yabai merges it with the notch height
-# instead of stacking the two, so nothing moves there. top_padding stays the
-# gap under the bar, same as every other gap.
-yabai -m config external_bar                all:32:0
-yabai -m config top_padding                 8
-# JankyBorders draws its 6px border outside the window, so an 8px gap leaves
-# 2px of wallpaper under the bottom border. A bigger gap keeps it off the edge.
-yabai -m config bottom_padding              20
-yabai -m config left_padding                8
-yabai -m config right_padding               8
-yabai -m config window_gap                  8
+# SketchyBar is a MACARCHY_BAR_HEIGHT (32pt) strip at the top of every display.
+# On a MacBook that is exactly the notch strip, which yabai excludes on its
+# own. An external display has no notch and (with the menu bar auto-hidden) no
+# excluded strip at all, so windows would cover the bar. external_bar reserves
+# the strip on every display; on the notch display yabai merges it with the
+# notch height instead of stacking the two, so nothing moves there.
+# top_padding stays the gap under the bar, same as every other gap. The bottom
+# default is bigger because JankyBorders draws its border outside the window,
+# and an 8px gap left 2px of wallpaper under it.
+yabai -m config external_bar                "all:${MACARCHY_BAR_HEIGHT:-32}:0"
+yabai -m config top_padding                 "${MACARCHY_PADDING_TOP:-8}"
+yabai -m config bottom_padding              "${MACARCHY_PADDING_BOTTOM:-20}"
+yabai -m config left_padding                "${MACARCHY_PADDING_LEFT:-8}"
+yabai -m config right_padding               "${MACARCHY_PADDING_RIGHT:-8}"
+yabai -m config window_gap                  "${MACARCHY_GAP:-8}"
 
 # ----- focus behaviour ------------------------------------------------------
 yabai -m config mouse_follows_focus          off
