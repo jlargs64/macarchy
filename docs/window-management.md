@@ -318,6 +318,55 @@ Calendar, and volume toggles mute.
 `macarchy-doctor` warns if the bar is not topmost (for example after a manual
 `sketchybar --bar topmost=off`); `sketchybar --reload` fixes it.
 
+### Items on the right
+
+The icons on the right are chosen and ordered by `MACARCHY_BAR_RIGHT` in
+`~/.config/macarchy/config`, listed left to right as they appear:
+
+```sh
+MACARCHY_BAR_RIGHT="caffeine wifi volume stats battery"   # the default
+```
+
+Every icon shows its value as a label while the pointer is over it.
+
+| Item | Shows | Click |
+|---|---|---|
+| `caffeine` | cup: bright while `caffeinate` keeps the Mac awake | toggles it (see [Caffeine toggle](#caffeine-toggle-in-the-bar)) |
+| `wifi` | signal; hover shows the network (`MACARCHY_WIFI_IFACE`) | Wi-Fi settings |
+| `volume` | output level | mute / unmute |
+| `stats` | CPU and memory | Activity Monitor |
+| `battery` | charge, red below 20% | Battery settings |
+
+Also shipped, off by default, each hidden when its app is not installed:
+`bluetooth`, `tailscale`, `containers`, `updates`. Add a name to the list and
+`sketchybar --reload`. A name that matches no item is skipped with a warning
+in the SketchyBar log.
+
+Each name is a function: `foo` is `bar_item_foo`, defined in
+`~/.config/sketchybar/items/foo.sh`. To add your own item, put a file in
+`~/.config/sketchybar/items.d/` (install.sh creates it; it is yours, never
+linked from the repo) and list its name. Files there are sourced after the
+built-in items, so a function with a built-in's name replaces it. For
+example, a clock in UTC:
+
+```sh
+# ~/.config/sketchybar/items.d/utc.sh
+bar_item_utc() {
+  sketchybar --add item utc right \
+    --set utc icon.drawing=off update_freq=30 \
+    script='sketchybar --set $NAME label="$(date -u +%H:%MZ)"'
+}
+```
+
+```sh
+MACARCHY_BAR_RIGHT="caffeine wifi volume stats battery utc"
+```
+
+A drop-in runs inside `sketchybarrc`, with `$CONFIG_DIR`, `$PLUGIN_DIR`, the
+theme colours (`$WHITE`, ...) and `$MACARCHY_FONT` set and the bar's item
+defaults already applied. It should only define functions; the function adds
+the item, and returns without adding anything if the app it needs is missing.
+
 ## Space indicators in the bar
 
 The bar shows Spaces 1–5 as plain numbers, Omarchy-style. Brightness carries
