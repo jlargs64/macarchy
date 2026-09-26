@@ -225,10 +225,13 @@ So every Space points at one fixed path:
 ~/.config/theme/wallpaper-current.jpg
 ```
 
-Applying a background copies the chosen image over that file and restarts
-`WallpaperAgent`. macOS re-reads the file's contents, so **every enrolled Space
-repaints at once** — confirmed in use, not just in theory. Only the file changes;
-the path each Space points at never does.
+Applying a background copies the chosen image over that file, points the
+visible desktops at it and restarts `WallpaperAgent`. macOS re-reads the file's
+contents, so **every enrolled Space repaints at once** — confirmed in use, not
+just in theory. Only the file changes; the path each Space points at never
+does. (Setting the picture alone does not repaint when the path is unchanged,
+and restarting the agent before it has saved the request loses it, so
+`lib/wallpaper.sh` waits for the agent's store to be written first.)
 
 **One-time setup:** run `theme-wallpaper-enroll` once. It walks every Space
 using the native `ctrl+<number>` shortcut, points each at the fixed path, and
@@ -237,8 +240,12 @@ while it runs. That shortcut must be enabled in System Settings > Keyboard >
 Keyboard Shortcuts > Mission Control.
 
 You only need this once. After enrolment, `theme-set` and `theme-bg` repaint
-all Spaces together. Run it again only if you add a Space, since a new one
-starts with whatever wallpaper macOS gives it.
+all Spaces together. A Space you add later (or a new display's Spaces) starts
+with whatever wallpaper macOS gives it, so `yabairc` runs
+`theme-wallpaper-enroll --here` on every Space switch: it points only the
+desktops on screen at the file, without switching anything, and does nothing
+when they already are. The first time you land on a new Space it picks up the
+theme. Without yabai, run `theme-wallpaper-enroll` again by hand instead.
 
 ## The themes
 

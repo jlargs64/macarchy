@@ -7,21 +7,49 @@
 # without the scripting addition, which this setup does not use.
 #
 # So this walks the Spaces using the native ctrl+<number> shortcut, sets the
-# wallpaper on each, and returns to where you started. Run it ONCE. After that
-# every Space points at ~/.config/theme/wallpaper-current.jpg and `theme-set`
-# only has to rewrite that file.
+# wallpaper on each, and returns to where you started. After that every Space
+# points at ~/.config/theme/wallpaper-current.jpg and `theme-set` only has to
+# rewrite that file. Your screen will visibly flick through each Space.
 #
-# Your screen will visibly flick through each Space. That is expected.
+#   theme-wallpaper-enroll          walk every Space now (needs ctrl+<number>)
+#   theme-wallpaper-enroll --here   enroll only the Spaces on screen right now,
+#                                   quietly and without switching. yabairc runs
+#                                   this on every Space switch, so a Space you
+#                                   added (or a new display) picks up the theme
+#                                   the first time you land on it.
 set -euo pipefail
 
 THEME_ROOT="$HOME/.config/theme"
 FIXED="$THEME_ROOT/wallpaper-current.jpg"
+# shellcheck source=../lib/wallpaper.sh
+. "$THEME_ROOT/lib/wallpaper.sh"
 
 [ -L "$THEME_ROOT/current" ] || {
   echo "no theme selected; run theme-set first" >&2
   exit 1
 }
-cp -f "$THEME_ROOT/current/wallpaper.jpg" "$FIXED"
+
+if [ "${1:-}" = --here ]; then
+  # The file already holds the current wallpaper (theme-set and theme-bg keep
+  # it fresh); only point the visible desktops at it if they aren't already.
+  [ -f "$FIXED" ] || exit 0
+  osascript >/dev/null 2>&1 <<EOS || true
+tell application "System Events"
+  repeat with d in desktops
+    if picture of d is not "$FIXED" then set picture of d to "$FIXED"
+  end repeat
+end tell
+EOS
+  exit 0
+fi
+
+# Seed the shared file with what the theme shows now (the background chosen
+# with theme-bg, not the gradient), so enrolling never resets that choice.
+src="$(theme_wallpaper_for "$THEME_ROOT/current")" || {
+  echo "the current theme has no wallpaper yet; run theme-set first" >&2
+  exit 1
+}
+cp -f "$src" "$FIXED"
 
 if ! command -v yabai >/dev/null 2>&1; then
   echo "theme-wallpaper-enroll: needs yabai to enumerate Spaces" >&2
@@ -57,7 +85,7 @@ while [ "$i" -le "$count" ]; do
 done
 
 [ -n "$start" ] && goto "$start"
-killall WallpaperAgent >/dev/null 2>&1 || true
+theme_wallpaper_push "$FIXED" # Spaces that already pointed at the file only repaint on restart
 echo "done. every Space now follows theme-set."
 echo "note: ctrl+<number> must be enabled in System Settings > Keyboard >"
 echo "      Keyboard Shortcuts > Mission Control for this to work."
