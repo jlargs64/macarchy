@@ -9,8 +9,8 @@ setup() {
 
 each_theme() { find "$THEMES" -mindepth 1 -maxdepth 1 -type d | LC_ALL=C sort; }
 
-@test "at least 22 themes ship" {
-  [ "$(each_theme | wc -l)" -ge 22 ]
+@test "at least 23 themes ship" {
+  [ "$(each_theme | wc -l)" -ge 23 ]
 }
 
 @test "every theme has the five required files" {

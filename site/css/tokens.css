@@ -14,6 +14,10 @@
   --t-bg:#0b0a0f; --t-fg:#f2c66d; --t-accent:#ff59f0; --t-accent2:#3ef1ff; --t-muted:#3a3148;
   --t-red:#ff4f6d; --t-green:#7bff7b; --t-yellow:#f2c66d; --t-blue:#4fa8ff; --t-magenta:#ff59f0; --t-cyan:#3ef1ff;
 }
+:root[data-theme="hollow"] {
+  --t-bg:#16110f; --t-fg:#e8d5b5; --t-accent:#e8772e; --t-accent2:#a878c2; --t-muted:#6b5747;
+  --t-red:#b8412f; --t-green:#8f9d4c; --t-yellow:#f0b54a; --t-blue:#6d8ca3; --t-magenta:#a878c2; --t-cyan:#82a898;
+}
 :root[data-theme="kanagawa-wave"] {
   --t-bg:#1f1f28; --t-fg:#dcd7ba; --t-accent:#7e9cd8; --t-accent2:#957fb8; --t-muted:#54546d;
   --t-red:#c34043; --t-green:#76946a; --t-yellow:#c0a36e; --t-blue:#7e9cd8; --t-magenta:#957fb8; --t-cyan:#6a9589;
@@ -102,6 +106,7 @@
 /* static per-theme swatches for the theme cards (each card shows its own palette regardless of the active theme) */
 :root {
   --pal-retro-82: #0b0a0f, #f2c66d, #ff59f0, #3ef1ff, #ff4f6d, #7bff7b, #4fa8ff, #f2c66d;
+  --pal-hollow: #16110f, #e8d5b5, #e8772e, #a878c2, #b8412f, #8f9d4c, #6d8ca3, #f0b54a;
   --pal-kanagawa-wave: #1f1f28, #dcd7ba, #7e9cd8, #957fb8, #c34043, #76946a, #7e9cd8, #c0a36e;
   --pal-catppuccin-mocha: #1e1e2e, #cdd6f4, #cba6f7, #89b4fa, #f38ba8, #a6e3a1, #89b4fa, #f9e2af;
   --pal-ethereal: #060b1e, #ffcead, #7d82d9, #ead7e7, #ed5b5a, #92a593, #7d82d9, #e9bb4f;
