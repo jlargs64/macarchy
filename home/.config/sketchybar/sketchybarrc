@@ -4,11 +4,21 @@
 # is exactly as tall as the MacBook notch (32pt), so the notch reads as part of
 # the bar instead of hanging below it.
 #
+# The bar covers the native macOS menu bar. With the menu bar auto-hidden, it
+# reveals whenever the pointer reaches the top edge, which is exactly where
+# this bar lives, and macOS has no setting for that reveal. So the bar is drawn
+# one window level above the menu bar (topmost=on, below) and the menu bar
+# slides in underneath it. To reach the native menu bar and its status items:
+#   shift + alt - m   hide / show this bar (skhdrc), or click the ⋯ tray item
+#   ctrl - F2         macOS "Move focus to menu bar" (ctrl + fn + F2 on the
+#                     laptop keyboard); its menus open above the bar
+#
 # Layout, mirroring Omarchy's waybar:
 #   left    Space numbers 1-N (MACARCHY_SPACES; focused = bright, occupied = dim, empty = faint)
 #   q       clock, immediately left of the notch (a true center would be under it)
 #   e       mic / camera in use, then now-playing, right of the notch, hidden when idle
-#   right   caffeine · wifi · volume · cpu+mem · battery — icons only, hover shows the value
+#   right   MACARCHY_BAR_RIGHT, by default updates · caffeine · wifi · bluetooth · volume · cpu+mem · battery · tray;
+#           icons only, hover shows the value (items/<name>.sh, items.d/ for your own)
 #
 # On a display without a notch, q and e hug the exact midpoint instead, which
 # would leave the clock ending at the center rather than sitting on it. So the
@@ -32,6 +42,17 @@ source "$CONFIG_DIR/colors.sh"
 BAR_HEIGHT="${MACARCHY_BAR_HEIGHT:-32}" # notch height on 14"/16" MacBook Pro; yabairc reserves the same strip
 
 ##### Bar #####
+# topmost=on puts the bar at window level 25 (kCGStatusWindowLevel), one above
+# the menu bar's 24, so the auto-hidden menu bar reveals underneath an opaque
+# bar instead of sliding over it. Drop-down menus open at level 101 and still
+# render above the bar. (off is level -20, window is 3: both below the menu bar.)
+#
+# notch_display_height applies to the notch display only. Its revealed menu
+# bar is 33pt tall (measured on a 14" MacBook Pro), 1pt more than the 32pt
+# notch, so at 32 a 1pt sliver of the native bar would show under this one.
+# External displays have a 30pt menu bar, fully covered at the normal height.
+# The extra 1pt overlaps yabai's 32pt reserve, inside the top window padding.
+NOTCH_BAR_HEIGHT=$((BAR_HEIGHT > 33 ? BAR_HEIGHT : 33))
 sketchybar --bar \
   position=top \
   height=$BAR_HEIGHT \
@@ -42,6 +63,8 @@ sketchybar --bar \
   corner_radius=0 \
   padding_left=6 \
   padding_right=6 \
+  topmost=on \
+  notch_display_height=$NOTCH_BAR_HEIGHT \
   display=all
 
 ##### Defaults #####
@@ -133,46 +156,25 @@ sketchybar --add item notch left \
   --subscribe notch space_change display_change system_woke
 
 ##### System status (right, icons only; hover reveals the label) #####
-# Right items stack right-to-left in add order, so battery is the rightmost.
-sketchybar --add item battery right \
-  --set battery \
-  label.drawing=off \
-  update_freq=60 \
-  script="$PLUGIN_DIR/battery.sh" \
-  click_script="$CONFIG_DIR/helpers/open_centered com.apple.systempreferences 'x-apple.systempreferences:com.apple.Battery-Settings.extension'" \
-  --subscribe battery mouse.entered mouse.exited
+# One item per file in items/<name>.sh, each defining bar_item_<name>. Your
+# own go in ~/.config/sketchybar/items.d/*.sh, sourced after the built-ins so
+# a drop-in can also replace one. MACARCHY_BAR_RIGHT picks which are shown and
+# in what order, left to right. Right items stack right-to-left in add order,
+# so the list is added in reverse: its last name ends up rightmost.
+for f in "$CONFIG_DIR"/items/*.sh "$HOME"/.config/sketchybar/items.d/*.sh; do
+  # shellcheck disable=SC1090
+  [ -f "$f" ] && source "$f"
+done
 
-sketchybar --add item stats right \
-  --set stats \
-  label.drawing=off \
-  update_freq=5 \
-  script="$PLUGIN_DIR/stats.sh" \
-  click_script="$CONFIG_DIR/helpers/open_centered com.apple.ActivityMonitor ''" \
-  --subscribe stats mouse.entered mouse.exited
-
-sketchybar --add item volume right \
-  --set volume \
-  label.drawing=off \
-  script="$PLUGIN_DIR/volume.sh" \
-  click_script="osascript -e 'set volume output muted not (output muted of (get volume settings))'; sketchybar --set volume script=\"$PLUGIN_DIR/volume.sh\"" \
-  --subscribe volume volume_change mouse.entered mouse.exited
-
-sketchybar --add item wifi right \
-  --set wifi \
-  label.drawing=off \
-  update_freq=30 \
-  script="$PLUGIN_DIR/wifi.sh" \
-  click_script="$CONFIG_DIR/helpers/open_centered com.apple.systempreferences 'x-apple.systempreferences:com.apple.wifi-settings-extension'" \
-  --subscribe wifi mouse.entered mouse.exited
-
-# caffeinate -dims toggle. The click is handled by the plugin itself (it
-# receives SENDER=mouse.clicked) so start/stop and rendering share one file.
-sketchybar --add item caffeine right \
-  --set caffeine \
-  label.drawing=off \
-  update_freq=30 \
-  script="$PLUGIN_DIR/caffeine.sh" \
-  --subscribe caffeine mouse.clicked mouse.entered mouse.exited
+read -ra bar_right <<<"${MACARCHY_BAR_RIGHT:-updates caffeine wifi bluetooth volume stats battery tray}"
+for ((i = ${#bar_right[@]} - 1; i >= 0; i--)); do
+  name="${bar_right[i]}"
+  if declare -F "bar_item_$name" >/dev/null; then
+    "bar_item_$name"
+  else
+    echo "sketchybarrc: no bar item '$name' in MACARCHY_BAR_RIGHT (no bar_item_$name function), skipping" >&2
+  fi
+done
 
 ##### Force Initial Update #####
 sketchybar --update

@@ -266,7 +266,18 @@ fi
 if macarchy_has bar; then
   section "Status bar"
   need_cmd sketchybar FelixKratz/formulae/sketchybar
+  # The bluetooth item skips itself without blueutil, so this is a warning.
+  if have blueutil; then ok "blueutil installed (bluetooth item)"; else warn "blueutil not installed; the bluetooth item is hidden" "brew install blueutil"; fi
   need_running sketchybar SketchyBar "brew services start sketchybar"
+  # topmost=on keeps the bar above the auto-hidden menu bar (see sketchybarrc);
+  # without it the native menu bar slides over the bar on every hover.
+  if running sketchybar; then
+    if sketchybar --query bar 2>/dev/null | grep -Eq '"topmost": *"on"'; then
+      ok "bar drawn above the native menu bar"
+    else
+      warn "bar is not topmost; the native menu bar reveals over it on hover" "sketchybar --reload"
+    fi
+  fi
   font_file() { find "$HOME/Library/Fonts" /Library/Fonts -maxdepth 1 -iname "$1" 2>/dev/null | grep -q .; }
   font_glob="*$(echo "$MACARCHY_FONT" | sed 's/ Nerd Font//; s/ /*/g')*Nerd*"
   if font_file "$font_glob"; then ok "font $MACARCHY_FONT installed"; else fail "font $MACARCHY_FONT not found; bar glyphs render as boxes" "brew install --cask font-hack-nerd-font"; fi

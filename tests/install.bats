@@ -31,6 +31,18 @@ install() { run "$REPO/install.sh" "$@"; }
   [[ $output == *"components: themes bar"* ]]
 }
 
+@test "--only bar installs blueutil for the bluetooth item" {
+  install --dry-run --only bar
+  [[ $output == *blueutil* ]]
+}
+
+@test "--only bar creates the items.d drop-in directory, --only themes does not" {
+  install --dry-run --only bar
+  [[ $output == *"+ mkdir -p $HOME/.config/sketchybar/items.d"* ]]
+  install --dry-run --only themes
+  [[ $output != *"items.d"* ]]
+}
+
 @test "--skip drops a component from the saved choice" {
   write_config "themes wm bar"
   install --dry-run --skip wm

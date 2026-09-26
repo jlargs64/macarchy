@@ -156,7 +156,7 @@ BREW_FORMULAE=()
 BREW_CASKS=()
 macarchy_has themes && BREW_FORMULAE+=(imagemagick fzf chafa)
 macarchy_has wm && BREW_FORMULAE+=(jq koekeishiya/formulae/yabai koekeishiya/formulae/skhd)
-macarchy_has bar && BREW_FORMULAE+=(jq FelixKratz/formulae/sketchybar) && BREW_CASKS+=(font-hack-nerd-font)
+macarchy_has bar && BREW_FORMULAE+=(jq blueutil FelixKratz/formulae/sketchybar) && BREW_CASKS+=(font-hack-nerd-font)
 macarchy_has borders && BREW_FORMULAE+=(FelixKratz/formulae/borders)
 macarchy_has keys && BREW_FORMULAE+=(fzf)
 macarchy_has agent && BREW_FORMULAE+=(uv) && BREW_CASKS+=(handy)
@@ -254,6 +254,21 @@ step_link() {
 }
 
 repo_files() { macarchy_repo_files "$REPO"; }
+
+# Your own bar items (see sketchybarrc). A real directory in $HOME, never a
+# link: nothing in the repo lives there, so step_link does not create it.
+# Skipped when ~/.config/sketchybar is a whole-directory link into the repo
+# (a folded `stow`), where it would land inside the checkout.
+step_bar_dropins() {
+  macarchy_has bar || return 0
+  local dir="$HOME/.config/sketchybar/items.d" parent_real repo_real
+  [ -d "$dir" ] && return 0
+  repo_real="$(cd "$REPO" && pwd -P)"
+  parent_real="$(cd "$HOME/.config/sketchybar" 2>/dev/null && pwd -P)" || parent_real=""
+  case "$parent_real/" in "$repo_real"/*) return 0 ;; esac
+  echo "==> Bar drop-in directory"
+  run mkdir -p "$dir"
+}
 
 # --remove: delete the links a component put in $HOME. Only links that point
 # into this repo are touched; brew packages and your own files stay.
@@ -455,6 +470,7 @@ echo
 step_brew
 step_defaults
 step_link
+step_bar_dropins
 step_seed_current
 step_theme_assets
 step_config

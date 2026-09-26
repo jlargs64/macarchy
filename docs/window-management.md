@@ -122,6 +122,7 @@ and re-add it.
 | `alt - b` | pop up `theme-bg-pick` — the current theme's backgrounds, with pictures |
 | `shift + alt - /` | pop up `theme-pick` — fzf theme picker with swatch previews |
 | `shift + alt - r` | `macarchy-restart`: restart yabai, JankyBorders, SketchyBar and skhd, each step on its own |
+| `shift + alt - m` | hide / show the bar, to reach the native menu bar (see [The native menu bar](#the-native-menu-bar)) |
 | `alt - /` | pop up `macarchy-keys` — a searchable list of every skhd binding |
 | `ctrl - <number>` | switch Space (**native macOS**, see below) |
 | `alt - w` | `ws --voice` — the workspace agent, see [docs/agent.md](agent.md) |
@@ -280,6 +281,100 @@ yabai -m rule --add app="^App Name$" manage=off   # try it live
 # it -- with stow, ~/.config/yabai/yabairc IS that file, so editing either one
 # edits both
 ```
+
+## The status bar
+
+SketchyBar draws one flat strip across the top of every display, 32pt tall
+(`MACARCHY_BAR_HEIGHT`): Space numbers on the left, the clock beside the notch
+(or on the midpoint of a display without one), and status icons on the right.
+
+### The native menu bar
+
+The bar covers the macOS menu bar. With the menu bar set to hide
+automatically, macOS reveals it whenever the pointer reaches the top edge of
+the screen, which is exactly where the bar sits, and clicking a bar item
+triggers it too. macOS has no setting for the reveal delay or the hot zone, so
+instead the bar is drawn one window level above the menu bar (`topmost=on` in
+`sketchybarrc`, level 25 against the menu bar's 24). The native menu bar still
+slides in on hover, but underneath the bar, so you never see it. Drop-down
+menus open far above both and are unaffected.
+
+On the notch display the revealed menu bar is 33pt, 1pt taller than the notch,
+so the bar is drawn 33pt tall there (`notch_display_height`) to hide the
+sliver. macarchy never changes the menu bar's own auto-hide setting.
+
+When you do need the native menu bar, the app menus or a status item that the
+bar has no equivalent for:
+
+| How | What it does |
+|---|---|
+| `shift + alt - m`, or click the `⋯` tray item at the far right | hides the bar on every display, so the native menu bar reveals on hover as usual. Press again to bring the bar back. yabai keeps reserving the strip, so no window moves. |
+| `ctrl - F2` (`ctrl + fn + F2` on the laptop keyboard) | macOS "Move focus to menu bar". The menu titles stay under the bar, but the menus themselves open above it; arrow keys move between them. Change it in System Settings > Keyboard > Keyboard Shortcuts > Keyboard. |
+| Raycast "Search Menu Items" | fuzzy-searches every menu item of the front app |
+
+The system items most people reach for are already in the bar: clicking Wi-Fi
+opens the Wi-Fi settings pane, battery opens Battery settings, the clock opens
+Calendar, and volume toggles mute.
+
+`macarchy-doctor` warns if the bar is not topmost (for example after a manual
+`sketchybar --bar topmost=off`); `sketchybar --reload` fixes it.
+
+### Items on the right
+
+The icons on the right are chosen and ordered by `MACARCHY_BAR_RIGHT` in
+`~/.config/macarchy/config`, listed left to right as they appear:
+
+```sh
+MACARCHY_BAR_RIGHT="updates caffeine wifi bluetooth volume stats battery tray"   # the default
+```
+
+Every icon shows its value as a label while the pointer is over it.
+
+| Item | Shows | Click |
+|---|---|---|
+| `updates` | `󰧞` dot when brew has outdated packages or a newer macarchy release is tagged; hidden otherwise. Checked hourly and on wake | runs `macarchy-update` in a popup, then lists the outdated brew packages (`brew upgrade` is left to you) |
+| `caffeine` | cup: bright while `caffeinate` keeps the Mac awake | toggles it (see [Caffeine toggle](#caffeine-toggle-in-the-bar)) |
+| `wifi` | signal; hover shows the network (`MACARCHY_WIFI_IFACE`) | Wi-Fi settings |
+| `bluetooth` | `󰂲` off (dim), `󰂯` on with nothing connected, `󰂱 N` connected; hover lists device names with battery % where macOS reports it (AirPods, Apple keyboards and mice). Hidden without `blueutil`, which the bar component installs | Bluetooth settings |
+| `volume` | output level | mute / unmute |
+| `stats` | CPU and memory | Activity Monitor |
+| `battery` | charge, red below 20% | Battery settings |
+| `tray` | `⋯`; hover says "menu bar" | hides the bar to reach the native menu bar; `shift + alt - m` brings it back (see [The native menu bar](#the-native-menu-bar)) |
+
+Also shipped, off by default, each hidden when its app is not installed. Add
+a name to the list and `sketchybar --reload`:
+
+| Item | Shows | Click |
+|---|---|---|
+| `tailscale` | `󰌘` connected, `󰇧` exit node in use, `󰌙` dim when stopped or logged out; hover shows the machine's tailnet name and "via <exit node>" | `tailscale up` / `down`; opens Tailscale.app when logged out. Needs Tailscale.app or the `tailscale` CLI |
+| `containers` | `󰡨 N` running Docker plus Podman containers; hidden at 0 or when both daemons are stopped; hover splits the count per engine | opens Docker Desktop, else Podman Desktop. Needs `docker` or `podman` |
+
+A name that matches no item is skipped with a warning in the SketchyBar log.
+
+Each name is a function: `foo` is `bar_item_foo`, defined in
+`~/.config/sketchybar/items/foo.sh`. To add your own item, put a file in
+`~/.config/sketchybar/items.d/` (install.sh creates it; it is yours, never
+linked from the repo) and list its name. Files there are sourced after the
+built-in items, so a function with a built-in's name replaces it. For
+example, a clock in UTC:
+
+```sh
+# ~/.config/sketchybar/items.d/utc.sh
+bar_item_utc() {
+  sketchybar --add item utc right \
+    --set utc icon.drawing=off update_freq=30 \
+    script='sketchybar --set $NAME label="$(date -u +%H:%MZ)"'
+}
+```
+
+```sh
+MACARCHY_BAR_RIGHT="caffeine wifi volume stats battery utc tray"
+```
+
+A drop-in runs inside `sketchybarrc`, with `$CONFIG_DIR`, `$PLUGIN_DIR`, the
+theme colours (`$WHITE`, ...) and `$MACARCHY_FONT` set and the bar's item
+defaults already applied. It should only define functions; the function adds
+the item, and returns without adding anything if the app it needs is missing.
 
 ## When it breaks
 
