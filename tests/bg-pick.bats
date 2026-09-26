@@ -7,6 +7,7 @@ setup() {
   common_setup
   T="$HOME/.config/theme"
   mkdir -p "$T/bin" "$T/themes/nord/backgrounds"
+  ln -s "$REPO/home/.config/theme/lib" "$T/lib" # theme-bg sources lib/wallpaper.sh
   for b in theme-bg theme-bg-pick theme-img theme-pick theme-list; do
     ln -s "$REPO/home/.config/theme/bin/$b" "$T/bin/$b"
   done
