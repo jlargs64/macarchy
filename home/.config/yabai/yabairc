@@ -65,9 +65,12 @@ yabai -m signal --add event=space_changed    action="sketchybar --trigger yabai_
 # with alt - c) sits in a centered column instead of spanning an ultrawide.
 # Re-evaluated whenever the set of visible tiles can change. Width and on/off
 # are MACARCHY_CENTER_WIDTH / MACARCHY_CENTER_SINGLE in ~/.config/macarchy/config.
-for ev in window_created window_destroyed window_minimized window_deminimized \
-  application_hidden application_visible space_changed display_changed \
-  display_added display_removed display_resized; do
+# application_terminated is needed too: when an app quits, yabai drops its
+# windows without a window_destroyed for each. window_focused is the catch-all
+# for anything else that leaves the tile count changed.
+for ev in window_created window_destroyed window_focused window_minimized \
+  window_deminimized application_terminated application_hidden application_visible \
+  space_changed display_changed display_added display_removed display_resized; do
   yabai -m signal --add event=$ev label="center-$ev" action="$HOME/.local/bin/macarchy-center apply"
 done
 
