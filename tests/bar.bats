@@ -30,7 +30,7 @@ added_right() { sed -n 's/^sketchybar --add item \([^ ]*\) right\( .*\)\{0,1\}$/
   bar_rc
   [ "$status" -eq 0 ]
   [ -z "$stderr" ]
-  [ "$(added_right)" = "battery stats volume wifi caffeine " ]
+  [ "$(added_right)" = "tray battery stats volume wifi caffeine " ]
   [ ! -e "$BATS_TEST_TMPDIR/plugin-ran" ]
 }
 
@@ -62,4 +62,15 @@ ITEM
   bar_rc
   [ "$status" -eq 0 ]
   [ "$(added_right)" = "battery mywifi foo " ]
+}
+
+@test "tray: click hides the bar, hover shows the menu bar label" {
+  bar_rc
+  grep -q "^sketchybar --add item tray right --set tray icon=⋯ label=menu bar .*click_script=sketchybar --bar hidden=toggle" "$STUB_LOG"
+  : >"$STUB_LOG"
+  cp "$REPO"/home/.config/sketchybar/plugins/{tray,hover}.sh "$CONFIG_DIR/plugins/"
+  NAME=tray SENDER=mouse.entered run bash "$CONFIG_DIR/plugins/tray.sh"
+  NAME=tray SENDER=mouse.exited run bash "$CONFIG_DIR/plugins/tray.sh"
+  [ "$(cat "$STUB_LOG")" = "sketchybar --set tray label.drawing=on
+sketchybar --set tray label.drawing=off" ]
 }

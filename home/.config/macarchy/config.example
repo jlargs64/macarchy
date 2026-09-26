@@ -56,13 +56,14 @@ MACARCHY_UPDATE_AT_LOGIN=true
 MACARCHY_KEYS_SOURCES="skhd ghostty zellij"
 
 # Status icons on the right of the bar, left to right as displayed. Built-in:
-# caffeine wifi volume stats battery. Also shipped but not on by default:
+# caffeine wifi volume stats battery tray (tray, the way to the native menu
+# bar, is best kept last so it sits at the far right). Also shipped but not on by default:
 # bluetooth tailscale containers updates -- each hides itself when its app
 # isn't installed. A name <foo> is a bar_item_<foo> function in
 # ~/.config/sketchybar/items/<foo>.sh, or one you define yourself in
 # ~/.config/sketchybar/items.d/*.sh. Unknown names are skipped with a
 # warning. Apply with `sketchybar --reload`.
-MACARCHY_BAR_RIGHT="caffeine wifi volume stats battery"
+MACARCHY_BAR_RIGHT="caffeine wifi volume stats battery tray"
 
 # --- layout: gaps, padding, bar, border (pixels) ---
 # Read by yabairc, bordersrc and sketchybarrc. After editing:

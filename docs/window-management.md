@@ -307,7 +307,7 @@ bar has no equivalent for:
 
 | How | What it does |
 |---|---|
-| `shift + alt - m` | hides the bar on every display, so the native menu bar reveals on hover as usual. Press again to bring the bar back. yabai keeps reserving the strip, so no window moves. |
+| `shift + alt - m`, or click the `⋯` tray item at the far right | hides the bar on every display, so the native menu bar reveals on hover as usual. Press again to bring the bar back. yabai keeps reserving the strip, so no window moves. |
 | `ctrl - F2` (`ctrl + fn + F2` on the laptop keyboard) | macOS "Move focus to menu bar". The menu titles stay under the bar, but the menus themselves open above it; arrow keys move between them. Change it in System Settings > Keyboard > Keyboard Shortcuts > Keyboard. |
 | Raycast "Search Menu Items" | fuzzy-searches every menu item of the front app |
 
@@ -324,7 +324,7 @@ The icons on the right are chosen and ordered by `MACARCHY_BAR_RIGHT` in
 `~/.config/macarchy/config`, listed left to right as they appear:
 
 ```sh
-MACARCHY_BAR_RIGHT="caffeine wifi volume stats battery"   # the default
+MACARCHY_BAR_RIGHT="caffeine wifi volume stats battery tray"   # the default
 ```
 
 Every icon shows its value as a label while the pointer is over it.
@@ -336,6 +336,7 @@ Every icon shows its value as a label while the pointer is over it.
 | `volume` | output level | mute / unmute |
 | `stats` | CPU and memory | Activity Monitor |
 | `battery` | charge, red below 20% | Battery settings |
+| `tray` | `⋯`; hover says "menu bar" | hides the bar to reach the native menu bar; `shift + alt - m` brings it back (see [The native menu bar](#the-native-menu-bar)) |
 
 Also shipped, off by default, each hidden when its app is not installed:
 `bluetooth`, `tailscale`, `containers`, `updates`. Add a name to the list and
@@ -359,7 +360,7 @@ bar_item_utc() {
 ```
 
 ```sh
-MACARCHY_BAR_RIGHT="caffeine wifi volume stats battery utc"
+MACARCHY_BAR_RIGHT="caffeine wifi volume stats battery utc tray"
 ```
 
 A drop-in runs inside `sketchybarrc`, with `$CONFIG_DIR`, `$PLUGIN_DIR`, the
