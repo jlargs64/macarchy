@@ -42,7 +42,8 @@ this list live, from `skhdrc`.
 | `shift + alt - b` | cycle the wallpaper within the current theme |
 | `alt - b` | pop up `theme-bg-pick`, the current theme's backgrounds with pictures |
 | `shift + alt - /` | pop up `theme-pick`, fzf theme picker with swatches |
-| `shift + alt - r` | restart yabai and reload SketchyBar |
+| `shift + alt - m` | hide / show the bar, to reach the native menu bar; clicking the `⋯` tray item at the far right hides it too, and only this brings it back |
+| `shift + alt - r` | `macarchy-restart`: yabai, borders, SketchyBar, then skhd |
 | `alt - /` | pop up `macarchy-keys`, a searchable list of every binding |
 | `ctrl - <number>` | switch Space (**native macOS**, enable under Keyboard Shortcuts > Mission Control) |
 | `alt - w` | `ws --voice`, the workspace agent |
@@ -69,8 +70,8 @@ this list live, from `skhdrc`.
 | `macarchy-keys --list` | every hotkey, as a table (`--markdown` for docs) |
 | `hotkey-check` | hotkey collisions with macOS, Raycast and Handy |
 | `ws "..."` / `ws -x "..."` / `ws --voice` | plain-English desktop control; dry-run unless `-x` or `MACARCHY_AGENT_EXECUTE=true` |
-| `macarchy-restart` | restart yabai and reload the bar (what `shift + alt - r` runs, once the PR adding it lands) |
-| `macarchy-rescue` | move off-screen windows back on screen (same PR) |
+| `macarchy-restart` | restart yabai, borders, SketchyBar and skhd, each on its own (what `shift + alt - r` runs); `--yabai`, `--borders`, `--bar`, `--skhd` for one |
+| `macarchy-rescue` | move off-screen windows back on screen; restarts nothing (yabairc runs it after display changes and wake) |
 
 Popups open in `MACARCHY_TERMINAL` as a floating window; yabai floats them
 by title.
@@ -111,11 +112,12 @@ failure (missing package, service not running, Accessibility not granted,
 
 | Symptom | Do |
 |---|---|
-| Windows stopped tiling, bar stale, something generally off | `shift + alt - r` (or `yabai --restart-service && sketchybar --reload`; `macarchy-restart` once it lands) |
+| Windows stopped tiling, bar stale, something generally off | `shift + alt - r`, or `macarchy-restart` from a terminal |
+| Bar gone (the `⋯` tray item was clicked) | `shift + alt - m`, or `sketchybar --bar hidden=off`; `sketchybar --query bar` shows `"hidden": "on"` when this is it |
 | Wallpaper wrong on one Space | switch to that Space once (yabai enrolls it on arrival), or run `theme-wallpaper-enroll` to walk every Space (the screen flicks through them; needs `ctrl + <number>` enabled) |
 | Wallpaper wrong everywhere | `theme-bg apply`, then `theme-set $(basename "$(readlink ~/.config/theme/current)")` |
-| A window is off screen or lost | `macarchy-rescue` (once it lands); until then `alt - g` to float it, `alt - =` to rebalance, or drag it from Mission Control |
-| Hotkeys dead | `macarchy-doctor`: is skhd running and granted Accessibility? If it is clean, check Secure Keyboard Entry: a terminal (Terminal.app, iTerm2) or a password manager holding it stops skhd from seeing keys; turn it off in that app. `tail /tmp/skhd_$USER.err.log` for the rest |
+| A window is off screen or lost | `macarchy-rescue`; failing that `alt - g` to float it, `alt - =` to rebalance, or drag it from Mission Control |
+| Hotkeys dead | `macarchy-doctor`: is skhd running and granted Accessibility? If it is clean, check Secure Keyboard Entry: an app holding it (Terminal.app, iTerm2, a password manager, a browser or macOS password field) makes skhd log `secure keyboard entry is enabled by (<pid>) '<app>'! abort..` in `/tmp/skhd_$USER.err.log` and quit. Leave the password field or turn it off in that app, then run `macarchy-restart --skhd` **from a terminal**: `shift + alt - r` is itself an skhd hotkey and does nothing while skhd is down |
 | `could not access accessibility features! abort..` in `/tmp/yabai_$USER.err.log` or the skhd log, often after `brew upgrade yabai` or `skhd` | the grant was invalidated: System Settings > Privacy & Security > Accessibility, remove and re-add `/opt/homebrew/bin/yabai` and `/opt/homebrew/bin/skhd`, then `yabai --restart-service; skhd --restart-service` |
 | Space numbers drift or the bar shows the wrong Space | `defaults write com.apple.dock mru-spaces -bool false && killall Dock` (doctor checks this) |
 | Theme changed but one app did not | that app's hook: `theme-set <name>` again and read its warning; Ghostty errors show in `ghostty +show-config 2>&1 >/dev/null` |
