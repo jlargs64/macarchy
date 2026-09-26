@@ -17,6 +17,17 @@
 
 MACARCHY_ALL_COMPONENTS="themes wm bar borders keys agent"
 
+# Directories under $HOME that files in home/ are linked into. macarchy-update
+# prunes dead links and macarchy-uninstall removes links only inside these, so
+# a new top-level directory under home/ must be added here (a test checks).
+MACARCHY_LINK_DIRS=".config .local/bin .claude"
+
+# macarchy_link_dirs -> those directories as absolute paths, one per line.
+macarchy_link_dirs() {
+  local d
+  for d in $MACARCHY_LINK_DIRS; do echo "$HOME/$d"; done
+}
+
 macarchy_component_desc() {
   case "$1" in
     themes) echo "theme-set + 22 themes for your terminal, editor, Neovim and wallpaper" ;;

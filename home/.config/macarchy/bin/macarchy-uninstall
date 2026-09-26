@@ -98,6 +98,8 @@ fi
 # the repo's file list, so links to files deleted upstream go too.
 echo "==> Removing links into $(tilde "$REPO")"
 removed=0 restored=0 dirs=""
+link_dirs=()
+while IFS= read -r d; do link_dirs+=("$d"); done < <(macarchy_link_dirs)
 while IFS= read -r -d '' link; do
   macarchy_is_our_link "$link" "$REPO" || continue
   run rm "$link"
@@ -107,7 +109,7 @@ while IFS= read -r -d '' link; do
     restored=$((restored + 1))
   fi
   dirs="$dirs$(dirname "$link")"$'\n'
-done < <(find "$HOME/.config" "$HOME/.local/bin" -type l -print0 2>/dev/null)
+done < <(find "${link_dirs[@]}" -type l -print0 2>/dev/null)
 
 # Links install.sh made that point at ~/.config/theme/current, not the repo.
 for link in "$HOME/.config/theme/current" \
@@ -122,11 +124,16 @@ for link in "$HOME/.config/theme/current" \
 done
 echo "  $removed removed, $restored restored from .pre-macarchy"
 
-# 4. Directories left empty. Deepest first, and never above ~/.config or
-# ~/.local/bin themselves.
+# 4. Directories left empty. Deepest first, and never the link dirs
+# (~/.config, ~/.local/bin, ...) themselves or anything above them.
+is_link_dir() {
+  local d
+  for d in "${link_dirs[@]}" "$HOME"; do [ "$1" = "$d" ] && return 0; done
+  return 1
+}
 if [ -n "$dirs" ]; then
   while IFS= read -r d; do
-    while [ -n "$d" ] && [ "$d" != "$HOME/.config" ] && [ "$d" != "$HOME/.local/bin" ] && [ "$d" != "$HOME" ]; do
+    while [ -n "$d" ] && ! is_link_dir "$d"; do
       if [ "$DRY_RUN" = 0 ]; then
         rmdir "$d" 2>/dev/null || break
       fi
