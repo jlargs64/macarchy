@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# theme-bg-pick -- fzf picker for the current theme's backgrounds, with a
+# picture of each (theme-img). The counterpart of theme-pick for wallpapers.
+#
+#   (no args)       picker; Enter applies the background (theme-bg <n>),
+#                   Esc cancels with no change
+#   --popup         relaunch in a floating terminal window (MACARCHY_TERMINAL);
+#                   this is what alt - b runs
+#   --preview FILE  what fzf's preview window shells out to (theme-img)
+#   --rows          print the raw tab-delimited fzf input rows and exit
+#   --dry-run       picker mode, but print the choice instead of applying it
+#   --help          this message
+#
+# THEME_ROOT (default ~/.config/theme) can be overridden for testing.
+set -euo pipefail
+
+THEME_ROOT="${THEME_ROOT:-$HOME/.config/theme}"
+BIN="$(cd "$(dirname "$0")" && pwd -P)"
+SELF="$BIN/$(basename "$0")"
+DRY_RUN=0
+
+usage() {
+  sed -n '2,13p' "$SELF" | sed 's/^# \{0,1\}//'
+}
+
+theme_dir() {
+  [ -L "$THEME_ROOT/current" ] || {
+    echo "theme-bg-pick: no theme selected; run theme-set first" >&2
+    exit 1
+  }
+  cd "$THEME_ROOT/current" && pwd -P
+}
+
+# rows: "display<TAB>path<TAB>n" from theme-bg's own numbered list, so the
+# numbering matches what `theme-bg <n>` applies. "* nn name" marks the current.
+build_rows() {
+  local dir mark n name
+  dir="$(theme_dir)"
+  "$BIN/theme-bg" | while read -r mark n name; do
+    if [ "$mark" != "*" ]; then
+      name="$n"
+      n="$mark"
+      mark=" "
+    fi
+    printf '%s %2s  %s%s\t%s\t%s\n' "$mark" "$n" "${name%.*}" "$([ "$mark" = "*" ] && echo ' (current)')" "$dir/backgrounds/$name" "$n"
+  done
+}
+
+run_picker() {
+  command -v fzf >/dev/null 2>&1 || {
+    echo "theme-bg-pick: fzf is required (brew install fzf)" >&2
+    exit 1
+  }
+  local rows selected status n idx
+  rows="$(build_rows)"
+  [ -n "$rows" ] || {
+    echo "theme-bg-pick: no backgrounds for $(basename "$(theme_dir)"); run theme-bg-fetch" >&2
+    exit 1
+  }
+  idx="$(printf '%s\n' "$rows" | grep -n '^\*' | cut -d: -f1 | head -1)"
+  local -a bind_opt=()
+  [ -n "$idx" ] && bind_opt=(--bind "start:pos($idx)")
+
+  if [ "${MACARCHY_BGPICK_POPUP:-0}" = 1 ]; then float_self; fi
+
+  set +e
+  selected="$(printf '%s\n' "$rows" | fzf \
+    --delimiter="$(printf '\t')" \
+    --with-nth=1 \
+    --header="$(basename "$(theme_dir)")  -  enter: set background  -  esc: cancel" \
+    --preview="$(printf '%q' "$SELF") --preview {2}" \
+    --preview-window=right,65%,border-left \
+    ${bind_opt[@]+"${bind_opt[@]}"})"
+  status=$?
+  set -e
+  [ "$status" -eq 0 ] && [ -n "$selected" ] || exit 0
+  n="$(printf '%s' "$selected" | cut -d "$(printf '\t')" -f3)"
+  [ -n "$n" ] || exit 0
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '%s\n' "$(printf '%s' "$selected" | cut -d "$(printf '\t')" -f2)"
+    exit 0
+  fi
+  exec "$BIN/theme-bg" "$n"
+}
+
+popup() {
+  local q_self
+  q_self="$(printf '%q' "$SELF")"
+  exec "$HOME/.config/macarchy/bin/macarchy-popup" theme-bg-pick "env MACARCHY_BGPICK_POPUP=1 $q_self"
+}
+
+# Float + center our own window (same approach as theme-pick / macarchy-keys).
+float_self() {
+  command -v yabai >/dev/null 2>&1 || return 0
+  (
+    local id
+    for _ in $(seq 1 30); do
+      id="$(yabai -m query --windows 2>/dev/null |
+        jq -r '[.[] | select(.title=="theme-bg-pick")][0].id // empty' 2>/dev/null)"
+      if [ -n "$id" ]; then
+        if yabai -m rule --list 2>/dev/null | jq -e 'map(select(.label=="theme-bg-pick")) | length > 0' >/dev/null 2>&1; then
+          yabai -m rule --apply theme-bg-pick >/dev/null 2>&1 || true
+        else
+          yabai -m window "$id" --toggle float --grid 6:6:1:1:4:4 >/dev/null 2>&1 || true
+        fi
+        yabai -m window "$id" --focus >/dev/null 2>&1 || true
+        return 0
+      fi
+      sleep 0.1
+    done
+  ) &
+}
+
+mode=picker
+preview=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --popup) mode=popup ;;
+    --rows) mode=rows ;;
+    --dry-run) DRY_RUN=1 ;;
+    --preview)
+      mode=preview
+      preview="${2:-}"
+      shift
+      ;;
+    -h | --help) mode=help ;;
+    *)
+      echo "theme-bg-pick: unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+case "$mode" in
+  help) usage ;;
+  rows) build_rows ;;
+  preview) exec "$BIN/theme-img" "$preview" ;;
+  popup) popup ;;
+  picker) run_picker ;;
+esac

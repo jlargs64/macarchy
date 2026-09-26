@@ -199,6 +199,14 @@ theme-bg next | prev  # cycle
 theme-bg-fetch        # re-download anything missing
 ```
 
+`alt - b` pops up `theme-bg-pick`, an fzf picker of the current theme's
+backgrounds with a picture of each (Omarchy-style); Enter applies it. The
+theme picker (`shift + alt - /`) shows each theme's background the same way,
+above its palette. Pictures are drawn by `theme-img` with
+[chafa](https://hpjansson.org/chafa/) (installed by `install.sh`) over the
+Kitty graphics protocol in Ghostty, kitty and WezTerm, iTerm2's own in iTerm2,
+and unicode blocks elsewhere; `MACARCHY_PREVIEW_FORMAT` overrides the choice.
+
 `shift + alt - b` cycles the background within the current theme;
 `shift + alt - t` cycles the theme itself.
 

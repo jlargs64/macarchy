@@ -154,7 +154,7 @@ echo
 # -----------------------------------------------------------------------
 BREW_FORMULAE=()
 BREW_CASKS=()
-macarchy_has themes && BREW_FORMULAE+=(imagemagick fzf)
+macarchy_has themes && BREW_FORMULAE+=(imagemagick fzf chafa)
 macarchy_has wm && BREW_FORMULAE+=(jq koekeishiya/formulae/yabai koekeishiya/formulae/skhd)
 macarchy_has bar && BREW_FORMULAE+=(jq FelixKratz/formulae/sketchybar) && BREW_CASKS+=(font-hack-nerd-font)
 macarchy_has borders && BREW_FORMULAE+=(FelixKratz/formulae/borders)

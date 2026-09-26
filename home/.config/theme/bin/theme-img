@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# theme-img <image> [cols] [rows] -- draw an image in the terminal.
+#
+# Used as the fzf preview for theme-bg-pick and theme-pick. Picks the best
+# renderer available: chafa (real pixels via the Kitty or iTerm graphics
+# protocol, or unicode blocks), then viu, then a one-line text fallback with
+# the file's name and size so the picker still works without either.
+#
+# The pixel protocol comes from the terminal the popup runs in
+# (MACARCHY_TERMINAL): ghostty, kitty and wezterm speak Kitty, iTerm2 speaks
+# its own, everything else gets blocks. Inside zellij or tmux blocks are used
+# too, since neither passes the protocols through. MACARCHY_PREVIEW_FORMAT
+# (kitty | iterm | sixels | symbols) overrides the guess.
+set -euo pipefail
+
+# shellcheck disable=SC1091
+[ -f "$HOME/.config/macarchy/lib.sh" ] && . "$HOME/.config/macarchy/lib.sh"
+
+img="${1:?usage: theme-img <image> [cols] [rows]}"
+cols="${2:-${FZF_PREVIEW_COLUMNS:-40}}"
+rows="${3:-${FZF_PREVIEW_LINES:-20}}"
+
+[ -f "$img" ] || {
+  echo "theme-img: no such file: $img" >&2
+  exit 1
+}
+
+format() {
+  if [ -n "${MACARCHY_PREVIEW_FORMAT:-}" ]; then
+    echo "$MACARCHY_PREVIEW_FORMAT"
+  elif [ -n "${ZELLIJ:-}${TMUX:-}" ]; then
+    echo symbols
+  else
+    case "${MACARCHY_TERMINAL:-ghostty}" in
+      ghostty | kitty | wezterm) echo kitty ;;
+      iterm2) echo iterm ;;
+      *) echo symbols ;;
+    esac
+  fi
+}
+
+if command -v chafa >/dev/null 2>&1; then
+  chafa -f "$(format)" --size "${cols}x${rows}" --animate off "$img"
+elif command -v viu >/dev/null 2>&1; then
+  viu -w "$cols" -h "$rows" "$img"
+else
+  dims="$(sips -g pixelWidth -g pixelHeight "$img" 2>/dev/null | awk '/pixelWidth/{w=$2} /pixelHeight/{h=$2} END{if (w) printf "%sx%s", w, h}')"
+  printf '%s  %s\n(brew install chafa for a picture here)\n' "$(basename "$img")" "${dims:-?}"
+fi
