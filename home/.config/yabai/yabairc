@@ -99,4 +99,8 @@ yabai -m rule --add label=theme-pick title="^theme-pick$" manage=off grid=6:6:1:
 yabai -m rule --add app="^Steam$"                  manage=off
 yabai -m rule --add app="^steam_osx$"              manage=off
 
+# Lay out the visible Spaces once now; the signals above only fire on changes,
+# so after a restart a lone window would otherwise span the display.
+"$HOME/.local/bin/macarchy-center" apply
+
 echo "yabai configuration loaded"
