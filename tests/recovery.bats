@@ -50,7 +50,7 @@ windows() { printf '[%s]' "$(
 
 restart() { run "$REPO/home/.config/macarchy/bin/macarchy-restart" "$@"; }
 rescue() { run "$REPO/home/.config/macarchy/bin/macarchy-rescue" "$@"; }
-doctor() { run "$REPO/home/.config/macarchy/bin/macarchy-doctor" "$@"; }
+doctor() { run "$REPO/home/.config/macarchy/bin/macarchy-doctor"; }
 
 # stub_order <line> <line> ... -- the lines appear in $STUB_LOG in this order
 stub_order() {
@@ -291,7 +291,7 @@ fake_plist() { # fake_plist <label> [with-throttle]
   [[ $output != *"yabai-2026-01-01"* ]]
 }
 
-@test "doctor: none of the new checks write to \$HOME" {
+@test 'doctor: none of the new checks write to $HOME' {
   install_links "themes wm borders"
   fake_plist com.asmvik.yabai
   stub pgrep 'exit 0'
