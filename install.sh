@@ -415,6 +415,24 @@ step_login_update() {
   fi
 }
 
+# After `brew upgrade yabai` macOS drops the Accessibility grant, yabai exits
+# at once and launchd (KeepAlive) respawns it in a tight loop. ThrottleInterval
+# turns that into one try every ten seconds. `yabai --start-service` writes
+# the plist, so on a first install there is nothing to edit yet;
+# `macarchy-restart --throttle` does the same thing later.
+step_yabai_throttle() {
+  macarchy_has wm || return 0
+  local plist
+  plist="$(macarchy_yabai_plist)" || return 0
+  echo "==> yabai LaunchAgent"
+  if /usr/libexec/PlistBuddy -c 'Print :ThrottleInterval' "$plist" >/dev/null 2>&1; then
+    echo "  ThrottleInterval already set in ${plist/#$HOME/~}"
+  else
+    run /usr/libexec/PlistBuddy -c 'Add :ThrottleInterval integer 10' "$plist"
+    echo "  (takes effect at the next yabai --restart-service)"
+  fi
+}
+
 step_optional_integrations() {
   macarchy_has themes || return 0
   echo "==> Optional integrations"
@@ -459,6 +477,7 @@ step_config
 step_agent
 step_build
 step_login_update
+step_yabai_throttle
 step_optional_integrations
 
 echo

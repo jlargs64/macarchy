@@ -219,6 +219,12 @@ h2 a:hover { text-decoration: underline; text-decoration-color: var(--color-bran
 .yours dt { font-weight: 500; font-size: var(--text-lg); }
 .yours dd { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-md); min-width: 0; color: var(--color-text-secondary); }
 @media (min-width: 64rem) { .yours > div { grid-template-columns: minmax(0, 14rem) minmax(0, 1fr); } }
+.settings-wrap { overflow-x: auto; max-width: 100%; }
+.settings { width: 100%; border-collapse: collapse; border-top: var(--rule-hair) solid var(--color-border-subtle); font-size: var(--text-sm); line-height: 1.6; }
+.settings th, .settings td { text-align: left; vertical-align: top; padding: var(--space-xs) var(--space-md) var(--space-xs) 0; border-bottom: var(--rule-hair) solid var(--color-border-subtle); }
+.settings th { font-weight: 500; color: var(--color-text); }
+.settings td:first-child { color: var(--color-brand); white-space: nowrap; }
+.settings td:last-child { padding-right: 0; }
 
 /* ---- trouble ---- */
 .trouble { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); }

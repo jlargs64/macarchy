@@ -21,10 +21,11 @@ VS Code (and Cursor, VSCodium, Windsurf), Zed, Zellij and Neovim; see
 |---|---|
 | Theming | `theme-set <name>` restyles your terminal (Ghostty, kitty, Alacritty, iTerm2), editor (VS Code and forks, Zed, Neovim), Zellij, SketchyBar, JankyBorders and the wallpaper together, skipping apps you don't have. [docs/theme-system.md](docs/theme-system.md) |
 | Window management | yabai (tiling) + skhd (hotkeys) + SketchyBar (status bar) + JankyBorders (focus border), layered over native macOS Spaces, no SIP changes. The bar draws above the auto-hidden menu bar; `shift + alt - m` hides it to reach the native one. [docs/window-management.md](docs/window-management.md) |
+| Recovery | `macarchy-doctor` names the silent failures (secure keyboard entry killing skhd, a lost Accessibility grant after `brew upgrade yabai`, windows off every display, a stale border); `shift + alt - r` restarts yabai, borders, the bar and skhd; display changes and wake re-rescue windows on their own. [docs/window-management.md](docs/window-management.md#when-it-breaks) |
 | Hotkey discovery | `alt - /` pops up a searchable which-key style list of every skhd binding; Enter runs it. Also lists Ghostty and Zellij keybinds when those configs exist |
 | Theme picker | `shift + alt - /` pops up `theme-pick`, an fzf picker with truecolor swatches for all 22 themes, in a floating window of your terminal (`MACARCHY_TERMINAL`); Enter applies it |
 | Raycast | a generated "Set Theme" script command |
-| Workspace agent | `ws`: plain-English (or voice, `alt - w`) control of windows, Spaces, theme and terminal tabs via an on-device 14 MB model. [docs/agent.md](docs/agent.md) |
+| Workspace agent | `ws`: plain-English (or voice, `alt - w`) control of windows, Spaces, theme, wallpaper and terminal tabs via an on-device 14 MB model. [docs/agent.md](docs/agent.md) |
 | Speech-to-text | [Handy](https://handy.computer) (offline, open-source; brew cask `handy`, installed by `install.sh`) transcribes for `ws --voice`. Its own hotkey, `alt - space` (hold to talk, tap to toggle), is configured inside Handy, not skhd. |
 
 Themes live under `home/.config/theme/themes/`. 22 themes ship. `retro-82` is
@@ -398,8 +399,10 @@ home/                       mirrors $HOME; install.sh links it file by file
   .config/raycast/scripts/  Raycast script commands
   .config/macarchy/         config.example, lib.sh (config loader), components.sh (what install.sh can install), bin/ (macarchy-keys, macarchy-popup, macarchy-update)
   .local/bin/                theme-*, macarchy-keys and macarchy-update on PATH, symlinked into .config/theme/bin and .config/macarchy/bin
+  .claude/skills/macarchy/  a Claude Code skill for operating the desktop (lands in ~/.claude/skills/)
 install.sh                  installer (see above)
 docs/                        long-form documentation
+AGENTS.md                    the map for coding agents working on this repo (CLAUDE.md points at it)
 ```
 
 ## Working on it

@@ -183,7 +183,8 @@
         <li><button class="theme-card" type="button" data-set-theme="white" data-mode="light" aria-pressed="false"><span class="theme-card__swatch" data-pal="white" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">white</span><span class="theme-card__src">ported from Omarchy · light</span></span></button></li>
 <!-- themes:end -->
       </ul>
-      <p class="muted" style="margin-top: var(--space-lg); max-width: var(--measure)"><kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>/</kbd> opens <code>theme-pick</code>, an fzf picker with a swatch strip per theme; <kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>t</kbd> cycles themes and <kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>b</kbd> cycles the wallpaper within one. <code>theme-port &lt;name&gt;</code> brings in anything else from Omarchy’s catalogue. Light themes need <code>--allow-light</code> and a look afterwards: the SketchyBar and border colour maths were written for dark backgrounds.</p>
+      <p class="muted" style="margin-top: var(--space-lg); max-width: var(--measure)"><kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>/</kbd> opens <code>theme-pick</code>, an fzf picker with a swatch strip per theme and a picture of its background above the palette. <kbd>alt</kbd>+<kbd>b</kbd> opens <code>theme-bg-pick</code>, the current theme’s backgrounds with a picture of each, Omarchy-style; Enter applies it. The pictures are drawn by <code>theme-img</code> with <a href="https://hpjansson.org/chafa/">chafa</a> over the Kitty graphics protocol in Ghostty (kitty and WezTerm too), iTerm2’s own protocol in iTerm2, and unicode blocks anywhere else. <kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>t</kbd> cycles themes and <kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>b</kbd> cycles the wallpaper within one; the choice is remembered per theme.</p>
+      <p class="muted" style="margin-top: var(--space-md); max-width: var(--measure)">The wallpaper follows the theme on every Space. macOS stores it per Space, so every Space points at one fixed file and a switch rewrites the file. A new Space enrolls itself the first time you land on it: yabai runs <code>theme-wallpaper-enroll --here</code> on each Space switch, which points only the desktops on screen at the file and does nothing when they already are. Without yabai, run <code>theme-wallpaper-enroll</code> once by hand instead. <code>theme-port &lt;name&gt;</code> brings in anything else from Omarchy’s catalogue. Light themes need <code>--allow-light</code> and a look afterwards: the SketchyBar and border colour maths were written for dark backgrounds.</p>
     </div>
   </section>
 
@@ -209,7 +210,7 @@
             <div><dt>shift + alt - b</dt><dd>cycle the wallpaper within the current theme</dd></div>
             <div><dt>shift + alt - /</dt><dd>pop up theme-pick, an fzf theme picker with swatches and a picture of each background</dd></div>
             <div><dt>alt - b</dt><dd>pop up theme-bg-pick, the current theme's backgrounds with pictures</dd></div>
-            <div><dt>shift + alt - r</dt><dd>restart yabai and reload SketchyBar</dd></div>
+            <div><dt>shift + alt - r</dt><dd>macarchy-restart: yabai, then borders, then the bar, then skhd, in that order</dd></div>
             <div><dt>alt - /</dt><dd>pop up macarchy-keys</dd></div>
             <div><dt>ctrl - number</dt><dd>switch Space (native macOS, enable it under Keyboard Shortcuts › Mission Control)</dd></div>
           </dl>
@@ -231,6 +232,11 @@
           </dl>
         </div>
       </div>
+      <aside class="trade" style="margin-top: var(--space-xl)" aria-labelledby="wide-title">
+        <h3 id="wide-title">Wide displays</h3>
+        <p class="sec" style="font-size: var(--text-sm)">Three things change on a monitor that is not the MacBook screen, none of them needing the scripting addition. The bar strip is reserved on every display: <code>external_bar</code> keeps <code>MACARCHY_BAR_HEIGHT</code> free at the top of each one, so a monitor with no notch and the menu bar hidden does not get windows under the bar. The clock sits on the midpoint of a display without a notch, instead of hugging where one would be. And a lone window (one window, or a stack) sits in a centered column with wallpaper gutters, laid out by <code>macarchy-center</code>; <kbd>alt</kbd>+<kbd>c</kbd> puts the focused window in that column on a busier Space, and again drops it back into its tile.</p>
+        <p class="muted"><code>MACARCHY_CENTER_WIDTH</code> sets the column, <code>16:10</code> of the display height by default, so a 16:9 monitor and the MacBook screen get no gutters. <code>MACARCHY_CENTER_SINGLE=false</code> turns the automatic part off and leaves <kbd>alt</kbd>+<kbd>c</kbd>. <code>macarchy-center status</code> prints what it would do for each visible Space.</p>
+      </aside>
       <aside class="trade" style="margin-top: var(--space-xl)" aria-labelledby="trade-title">
         <h3 id="trade-title">The SIP trade</h3>
         <p class="sec" style="font-size: var(--text-sm)">yabai’s optional scripting addition injects into Dock.app and needs System Integrity Protection partially disabled. macarchy does not use it. macOS keeps owning Spaces; yabai only arranges windows inside one.</p>
@@ -316,7 +322,7 @@
           <li><code>sketchybar --reload</code>, then sets the border colours from <code>ACCENT</code> and <code>MUTED</code>.</li>
           <li>Touches Zellij’s <code>config.kdl</code> so a running session repaints.</li>
           <li>Sends <code>:colorscheme</code> to every running Neovim.</li>
-          <li>Sets the wallpaper, generating it first if missing. Run <code>theme-wallpaper-enroll</code> once so every Space follows.</li>
+          <li>Sets the wallpaper, generating it first if missing. Every Space follows: each points at one fixed file, and a new Space enrolls itself the first time you land on it.</li>
           <li>Asks Ghostty to reload with <kbd>cmd</kbd>+<kbd>shift</kbd>+<kbd>,</kbd>. If the keystroke does not land, it prints the shortcut and you press it yourself.</li>
         </ol>
         <p class="muted">Steps 3 through 7 are best-effort. A missing or stopped app is skipped and the switch carries on.</p>
@@ -343,6 +349,34 @@
 <span class="ln">MACARCHY_RAYCAST_AUTHOR=""        <span class="c"># @raycast.author line; blank omits it</span></span>
 <span class="ln">MACARCHY_WIFI_IFACE=en0           <span class="c"># interface the wifi bar plugin reads</span></span></code></pre>
             </figure>
+          </dd>
+        </div>
+        <div>
+          <dt>Layout</dt>
+          <dd>
+            <p>Gaps, padding, the bar strip and the border are settings in the same file, not edits to yabairc. All pixels; the defaults are in <code>lib.sh</code>, so a line you delete falls back to them. yabairc, bordersrc and sketchybarrc all read them.</p>
+            <div class="settings-wrap">
+              <table class="settings">
+                <thead><tr><th scope="col">Setting</th><th scope="col">Default</th><th scope="col">Meaning</th></tr></thead>
+                <tbody>
+                  <tr><td><code>MACARCHY_GAP</code></td><td><code>8</code></td><td>gap between tiled windows</td></tr>
+                  <tr><td><code>MACARCHY_PADDING_TOP</code></td><td><code>8</code></td><td>gap under the bar</td></tr>
+                  <tr><td><code>MACARCHY_PADDING_BOTTOM</code></td><td><code>20</code></td><td>gap above the screen edge; bigger than the rest because the border draws outside the window</td></tr>
+                  <tr><td><code>MACARCHY_PADDING_LEFT</code> / <code>_RIGHT</code></td><td><code>8</code></td><td>side gaps (a centered column adds its own, see <a href="#wide-title">Wide displays</a>)</td></tr>
+                  <tr><td><code>MACARCHY_BAR_HEIGHT</code></td><td><code>32</code></td><td>SketchyBar strip; yabai reserves the same height at the top of every display (<code>external_bar</code>)</td></tr>
+                  <tr><td><code>MACARCHY_BORDER_WIDTH</code></td><td><code>6</code></td><td>JankyBorders focus border</td></tr>
+                  <tr><td><code>MACARCHY_BORDER_STYLE</code></td><td><code>round</code></td><td><code>round</code> or <code>square</code></td></tr>
+                  <tr><td><code>MACARCHY_CENTER_WIDTH</code></td><td><code>16:10</code></td><td>centered column width, as an aspect ratio relative to the display height or a pixel count (<code>2200</code>)</td></tr>
+                  <tr><td><code>MACARCHY_CENTER_SINGLE</code></td><td><code>true</code></td><td>center a lone window automatically; <code>false</code> leaves only <kbd>alt</kbd>+<kbd>c</kbd></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>After a change, restart what reads them:</p>
+            <figure class="code">
+              <figcaption class="code__bar"><span>sh</span><button class="btn btn--sm" type="button" data-copy><span class="btn__label">Copy</span></button></figcaption>
+<pre><code><span class="ln"><span class="p">$ </span>yabai --restart-service; brew services restart borders; sketchybar --reload</span></code></pre>
+            </figure>
+            <p class="muted">Or <kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>r</kbd>, which runs <code>macarchy-restart</code> for all of them.</p>
           </dd>
         </div>
         <div>
@@ -380,6 +414,10 @@
       <div>
         <h2 id="trouble-title"><a href="#trouble">When something looks wrong</a></h2>
         <ul style="margin-top: var(--space-lg)">
+          <li><strong>Start with <code>macarchy-doctor</code>.</strong> It checks every component you installed, packages, permissions, services and the theme state, and prints a fix line under each failure. It is read-only and never starts or installs anything; <code>--quiet</code> prints only warnings and failures, and the exit status is 1 when something failed.</li>
+          <li><strong>Hotkeys stopped landing.</strong> skhd stops receiving hotkeys while an app has secure keyboard entry on, which a password field turns on and some terminals keep on. <code>macarchy-doctor</code> reports which app has it.</li>
+          <li><strong>Something is stuck.</strong> <kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>r</kbd> runs <code>macarchy-restart</code>: yabai, then borders, then the bar, then skhd, in that order.</li>
+          <li><strong>A window ended up off every display.</strong> <code>macarchy-rescue</code> pulls it back onto the focused one.</li>
           <li><strong>Ghostty shows a “Configuration Errors” dialog after a switch.</strong> The theme’s <code>ghostty</code> fragment names a theme Ghostty does not have. Names are exact: <code>Catppuccin Mocha</code>, not <code>catppuccin-mocha</code>. Check with <code>ghostty +list-themes</code>.</li>
           <li><strong>Space indicators look wrong after a reboot.</strong> <code>mru-spaces</code> must stay off; the installer sets it. yabai and the bar both assume Space N stays Space N.</li>
           <li><strong>Switching Spaces feels floaty.</strong> The installer already halves the slide to 0.1s. The stronger option is System Settings › Accessibility › Display › Reduce Motion, left off by default because it flattens animations system-wide.</li>
@@ -388,7 +426,10 @@
       </div>
       <figure class="code">
         <figcaption class="code__bar"><span>sh</span><button class="btn btn--sm" type="button" data-copy><span class="btn__label">Copy</span></button></figcaption>
-<pre><code><span class="ln"><span class="p">$ </span>readlink ~/.config/theme/current            <span class="c"># which theme is active</span></span>
+<pre><code><span class="ln"><span class="p">$ </span>macarchy-doctor                             <span class="c"># every component, a fix line per failure</span></span>
+<span class="ln"><span class="p">$ </span>macarchy-restart                            <span class="c"># yabai, borders, the bar, skhd</span></span>
+<span class="ln"><span class="p">$ </span>macarchy-rescue                             <span class="c"># off-display windows, back onto this one</span></span>
+<span class="ln"><span class="p">$ </span>readlink ~/.config/theme/current            <span class="c"># which theme is active</span></span>
 <span class="ln"><span class="p">$ </span>ghostty +show-config 2&gt;&amp;1 &gt;/dev/null        <span class="c"># theme-name errors show here</span></span>
 <span class="ln"><span class="p">$ </span>nvim --headless -c 'lua print(vim.g.colors_name) vim.cmd("qa!")'</span>
 <span class="ln"><span class="p">$ </span>sketchybar --query bar | jq .color          <span class="c"># expect 0xff&lt;BG&gt;</span></span>

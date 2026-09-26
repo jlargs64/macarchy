@@ -121,7 +121,7 @@ and re-add it.
 | `shift + alt - b` | cycle the wallpaper within the current theme |
 | `alt - b` | pop up `theme-bg-pick` — the current theme's backgrounds, with pictures |
 | `shift + alt - /` | pop up `theme-pick` — fzf theme picker with swatch previews |
-| `shift + alt - r` | restart yabai and reload SketchyBar |
+| `shift + alt - r` | `macarchy-restart`: restart yabai, JankyBorders, SketchyBar and skhd, each step on its own |
 | `shift + alt - m` | hide / show the bar, to reach the native menu bar (see [The native menu bar](#the-native-menu-bar)) |
 | `alt - /` | pop up `macarchy-keys` — a searchable list of every skhd binding |
 | `ctrl - <number>` | switch Space (**native macOS**, see below) |
@@ -257,8 +257,9 @@ Mission Control.
 ### Gaps, padding, bar and border
 
 All pixels, all in `~/.config/macarchy/config` (defaults in `lib.sh`). yabairc,
-bordersrc and sketchybarrc read them, so after a change:
-`yabai --restart-service; brew services restart borders; sketchybar --reload`.
+bordersrc and sketchybarrc read them, so after a change: `macarchy-restart`
+(or `shift + alt - r`), which restarts yabai, borders, the bar and skhd in
+that order.
 
 | Setting | Default | Meaning |
 |---|---|---|
@@ -347,8 +348,8 @@ a name to the list and `sketchybar --reload`:
 |---|---|---|
 | `tailscale` | `󰌘` connected, `󰇧` exit node in use, `󰌙` dim when stopped or logged out; hover shows the machine's tailnet name and "via <exit node>" | `tailscale up` / `down`; opens Tailscale.app when logged out. Needs Tailscale.app or the `tailscale` CLI |
 | `containers` | `󰡨 N` running Docker plus Podman containers; hidden at 0 or when both daemons are stopped; hover splits the count per engine | opens Docker Desktop, else Podman Desktop. Needs `docker` or `podman` |
- A name that matches no item is skipped with a warning
-in the SketchyBar log.
+
+A name that matches no item is skipped with a warning in the SketchyBar log.
 
 Each name is a function: `foo` is `bar_item_foo`, defined in
 `~/.config/sketchybar/items/foo.sh`. To add your own item, put a file in
@@ -374,6 +375,31 @@ A drop-in runs inside `sketchybarrc`, with `$CONFIG_DIR`, `$PLUGIN_DIR`, the
 theme colours (`$WHITE`, ...) and `$MACARCHY_FONT` set and the bar's item
 defaults already applied. It should only define functions; the function adds
 the item, and returns without adding anything if the app it needs is missing.
+
+## When it breaks
+
+Every piece here fails silently: yabai keeps its PID while it stops tiling,
+skhd is respawned by launchd with nothing to say, the border just stays where
+it was. `macarchy-doctor` names each of these and prints the fix; this table is
+the short version.
+
+| Symptom | What is going on | What to press or run |
+|---|---|---|
+| **Hotkeys are dead**, yabai still tiles | An app turned on secure keyboard entry (a password field, Terminal's Secure Keyboard Entry, a password manager). skhd exits with `secure keyboard entry is enabled by (<pid>) '<app>'! abort..`, launchd restarts it, it exits again. | `macarchy-doctor` names the app (from `ioreg`'s `kCGSSessionSecureInputPID`). Leave its password field or turn the setting off; skhd comes back on its own. |
+| **Windows are gone** after unplugging a monitor, changing resolution or waking | yabai missed the display change ([yabai #2638](https://github.com/asmvik/yabai/issues/2638)) and the windows keep frames on a display that no longer exists. | This self-heals: `yabairc` runs `macarchy-rescue` two seconds after `display_added`, `display_removed` and `system_woke`. If something is still lost: `macarchy-rescue` (`--dry-run` to look first), or `shift + alt - r`. |
+| **Tiling stopped after `brew upgrade yabai`** | The binary changed, so macOS dropped its Accessibility grant. yabai logs `could not access accessibility features` and launchd crash-loops it. | System Settings > Privacy & Security > Accessibility: remove yabai, add `/opt/homebrew/bin/yabai` again, then `yabai --restart-service`. `install.sh` and `macarchy-restart --throttle` add `ThrottleInterval 10` to yabai's LaunchAgent so the loop is one try every ten seconds instead of a CPU-eating spin. |
+| **The border is stale** (on the wrong window, or nowhere) | JankyBorders loses track after yabai restarts and after fullscreen transitions ([#80](https://github.com/FelixKratz/JankyBorders/issues/80), [#201](https://github.com/FelixKratz/JankyBorders/issues/201)); two `borders` processes do the same. | `shift + alt - r`, or `macarchy-restart --borders` alone. |
+| **A lone window spans the whole ultrawide** after a restart | yabai came back before `macarchy-center` could pad the Space. | `shift + alt - r` (it waits for yabai, then re-centers), or `macarchy-center apply`. |
+
+`shift + alt - r` runs `macarchy-restart`: yabai, a wait until it answers,
+`macarchy-center apply`, then borders, SketchyBar and skhd. Each step runs
+whether or not the previous one worked, and a failed one is printed. Flags
+restart a subset (`--yabai`, `--borders`, `--bar`, `--skhd`).
+
+`macarchy-doctor` also lists crash reports for yabai, skhd, borders and
+SketchyBar from the last seven days, checks that the signals `yabairc` adds are
+loaded (a yabai that lost them is running but not doing anything), and counts
+windows that sit off every display.
 
 ## Space indicators in the bar
 

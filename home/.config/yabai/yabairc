@@ -25,6 +25,9 @@ yabai -m config layout                      bsp
 yabai -m config window_placement            second_child
 yabai -m config auto_balance                off
 yabai -m config split_ratio                 0.50
+# A new window opens on the display that has focus, not wherever its app was
+# last seen; that display may have been unplugged since.
+yabai -m config window_origin_display       focused
 
 # ----- gaps and padding -----------------------------------------------------
 # SketchyBar is a MACARCHY_BAR_HEIGHT (32pt) strip at the top of every display.
@@ -89,6 +92,16 @@ for ev in window_created window_destroyed window_focused window_minimized \
   window_deminimized application_terminated application_hidden application_visible \
   space_changed display_changed display_added display_removed display_resized; do
   yabai -m signal --add event=$ev label="center-$ev" action="$HOME/.local/bin/macarchy-center apply"
+done
+
+# ----- rescue windows after display changes and wake ------------------------
+# yabai can miss a display parameter change (a monitor unplugged, wake from
+# sleep, asmvik/yabai #2638) and leave windows with frames on no display.
+# Give macOS two seconds to settle, then pull the lost ones onto the focused
+# display and re-center. Both scripts exit 0, so the chain never stops early.
+for ev in display_added display_removed system_woke; do
+  yabai -m signal --add event=$ev label="rescue-$ev" \
+    action="sleep 2; $HOME/.local/bin/macarchy-rescue; $HOME/.local/bin/macarchy-center apply"
 done
 
 # ----- rules: apps that should never be tiled -------------------------------

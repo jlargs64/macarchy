@@ -55,6 +55,7 @@ THEME_ALIASES = {
     "the 82 one": "retro-82",
 }
 SPACES = [1, 2, 3, 4, 5]
+BG_ALIASES = {"previous": "prev", "last": "prev", "the next one": "next", "another": "next"}
 DIRECTIONS = ["west", "east", "north", "south"]
 DIR_ALIASES = {"left": "west", "right": "east", "up": "north", "down": "south"}
 
@@ -130,6 +131,15 @@ def toggle_window(state: WindowState):
 
 
 @needle.tool
+def center_window(app: str | None = None):
+    """Center a window in a column on a wide display, or put it back if it is centered.
+    Args:
+        app: app name; omit for focused window
+    """
+    return _rec("center_window", app=app)
+
+
+@needle.tool
 def set_layout(layout: Layout):
     """Set the Space's tiling layout.
     Args:
@@ -158,6 +168,21 @@ def set_theme(name: Theme):
 def next_theme():
     """Cycle to the next theme."""
     return _rec("next_theme")
+
+
+@needle.tool
+def set_background(choice: str):
+    """Set the desktop background (wallpaper) within the current theme.
+    Args:
+        choice: next, prev, a number from 1, or part of the picture's name
+    """
+    return _rec("set_background", choice=choice)
+
+
+@needle.tool
+def pick_background():
+    """Open the background (wallpaper) picker, which shows a picture of each."""
+    return _rec("pick_background")
 
 
 # ----- terminal multiplexer (zellij) ----------------------------------------
@@ -195,10 +220,13 @@ TOOLS = [
     focus_space,
     warp_window,
     toggle_window,
+    center_window,
     set_layout,
     balance_windows,
     set_theme,
     next_theme,
+    set_background,
+    pick_background,
     zellij_new_tab,
     zellij_go_to_tab,
     zellij_split_pane,

@@ -91,7 +91,9 @@ shift + alt - 0x2C : ~/.local/bin/theme-pick --popup   # shift + alt - /   pick 
 shift + alt - m : sketchybar --bar hidden=toggle   # toggle the bar (reveals the native menu bar)
 
 # ----- restart services -----------------------------------------------------
-shift + alt - r : yabai --restart-service && sketchybar --reload   # restart yabai + sketchybar
+# yabai, then borders, SketchyBar and skhd, each step on its own; a failed
+# step is printed and the rest still run. `macarchy-restart --help` for subsets.
+shift + alt - r : ~/.local/bin/macarchy-restart   # restart yabai, borders, SketchyBar and skhd
 
 # ----- help -------------------------------------------------------------
 alt - 0x2C : ~/.local/bin/macarchy-keys --popup   # alt - /   show all hotkeys

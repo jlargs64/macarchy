@@ -42,3 +42,17 @@ MACARCHY_HANDY="${MACARCHY_HANDY:-/Applications/Handy.app/Contents/MacOS/handy}"
 [ -f "$HOME/.config/macarchy/config" ] && . "$HOME/.config/macarchy/config"
 
 export MACARCHY_DEFAULT_THEME MACARCHY_FONT MACARCHY_SPACES MACARCHY_RAYCAST_AUTHOR MACARCHY_WIFI_IFACE MACARCHY_BAR_RIGHT
+
+# macarchy_yabai_plist -> the yabai LaunchAgent plist, if `yabai --start-service`
+# has written one. The label changed from com.koekeishiya.yabai to
+# com.asmvik.yabai when the project moved, so look for both.
+macarchy_yabai_plist() {
+  local l
+  for l in com.koekeishiya.yabai com.asmvik.yabai; do
+    if [ -f "$HOME/Library/LaunchAgents/$l.plist" ]; then
+      echo "$HOME/Library/LaunchAgents/$l.plist"
+      return 0
+    fi
+  done
+  return 1
+}

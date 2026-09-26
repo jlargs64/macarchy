@@ -15,6 +15,8 @@ setup() {
   [ "$(macarchy_component_of .config/yabai/yabairc)" = wm ]
   [ "$(macarchy_component_of .config/theme/bin/hotkey-check)" = wm ]
   [ "$(macarchy_component_of .local/bin/macarchy-center)" = wm ]
+  [ "$(macarchy_component_of .local/bin/macarchy-restart)" = wm ]
+  [ "$(macarchy_component_of .config/macarchy/bin/macarchy-rescue)" = wm ]
   [ "$(macarchy_component_of .config/sketchybar/sketchybarrc)" = bar ]
   [ "$(macarchy_component_of .config/borders/bordersrc)" = borders ]
   [ "$(macarchy_component_of .local/bin/macarchy-keys)" = keys ]
@@ -32,6 +34,21 @@ setup() {
       ;;
     esac
   done < <(macarchy_repo_files "$REPO")
+}
+
+@test "every file under home/ is inside a link dir, so prune and uninstall reach it" {
+  while IFS= read -r rel; do
+    rel="${rel#home/}"
+    hit=0
+    for d in $MACARCHY_LINK_DIRS; do
+      case "$rel" in "$d"/*) hit=1 ;; esac
+    done
+    if [ "$hit" = 0 ]; then
+      echo "$rel is outside MACARCHY_LINK_DIRS ($MACARCHY_LINK_DIRS)"
+      return 1
+    fi
+  done < <(macarchy_repo_files "$REPO")
+  [ "$(macarchy_link_dirs | head -1)" = "$HOME/.config" ]
 }
 
 @test "resolve adds dependencies and keeps canonical order" {

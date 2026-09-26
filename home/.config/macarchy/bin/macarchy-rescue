@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# macarchy-rescue -- bring windows that ended up off every display back.
+#
+# Usage:
+#   macarchy-rescue              move each off-screen window to the focused display
+#   macarchy-rescue --dry-run    only print what it would move
+#
+# On macOS 26 and later yabai can miss a display parameter change (a monitor
+# unplugged, a resolution switch, wake from sleep), and windows keep frames
+# that no longer land on any display. A window whose frame covers less than
+# a tenth of its area on any display counts as lost and is moved with
+# `yabai -m window <id> --display <focused>`, which needs no scripting
+# addition. Minimized and hidden windows are left alone. yabairc runs this
+# after display_added, display_removed and system_woke, and macarchy-doctor
+# reports the count. Always exits 0, so a signal chain never stops here.
+
+set -uo pipefail
+
+DRY=0
+for a in "$@"; do
+  case "$a" in
+    -n | --dry-run) DRY=1 ;;
+    -h | --help)
+      sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *)
+      echo "macarchy-rescue: unknown argument: $a" >&2
+      exit 2
+      ;;
+  esac
+done
+
+for c in yabai jq; do
+  command -v "$c" >/dev/null 2>&1 || {
+    echo "macarchy-rescue: $c not found" >&2
+    exit 0
+  }
+done
+
+displays="$(yabai -m query --displays 2>/dev/null)"
+windows="$(yabai -m query --windows 2>/dev/null)"
+if [ -z "$displays" ] || [ -z "$windows" ]; then
+  echo "macarchy-rescue: yabai did not answer" >&2
+  exit 0
+fi
+
+focused="$(jq -r 'map(select(.["has-focus"])) | .[0].index // empty' <<<"$displays" 2>/dev/null)"
+if [ -z "$focused" ]; then
+  focused="$(jq -r '.[0].index // empty' <<<"$displays" 2>/dev/null)"
+fi
+if [ -z "$focused" ]; then
+  echo "macarchy-rescue: no displays" >&2
+  exit 0
+fi
+
+# One line per lost window: id, app, title, frame. Intersection of two frames
+# is (overlap in x) * (overlap in y), zero when they do not touch.
+lost="$(jq -r --argjson displays "$displays" '
+  def inter($a; $b):
+    (([$a.x + $a.w, $b.x + $b.w] | min) - ([$a.x, $b.x] | max)) as $w
+    | (([$a.y + $a.h, $b.y + $b.h] | min) - ([$a.y, $b.y] | max)) as $h
+    | if $w > 0 and $h > 0 then $w * $h else 0 end;
+  .[]
+  | select((.["is-minimized"] | not) and (.["is-hidden"] | not))
+  | select(.frame.w > 0 and .frame.h > 0)
+  | . as $win
+  | ([$displays[] | inter($win.frame; .frame)] | max) as $seen
+  | select($seen < $win.frame.w * $win.frame.h / 10)
+  | "\(.id)\t\(.app)\t\(.title)\t\(.frame.x | floor),\(.frame.y | floor) \(.frame.w | floor)x\(.frame.h | floor)"
+' <<<"$windows" 2>/dev/null)"
+
+if [ -z "$lost" ]; then
+  [ "$DRY" = 1 ] && echo "macarchy-rescue: every window is on a display"
+  exit 0
+fi
+
+while IFS=$'\t' read -r id app title frame; do
+  [ -n "$id" ] || continue
+  if [ "$DRY" = 1 ]; then
+    echo "would move $id $app \"$title\" at $frame to display $focused"
+  elif yabai -m window "$id" --display "$focused" >/dev/null 2>&1; then
+    echo "moved $id $app \"$title\" from $frame to display $focused"
+  else
+    echo "could not move $id $app \"$title\" (yabai -m window $id --display $focused failed)" >&2
+  fi
+done <<<"$lost"
+exit 0
