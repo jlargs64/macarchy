@@ -75,6 +75,18 @@ need_running() {
   if running "$1"; then ok "$2 running"; else fail "$2 not running" "$3"; fi
 }
 
+# check_crashes <process> -- crash reports for it in the last 7 days
+check_crashes() {
+  local reports n
+  reports="$(find "$HOME/Library/Logs/DiagnosticReports" -maxdepth 1 -mtime -7 \( -name "$1-*" -o -name "$1_*" \) 2>/dev/null | LC_ALL=C sort)"
+  n="$(printf '%s' "$reports" | grep -c . | tr -d ' ')"
+  if [ "$n" = 0 ]; then
+    ok "no $1 crash reports in the last 7 days"
+  else
+    warn "$n $1 crash report(s) in the last 7 days: $(printf '%s\n' "$reports" | tail -3 | xargs -n1 basename | tr '\n' ' ')" "open ~/Library/Logs/DiagnosticReports (Console.app shows the same)"
+  fi
+}
+
 version() {
   if [ -e "$REPO/.git" ]; then
     git -C "$REPO" describe --tags --match 'v[0-9]*' --always 2>/dev/null
@@ -197,16 +209,53 @@ if macarchy_has wm; then
   section "Window management"
   need_cmd yabai koekeishiya/formulae/yabai
   need_cmd skhd koekeishiya/formulae/skhd
-  if running yabai; then
-    if yabai -m query --displays >/dev/null 2>&1; then
-      ok "yabai running and answering"
-    else
-      fail "yabai is running but not answering queries, usually missing Accessibility" "System Settings > Privacy & Security > Accessibility: enable $(command -v yabai || echo yabai), then yabai --restart-service"
-    fi
+  yabai_ok=0
+  yabai_log="${MACARCHY_YABAI_ERR_LOG:-/tmp/yabai_${USER:-$(id -un)}.err.log}"
+  if running yabai && yabai -m query --displays >/dev/null 2>&1; then
+    ok "yabai running and answering"
+    yabai_ok=1
+  elif [ -f "$yabai_log" ] && tail -50 "$yabai_log" 2>/dev/null | grep -q "could not access accessibility"; then
+    # after `brew upgrade yabai` the binary changes and macOS drops the grant;
+    # launchd keeps respawning it and the log fills with this line
+    fail "yabai cannot use Accessibility ($(tilde "$yabai_log")); a brew upgrade drops the grant and launchd crash-loops it" "System Settings > Privacy & Security > Accessibility: remove yabai, add $(command -v yabai || echo /opt/homebrew/bin/yabai) again, then yabai --restart-service"
+  elif running yabai; then
+    fail "yabai is running but not answering queries, usually missing Accessibility" "System Settings > Privacy & Security > Accessibility: enable $(command -v yabai || echo yabai), then yabai --restart-service"
   else
     fail "yabai not running" "yabai --start-service"
   fi
+  if yabai_plist="$(macarchy_yabai_plist)"; then
+    if grep -q '<key>ThrottleInterval</key>' "$yabai_plist"; then
+      ok "yabai LaunchAgent has ThrottleInterval"
+    else
+      warn "yabai LaunchAgent has no ThrottleInterval, so a crash (lost Accessibility) makes launchd respawn it in a tight loop" "macarchy-restart --throttle   (or: /usr/libexec/PlistBuddy -c 'Add :ThrottleInterval integer 10' $(tilde "$yabai_plist"))"
+    fi
+  fi
+  if [ "$yabai_ok" = 1 ]; then
+    if yabai -m signal --list 2>/dev/null | grep -q '"label": *"center-'; then
+      ok "yabai signals from yabairc loaded"
+    else
+      fail "yabai is running without the signals yabairc adds (it did not finish loading?)" "yabai --restart-service"
+    fi
+    n_lost="$("$REPO/home/.config/macarchy/bin/macarchy-rescue" --dry-run 2>/dev/null | grep -c '^would move' | tr -d ' ')"
+    if [ "$n_lost" = 0 ]; then
+      ok "every window is on a display"
+    else
+      warn "$n_lost window(s) sit off every display" "macarchy-rescue"
+    fi
+  fi
   need_running skhd skhd "skhd --start-service (and enable it under Privacy & Security > Accessibility)"
+  # an app with secure keyboard entry on (a password field, Terminal's
+  # Secure Keyboard Entry, ...) makes skhd abort; launchd restarts it, but
+  # hotkeys are dead until the app lets go
+  secure_pid="$(ioreg -l -w 0 2>/dev/null | grep -o 'kCGSSessionSecureInputPID"=[0-9]*' | head -1 | grep -o '[0-9]*$')"
+  if [ -n "$secure_pid" ]; then
+    secure_app="$(basename "$(ps -o comm= -p "$secure_pid" 2>/dev/null)" 2>/dev/null)"
+    warn "secure keyboard entry is on in ${secure_app:-an app} (pid $secure_pid), so skhd aborts and hotkeys are dead" "leave that app's password field, or turn off its Secure Keyboard Entry setting; skhd comes back on its own (or: skhd --restart-service)"
+  else
+    ok "secure keyboard entry off"
+  fi
+  check_crashes yabai
+  check_crashes skhd
   if [ "$(defaults read com.apple.dock mru-spaces 2>/dev/null)" = 0 ]; then
     ok "Spaces keep their order (mru-spaces off)"
   else
@@ -222,12 +271,18 @@ if macarchy_has bar; then
   font_glob="*$(echo "$MACARCHY_FONT" | sed 's/ Nerd Font//; s/ /*/g')*Nerd*"
   if font_file "$font_glob"; then ok "font $MACARCHY_FONT installed"; else fail "font $MACARCHY_FONT not found; bar glyphs render as boxes" "brew install --cask font-hack-nerd-font"; fi
   if [ -f "$HOME/Library/Fonts/sketchybar-app-font.ttf" ]; then ok "sketchybar-app-font installed"; else warn "sketchybar-app-font missing; Space indicators show no app icons" "re-run ./install.sh --only bar"; fi
+  check_crashes sketchybar
 fi
 
 if macarchy_has borders; then
   section "Borders"
   need_cmd borders FelixKratz/formulae/borders
   need_running borders JankyBorders "brew services start borders"
+  n_borders="$(pgrep -x -u "$(id -u)" borders 2>/dev/null | grep -c . | tr -d ' ')"
+  if [ "$n_borders" -gt 1 ]; then
+    warn "$n_borders borders processes running; the border goes stale or draws twice" "macarchy-restart --borders"
+  fi
+  check_crashes borders
 fi
 
 if macarchy_has keys; then

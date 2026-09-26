@@ -41,6 +41,8 @@ macarchy_component_of() {
   case "$1" in
     .config/theme/bin/hotkey-check | .local/bin/hotkey-check) echo wm ;;
     .config/macarchy/bin/macarchy-center | .local/bin/macarchy-center) echo wm ;;
+    .config/macarchy/bin/macarchy-restart | .local/bin/macarchy-restart) echo wm ;;
+    .config/macarchy/bin/macarchy-rescue | .local/bin/macarchy-rescue) echo wm ;;
     .config/macarchy/bin/macarchy-keys | .local/bin/macarchy-keys) echo keys ;;
     .config/macarchy/agent/* | .config/macarchy/swift/* | .local/bin/ws) echo agent ;;
     .config/theme/* | .config/raycast/* | .local/bin/theme-*) echo themes ;;

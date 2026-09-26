@@ -21,6 +21,7 @@ VS Code (and Cursor, VSCodium, Windsurf), Zed, Zellij and Neovim; see
 |---|---|
 | Theming | `theme-set <name>` restyles your terminal (Ghostty, kitty, Alacritty, iTerm2), editor (VS Code and forks, Zed, Neovim), Zellij, SketchyBar, JankyBorders and the wallpaper together, skipping apps you don't have. [docs/theme-system.md](docs/theme-system.md) |
 | Window management | yabai (tiling) + skhd (hotkeys) + SketchyBar (status bar) + JankyBorders (focus border), layered over native macOS Spaces, no SIP changes. [docs/window-management.md](docs/window-management.md) |
+| Recovery | `macarchy-doctor` names the silent failures (secure keyboard entry killing skhd, a lost Accessibility grant after `brew upgrade yabai`, windows off every display, a stale border); `shift + alt - r` restarts yabai, borders, the bar and skhd; display changes and wake re-rescue windows on their own. [docs/window-management.md](docs/window-management.md#when-it-breaks) |
 | Hotkey discovery | `alt - /` pops up a searchable which-key style list of every skhd binding; Enter runs it. Also lists Ghostty and Zellij keybinds when those configs exist |
 | Theme picker | `shift + alt - /` pops up `theme-pick`, an fzf picker with truecolor swatches for all 22 themes, in a floating window of your terminal (`MACARCHY_TERMINAL`); Enter applies it |
 | Raycast | a generated "Set Theme" script command |

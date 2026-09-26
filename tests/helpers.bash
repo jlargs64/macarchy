@@ -23,9 +23,10 @@ common_setup() {
   export STUBS="$BATS_TEST_TMPDIR/stubs" STUB_LOG="$BATS_TEST_TMPDIR/stub.log"
   mkdir -p "$STUBS"
   : >"$STUB_LOG"
-  for c in launchctl yabai skhd sketchybar borders brew defaults killall osascript open uv; do stub "$c"; done
-  stub pgrep "exit 1"                                   # nothing is running unless a test says so
-  stub launchctl '[ "$1" = print ] && exit 113; exit 0' # no agent loaded
+  for c in launchctl yabai skhd sketchybar borders brew defaults killall osascript open uv ioreg pkill; do stub "$c"; done
+  stub pgrep "exit 1"                                             # nothing is running unless a test says so
+  stub launchctl '[ "$1" = print ] && exit 113; exit 0'           # no agent loaded
+  export MACARCHY_YABAI_ERR_LOG="$BATS_TEST_TMPDIR/yabai.err.log" # not the real /tmp/yabai_$USER.err.log
   export PATH="$STUBS:$HOME/.local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
   export NO_COLOR=1
   unset MACARCHY_COMPONENTS MACARCHY_THEME_TARGETS MACARCHY_UPDATE_AT_LOGIN
