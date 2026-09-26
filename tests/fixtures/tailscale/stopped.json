@@ -1,0 +1,38 @@
+{
+  "Version": "1.88.1-t0000000-g0000000",
+  "TUN": true,
+  "BackendState": "Stopped",
+  "HaveNodeKey": true,
+  "AuthURL": "",
+  "TailscaleIPs": [
+    "100.64.0.1",
+    "fd7a:115c:a1e0::1"
+  ],
+  "Self": {
+    "ID": "n1",
+    "HostName": "Laptop",
+    "DNSName": "laptop.example-tail.ts.net.",
+    "OS": "macOS",
+    "Online": false,
+    "ExitNode": false,
+    "ExitNodeOption": false
+  },
+  "Health": [],
+  "MagicDNSSuffix": "example-tail.ts.net",
+  "CurrentTailnet": {
+    "Name": "user@example.com",
+    "MagicDNSSuffix": "example-tail.ts.net",
+    "MagicDNSEnabled": true
+  },
+  "Peer": {
+    "nodekey:aaaa": {
+      "ID": "n2",
+      "HostName": "homeserver",
+      "DNSName": "homeserver.example-tail.ts.net.",
+      "OS": "linux",
+      "Online": true,
+      "ExitNode": false,
+      "ExitNodeOption": true
+    }
+  }
+}

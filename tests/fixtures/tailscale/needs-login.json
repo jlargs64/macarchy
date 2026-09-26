@@ -1,0 +1,21 @@
+{
+  "Version": "1.88.1-t0000000-g0000000",
+  "TUN": true,
+  "BackendState": "NeedsLogin",
+  "HaveNodeKey": false,
+  "AuthURL": "",
+  "TailscaleIPs": null,
+  "Self": {
+    "ID": "",
+    "HostName": "Laptop",
+    "DNSName": "",
+    "OS": "macOS",
+    "Online": false,
+    "ExitNode": false,
+    "ExitNodeOption": false
+  },
+  "Health": ["You are logged out."],
+  "MagicDNSSuffix": "",
+  "CurrentTailnet": null,
+  "Peer": null
+}
