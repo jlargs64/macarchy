@@ -17,7 +17,7 @@
 #   left    Space numbers 1-N (MACARCHY_SPACES; focused = bright, occupied = dim, empty = faint)
 #   q       clock, immediately left of the notch (a true center would be under it)
 #   e       mic / camera in use, then now-playing, right of the notch, hidden when idle
-#   right   MACARCHY_BAR_RIGHT, by default caffeine · wifi · volume · cpu+mem · battery · tray;
+#   right   MACARCHY_BAR_RIGHT, by default updates · caffeine · wifi · bluetooth · volume · cpu+mem · battery · tray;
 #           icons only, hover shows the value (items/<name>.sh, items.d/ for your own)
 #
 # On a display without a notch, q and e hug the exact midpoint instead, which
@@ -166,7 +166,7 @@ for f in "$CONFIG_DIR"/items/*.sh "$HOME"/.config/sketchybar/items.d/*.sh; do
   [ -f "$f" ] && source "$f"
 done
 
-read -ra bar_right <<<"${MACARCHY_BAR_RIGHT:-caffeine wifi volume stats battery tray}"
+read -ra bar_right <<<"${MACARCHY_BAR_RIGHT:-updates caffeine wifi bluetooth volume stats battery tray}"
 for ((i = ${#bar_right[@]} - 1; i >= 0; i--)); do
   name="${bar_right[i]}"
   if declare -F "bar_item_$name" >/dev/null; then

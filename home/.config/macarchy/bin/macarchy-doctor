@@ -217,6 +217,8 @@ fi
 if macarchy_has bar; then
   section "Status bar"
   need_cmd sketchybar FelixKratz/formulae/sketchybar
+  # The bluetooth item skips itself without blueutil, so this is a warning.
+  if have blueutil; then ok "blueutil installed (bluetooth item)"; else warn "blueutil not installed; the bluetooth item is hidden" "brew install blueutil"; fi
   need_running sketchybar SketchyBar "brew services start sketchybar"
   # topmost=on keeps the bar above the auto-hidden menu bar (see sketchybarrc);
   # without it the native menu bar slides over the bar on every hover.

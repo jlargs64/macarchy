@@ -19,7 +19,7 @@ MACARCHY_UPDATE_AT_LOGIN="${MACARCHY_UPDATE_AT_LOGIN:-true}"
 MACARCHY_THEME_TARGETS="${MACARCHY_THEME_TARGETS:-auto}"
 MACARCHY_TERMINAL="${MACARCHY_TERMINAL:-ghostty}"
 MACARCHY_KEYS_SOURCES="${MACARCHY_KEYS_SOURCES:-skhd ghostty zellij}"
-MACARCHY_BAR_RIGHT="${MACARCHY_BAR_RIGHT:-caffeine wifi volume stats battery tray}"
+MACARCHY_BAR_RIGHT="${MACARCHY_BAR_RIGHT:-updates caffeine wifi bluetooth volume stats battery tray}"
 MACARCHY_CENTER_WIDTH="${MACARCHY_CENTER_WIDTH:-16:10}"
 MACARCHY_CENTER_SINGLE="${MACARCHY_CENTER_SINGLE:-true}"
 # Layout (yabairc, bordersrc, sketchybarrc). Pixels.

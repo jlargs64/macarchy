@@ -19,6 +19,9 @@ setup() {
   # real sketchybar ahead of the stub. A function wins over any PATH lookup.
   sketchybar() { echo "sketchybar $*" >>"$STUB_LOG"; }
   export -f sketchybar
+  # bluetooth only adds itself when blueutil exists; a function satisfies command -v.
+  blueutil() { :; }
+  export -f blueutil
 }
 
 bar_rc() { run --separate-stderr bash "$CONFIG_DIR/sketchybarrc"; }
@@ -30,7 +33,7 @@ added_right() { sed -n 's/^sketchybar --add item \([^ ]*\) right\( .*\)\{0,1\}$/
   bar_rc
   [ "$status" -eq 0 ]
   [ -z "$stderr" ]
-  [ "$(added_right)" = "tray battery stats volume wifi caffeine " ]
+  [ "$(added_right)" = "tray battery stats volume bluetooth wifi caffeine updates " ]
   [ ! -e "$BATS_TEST_TMPDIR/plugin-ran" ]
 }
 

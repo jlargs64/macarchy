@@ -324,23 +324,30 @@ The icons on the right are chosen and ordered by `MACARCHY_BAR_RIGHT` in
 `~/.config/macarchy/config`, listed left to right as they appear:
 
 ```sh
-MACARCHY_BAR_RIGHT="caffeine wifi volume stats battery tray"   # the default
+MACARCHY_BAR_RIGHT="updates caffeine wifi bluetooth volume stats battery tray"   # the default
 ```
 
 Every icon shows its value as a label while the pointer is over it.
 
 | Item | Shows | Click |
 |---|---|---|
+| `updates` | `󰧞` dot when brew has outdated packages or a newer macarchy release is tagged; hidden otherwise. Checked hourly and on wake | runs `macarchy-update` in a popup, then lists the outdated brew packages (`brew upgrade` is left to you) |
 | `caffeine` | cup: bright while `caffeinate` keeps the Mac awake | toggles it (see [Caffeine toggle](#caffeine-toggle-in-the-bar)) |
 | `wifi` | signal; hover shows the network (`MACARCHY_WIFI_IFACE`) | Wi-Fi settings |
+| `bluetooth` | `󰂲` off (dim), `󰂯` on with nothing connected, `󰂱 N` connected; hover lists device names with battery % where macOS reports it (AirPods, Apple keyboards and mice). Hidden without `blueutil`, which the bar component installs | Bluetooth settings |
 | `volume` | output level | mute / unmute |
 | `stats` | CPU and memory | Activity Monitor |
 | `battery` | charge, red below 20% | Battery settings |
 | `tray` | `⋯`; hover says "menu bar" | hides the bar to reach the native menu bar; `shift + alt - m` brings it back (see [The native menu bar](#the-native-menu-bar)) |
 
-Also shipped, off by default, each hidden when its app is not installed:
-`bluetooth`, `tailscale`, `containers`, `updates`. Add a name to the list and
-`sketchybar --reload`. A name that matches no item is skipped with a warning
+Also shipped, off by default, each hidden when its app is not installed. Add
+a name to the list and `sketchybar --reload`:
+
+| Item | Shows | Click |
+|---|---|---|
+| `tailscale` | `󰌘` connected, `󰇧` exit node in use, `󰌙` dim when stopped or logged out; hover shows the machine's tailnet name and "via <exit node>" | `tailscale up` / `down`; opens Tailscale.app when logged out. Needs Tailscale.app or the `tailscale` CLI |
+| `containers` | `󰡨 N` running Docker plus Podman containers; hidden at 0 or when both daemons are stopped; hover splits the count per engine | opens Docker Desktop, else Podman Desktop. Needs `docker` or `podman` |
+ A name that matches no item is skipped with a warning
 in the SketchyBar log.
 
 Each name is a function: `foo` is `bar_item_foo`, defined in
