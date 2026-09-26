@@ -1,0 +1,42 @@
+{
+  "SPBluetoothDataType" : [
+    {
+      "controller_properties" : {
+        "controller_address" : "84:2F:57:1E:9D:9E",
+        "controller_state" : "attrib_on"
+      },
+      "device_connected" : [
+        {
+          "Justins AirPods Pro v2" : {
+            "device_address" : "48:E1:5C:D9:1D:69",
+            "device_batteryLevelCase" : "43%",
+            "device_batteryLevelLeft" : "100%",
+            "device_batteryLevelRight" : "80%",
+            "device_minorType" : "Headphones",
+            "device_productID" : "0x2014",
+            "device_vendorID" : "0x004C"
+          }
+        },
+        {
+          "MX Master 3S M" : {
+            "device_address" : "DC:DA:FB:C1:2A:67",
+            "device_firmwareVersion" : "RBM22.02_0009",
+            "device_minorType" : "Mouse",
+            "device_productID" : "0xB034",
+            "device_services" : "0x400020 < HID BLE >",
+            "device_vendorID" : "0x046D"
+          }
+        }
+      ],
+      "device_not_connected" : [
+        {
+          "Justin’s Magic Keyboard" : {
+            "device_address" : "48:E1:5C:C3:6C:D8",
+            "device_batteryLevelMain" : "12%",
+            "device_minorType" : "Keyboard"
+          }
+        }
+      ]
+    }
+  ]
+}
