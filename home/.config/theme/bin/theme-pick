@@ -5,10 +5,10 @@
 #                 `theme-set <name>`, Esc cancels with no change
 #   --list        plain aligned table (name, mode, BG, FG, ACCENT) to
 #                 stdout, no fzf
-#   --preview NAME  render NAME's full palette + nvim colorscheme +
-#                 backgrounds; this is what fzf's own --preview window
-#                 shells out to (theme-pick calling itself), but it also
-#                 works standalone
+#   --preview NAME  render NAME's background (a picture, via theme-img),
+#                 full palette, nvim colorscheme and background filenames;
+#                 this is what fzf's own --preview window shells out to
+#                 (theme-pick calling itself), but it also works standalone
 #   --popup       relaunch the picker in a floating terminal window (MACARCHY_TERMINAL)
 #   --dry-run     picker mode, but print the chosen theme name instead of
 #                 calling theme-set (for testing)
@@ -28,6 +28,7 @@ THEMES_DIR="${THEMES_DIR:-$HOME/.config/theme/themes}"
 # does something sane (no "current" symlink under a repo checkout --
 # current_theme just comes back empty, which is fine for --list/--rows).
 CURRENT_LINK="$(dirname "$THEMES_DIR")/current"
+SELF="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
 
 DRY_RUN=0
 
@@ -132,6 +133,16 @@ print_preview() {
     echo "theme-pick: no such theme: $name" >&2
     return 1
   }
+  # The theme's wallpaper first: the background remembered by theme-bg, else
+  # its first background, else the palette gradient. Half the preview height.
+  local img=""
+  [ -f "$dir/.bg" ] && img="$(cat "$dir/.bg" 2>/dev/null || true)"
+  [ -f "$img" ] || img="$(find "$dir/backgrounds" -maxdepth 1 -type f \( -name '*.jpg' -o -name '*.png' \) 2>/dev/null | LC_ALL=C sort | head -1)"
+  [ -f "$img" ] || img="$dir/wallpaper.jpg"
+  if [ -f "$img" ] && [ -x "$(dirname "$SELF")/theme-img" ]; then
+    "$(dirname "$SELF")/theme-img" "$img" "${FZF_PREVIEW_COLUMNS:-40}" "$(((${FZF_PREVIEW_LINES:-24}) / 2))" 2>/dev/null || true
+    echo
+  fi
   (
     # shellcheck disable=SC1091
     . "$dir/colors.sh"
@@ -173,8 +184,6 @@ build_rows() {
 # ---------------------------------------------------------------------------
 # picker
 # ---------------------------------------------------------------------------
-
-SELF="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
 
 run_picker() {
   command -v fzf >/dev/null 2>&1 || {

@@ -113,6 +113,7 @@ yabai -m rule --add label=macarchy-keys title="^macarchy-keys$" manage=off grid=
 # theme-pick pops up in its own terminal window (shift + alt - /); float it,
 # centered, the same way macarchy-keys is floated above.
 yabai -m rule --add label=theme-pick title="^theme-pick$" manage=off grid=6:6:1:1:4:4
+yabai -m rule --add label=theme-bg-pick title="^theme-bg-pick$" manage=off grid=6:6:1:1:4:4
 
 # Steam's windows are not AXStandardWindow, so yabai cannot tile them at all.
 # Float it explicitly rather than letting it look like a yabai failure.

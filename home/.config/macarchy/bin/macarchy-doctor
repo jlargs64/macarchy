@@ -188,6 +188,7 @@ if macarchy_has themes; then
   fi
   if have magick || have convert; then ok "imagemagick installed"; else fail "imagemagick not installed; wallpapers cannot be generated" "brew install imagemagick"; fi
   need_cmd fzf fzf
+  if have chafa; then ok "chafa installed"; else warn "chafa not installed; theme-pick and theme-bg-pick show no pictures" "brew install chafa"; fi
   n_bg="$(find "$HOME/.config/theme/themes" -path '*/backgrounds/*' -type f 2>/dev/null | wc -l | tr -d ' ')"
   if [ "$n_bg" -gt 0 ]; then ok "$n_bg theme backgrounds fetched"; else warn "no theme backgrounds fetched; wallpapers fall back to flat colour" "theme-bg-fetch"; fi
 fi
