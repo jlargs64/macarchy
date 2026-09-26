@@ -7,7 +7,7 @@
   ws --wav clip.wav                                             # run from an existing 16 kHz mono WAV
 
 Pipeline: text -> vocabulary gate -> Needle (tuned .cact) per clause -> schema validation
-        -> canonicalise args against live yabai apps / theme-list -> yabai / zellij / theme-set.
+        -> canonicalise args against live yabai apps / theme-list -> yabai / zellij / theme-set / theme-bg.
 Config (shell KEY=value, ~/.config/macarchy/config):
   MACARCHY_AGENT_MODEL    path to .cact  (default ~/.local/share/macarchy/models/workspace-agent.cact)
   MACARCHY_AGENT_EXECUTE  true|false     make execute the default instead of dry-run
@@ -44,7 +44,8 @@ VOCAB = set(
     """focus switch go bring show jump pull give put open launch start fire boot run move send stick throw take
 shove push swap warp shift float untile toggle pop unfloat tile fullscreen zoom maximize maximise unzoom flip rotate change
 stack set use disable turn stop balance equalize even resize cycle apply split add create spin tab pane theme space desktop
-workspace window windows layout bsp tiling tiled left right up down west east north south terminal browser next""".split()
+workspace window windows layout bsp tiling tiled left right up down west east north south terminal browser next
+center centre centered centred uncenter uncentre column background backgrounds wallpaper wallpapers picker prev previous""".split()
 )
 VOCAB |= {a.lower() for a in T.APPS} | {t.lower() for t in T.THEMES} | set(T.THEME_ALIASES) | set(T.APP_ALIASES)
 
@@ -108,6 +109,17 @@ def canon_app(name, wins):
     if close:
         return next(a for a in pool if a.lower() == close[0])
     return name.strip()  # unknown app: pass through, `open -a` will complain
+
+
+NUM_WORDS = {w: str(i) for i, w in enumerate("one two three four five six seven eight nine".split(), 1)}
+
+
+def canon_bg(choice):
+    """theme-bg takes next, prev, a number, or part of a file name; fold the ways people say the first three."""
+    key = (choice or "").strip().lower().rstrip(".")
+    key = T.BG_ALIASES.get(key, key)
+    key = NUM_WORDS.get(key, key)
+    return re.sub(r"^(?:the\s+)?(\d+)(?:st|nd|rd|th)?(?:\s+one)?$", r"\1", key) or None
 
 
 def canon_theme(name):
@@ -199,7 +211,7 @@ def infer(text, model, wins=()):
     calls = [c for c in calls if valid(c)]
     # the model sometimes drops the app in "put helium on space 2"; refill from the clause
     for c in calls:
-        if c["name"] in ("send_to_space", "warp_window") and not (c.get("arguments") or {}).get("app"):
+        if c["name"] in ("send_to_space", "warp_window", "center_window") and not (c.get("arguments") or {}).get("app"):
             named = app_in(text, wins)
             if named and not re.search(r"\b(this|it|the (current|focused) window|that)\b", text.lower()):
                 c.setdefault("arguments", {})["app"] = named
@@ -234,6 +246,7 @@ def plan(text, model, wins=()):
 
 # ----- execution ------------------------------------------------------------
 def execute(call, wins):
+    """The command for a call: one argv list, or a list of them to run in order (stops at the first failure)."""
     n, a = call["name"], dict(call.get("arguments") or {})
     if "app" in a:
         a["app"] = canon_app(a["app"], wins)
@@ -258,6 +271,14 @@ def execute(call, wins):
         flag = {"float": "float", "fullscreen": "zoom-fullscreen", "zoom": "zoom-parent", "split": "split"}[a["state"]]
         cmd = ["yabai", "-m", "window", "--toggle", flag]
         return cmd + ["--grid", "4:4:1:1:2:2"] if flag == "float" else cmd
+    if n == "center_window":
+        toggle = ["macarchy-center", "toggle"]  # acts on the focused window
+        if not a.get("app"):
+            return toggle
+        wid = window_for(a["app"], wins)
+        if wid is None:
+            raise RuntimeError(f"no window for {a['app']}")
+        return [["yabai", "-m", "window", "--focus", str(wid)], toggle]
     if n == "set_layout":
         return ["yabai", "-m", "space", "--layout", a["layout"]]
     if n == "balance_windows":
@@ -269,6 +290,13 @@ def execute(call, wins):
         return ["theme-set", t]
     if n == "next_theme":
         return ["theme-next"]
+    if n == "set_background":
+        choice = canon_bg(a["choice"])
+        if not choice:
+            raise RuntimeError("no background named")
+        return ["theme-bg", choice]
+    if n == "pick_background":
+        return ["theme-bg-pick", "--popup"]
     if n.startswith("zellij_"):
         sess = zellij_session()
         base = ["zellij"] + (["-s", sess] if sess else []) + ["action"]
@@ -477,19 +505,23 @@ def main(argv):
     lines, results = [], []
     for call in calls:
         try:
-            cmd = execute(call, wins)
+            cmds = execute(call, wins)
         except Exception as e:
             lines.append(f"skip {call['name']}: {e}")
             continue
-        if execute_mode:
-            r = subprocess.run(cmd, capture_output=True, text=True)
-            ok = r.returncode == 0
-            lines.append(
-                ("ran  " if ok else "FAIL ") + shlex.join(cmd) + ("" if ok else f"  -> {r.stderr.strip()[:80]}")
-            )
-        else:
-            lines.append("would " + shlex.join(cmd))
-        results.append({"call": call, "cmd": cmd})
+        cmds = cmds if isinstance(cmds[0], list) else [cmds]
+        for cmd in cmds:
+            if execute_mode:
+                r = subprocess.run(cmd, capture_output=True, text=True)
+                ok = r.returncode == 0
+                lines.append(
+                    ("ran  " if ok else "FAIL ") + shlex.join(cmd) + ("" if ok else f"  -> {r.stderr.strip()[:80]}")
+                )
+                if not ok:
+                    break
+            else:
+                lines.append("would " + shlex.join(cmd))
+            results.append({"call": call, "cmd": cmd})
     # yabai has no signal for a window changing spaces, so the bar's space
     # indicators would keep showing the old occupancy; nudge them ourselves.
     if execute_mode and results:

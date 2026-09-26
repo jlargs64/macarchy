@@ -1,11 +1,12 @@
 # Workspace agent (`ws`)
 
 Say what you want done to the desktop, in plain words, and a 14 MB on-device
-model turns it into yabai, zellij and theme commands. Nothing leaves the machine.
+model turns it into yabai, zellij, theme and wallpaper commands. Nothing leaves the machine.
 
 ```
 ws "put slack on space 2 and switch to the kanagawa theme"   # prints what it would run
 ws -x "focus helium"                                          # runs it
+ws -x "center slack and use the mountains wallpaper"
 ws --voice                                                    # alt - w: press to listen, press again to run
 ```
 
@@ -41,8 +42,11 @@ ws --voice                                                    # alt - w: press t
 | `focus_space(space)` | native ctrl-N via System Events key codes |
 | `warp_window(direction, app?)` | `yabai -m window --warp` |
 | `toggle_window(float/fullscreen/zoom/split)` | `yabai -m window --toggle ...` |
+| `center_window(app?)` | `macarchy-center toggle` (alt - c), after `yabai -m window --focus <id>` when an app is named |
 | `set_layout(bsp/stack/float)`, `balance_windows()` | `yabai -m space ...` |
 | `set_theme(name)`, `next_theme()` | `theme-set`, `theme-next` |
+| `set_background(next/prev/N/name)` | `theme-bg <choice>`; "previous", "last" and number words are folded first |
+| `pick_background()` | `theme-bg-pick --popup` (alt - b) |
 | `zellij_new_tab(name?)`, `zellij_go_to_tab(n)`, `zellij_split_pane(right/down)` | `zellij -s <session> action ...` |
 
 Zellij target: `$ZELLIJ_SESSION_NAME` when run inside zellij, otherwise the newest
@@ -51,7 +55,7 @@ live session. With several Ghostty windows open that is a guess.
 ## Files
 
 ```
-home/.config/macarchy/agent/tools.py      the 13 tools; schemas for training AND runtime come from here
+home/.config/macarchy/agent/tools.py      the 16 tools; schemas for training AND runtime come from here
 home/.config/macarchy/agent/ws.py         runner
 home/.config/macarchy/agent/ws            launcher (uses ~/.local/share/macarchy/venv)
 home/.config/macarchy/agent/pyproject.toml  dependencies; uv.lock pins them, .python-version pins 3.11
@@ -64,4 +68,6 @@ home/.config/macarchy/agent/finetune/     data generator, eval, how to train
 
 Add a `@needle.tool` function to `tools.py`, a phrase generator to `finetune/gen_data.py`,
 an executor branch to `ws.py`, then regenerate data and retrain. Schemas are part of
-the prompt, so any rename or description change also needs a retrain.
+the prompt, so any rename or description change also needs a retrain. Until the retrain
+the new tool is already in the runtime prompt (the schemas come from `tools.py` at
+startup), so the model can call it, just less reliably than the ones it was tuned on.

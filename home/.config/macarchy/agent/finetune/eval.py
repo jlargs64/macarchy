@@ -56,6 +56,11 @@ HARD = [
     ("remind me to water the plants", []),
     ("push slack to the left", [{"name": "warp_window", "arguments": {"direction": "west", "app": "slack"}}]),
     ("go to space 4", [{"name": "focus_space", "arguments": {"space": 4}}]),
+    ("center this window", [{"name": "center_window", "arguments": {}}]),
+    ("put slack in the middle", [{"name": "center_window", "arguments": {"app": "slack"}}]),
+    ("next wallpaper", [{"name": "set_background", "arguments": {"choice": "next"}}]),
+    ("use the mountains background", [{"name": "set_background", "arguments": {"choice": "mountains"}}]),
+    ("pick a background", [{"name": "pick_background", "arguments": {}}]),
 ]
 
 

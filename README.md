@@ -24,7 +24,7 @@ VS Code (and Cursor, VSCodium, Windsurf), Zed, Zellij and Neovim; see
 | Hotkey discovery | `alt - /` pops up a searchable which-key style list of every skhd binding; Enter runs it. Also lists Ghostty and Zellij keybinds when those configs exist |
 | Theme picker | `shift + alt - /` pops up `theme-pick`, an fzf picker with truecolor swatches for all 22 themes, in a floating window of your terminal (`MACARCHY_TERMINAL`); Enter applies it |
 | Raycast | a generated "Set Theme" script command |
-| Workspace agent | `ws`: plain-English (or voice, `alt - w`) control of windows, Spaces, theme and terminal tabs via an on-device 14 MB model. [docs/agent.md](docs/agent.md) |
+| Workspace agent | `ws`: plain-English (or voice, `alt - w`) control of windows, Spaces, theme, wallpaper and terminal tabs via an on-device 14 MB model. [docs/agent.md](docs/agent.md) |
 | Speech-to-text | [Handy](https://handy.computer) (offline, open-source; brew cask `handy`, installed by `install.sh`) transcribes for `ws --voice`. Its own hotkey, `alt - space` (hold to talk, tap to toggle), is configured inside Handy, not skhd. |
 
 Themes live under `home/.config/theme/themes/`. 22 themes ship. `retro-82` is
