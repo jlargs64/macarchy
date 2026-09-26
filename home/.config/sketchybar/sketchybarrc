@@ -29,7 +29,7 @@ source "$HOME/.config/macarchy/lib.sh" 2>/dev/null || true
 source "$HOME/.config/theme/current/colors.sh" # active theme palette
 source "$CONFIG_DIR/colors.sh"
 
-BAR_HEIGHT=32 # notch height on 14"/16" MacBook Pro
+BAR_HEIGHT="${MACARCHY_BAR_HEIGHT:-32}" # notch height on 14"/16" MacBook Pro; yabairc reserves the same strip
 
 ##### Bar #####
 sketchybar --bar \

@@ -245,15 +245,30 @@ Mission Control.
 `~/.config/yabai/yabairc`, in full:
 
 - **bsp** layout, new windows open as `second_child`, no auto-balance
-- 8px gaps and padding on every side except the bottom, which is 20px so the
-  6px JankyBorders border does not sit on the screen edge. `external_bar
-  all:32:0` reserves the 32px SketchyBar strip on every display (yabai only
-  excludes it by itself on the notch display), so no extra top padding is
-  needed to clear the bar
+- gaps, padding, the bar strip and the border are settings in
+  `~/.config/macarchy/config`, not edits to yabairc (table below)
 - focus does not follow the mouse, in either direction
 - `window_border off` — JankyBorders draws the border instead
 - never tiled: System Settings, System Information, Activity Monitor,
   Calculator, Archive Utility, Finder copy dialogs, 1Password, Raycast
+
+### Gaps, padding, bar and border
+
+All pixels, all in `~/.config/macarchy/config` (defaults in `lib.sh`). yabairc,
+bordersrc and sketchybarrc read them, so after a change:
+`yabai --restart-service; brew services restart borders; sketchybar --reload`.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `MACARCHY_GAP` | `8` | gap between tiled windows |
+| `MACARCHY_PADDING_TOP` | `8` | gap under the bar |
+| `MACARCHY_PADDING_BOTTOM` | `20` | gap above the screen edge; bigger than the rest because the border draws outside the window |
+| `MACARCHY_PADDING_LEFT` / `_RIGHT` | `8` | side gaps (a centered column adds its own, see [Wide displays](#wide-and-external-displays)) |
+| `MACARCHY_BAR_HEIGHT` | `32` | SketchyBar strip; yabai reserves the same height at the top of every display (`external_bar`) |
+| `MACARCHY_BORDER_WIDTH` | `6` | JankyBorders focus border |
+| `MACARCHY_BORDER_STYLE` | `round` | `round` or `square` |
+| `MACARCHY_CENTER_WIDTH` | `16:10` | centered column width, see [Wide displays](#wide-and-external-displays) |
+| `MACARCHY_CENTER_SINGLE` | `true` | center a lone window automatically |
 
 To stop yabai managing another app, add a rule and restart:
 

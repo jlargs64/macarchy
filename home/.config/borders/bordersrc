@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
+# JankyBorders: the focus border. Width and style come from
+# ~/.config/macarchy/config (MACARCHY_BORDER_WIDTH, MACARCHY_BORDER_STYLE);
+# colors from the active theme.
+# shellcheck disable=SC1091
+[ -f "$HOME/.config/macarchy/lib.sh" ] && . "$HOME/.config/macarchy/lib.sh"
 # shellcheck disable=SC1091
 source "$HOME/.config/theme/current/colors.sh"
 
 options=(
-  style=round
-  width=6.0
+  "style=${MACARCHY_BORDER_STYLE:-round}"
+  "width=${MACARCHY_BORDER_WIDTH:-6}.0"
   hidpi=off
   "active_color=0xff${ACCENT}"
   "inactive_color=0xff${MUTED}"
