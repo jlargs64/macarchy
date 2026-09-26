@@ -398,8 +398,10 @@ home/                       mirrors $HOME; install.sh links it file by file
   .config/raycast/scripts/  Raycast script commands
   .config/macarchy/         config.example, lib.sh (config loader), components.sh (what install.sh can install), bin/ (macarchy-keys, macarchy-popup, macarchy-update)
   .local/bin/                theme-*, macarchy-keys and macarchy-update on PATH, symlinked into .config/theme/bin and .config/macarchy/bin
+  .claude/skills/macarchy/  a Claude Code skill for operating the desktop (lands in ~/.claude/skills/)
 install.sh                  installer (see above)
 docs/                        long-form documentation
+AGENTS.md                    the map for coding agents working on this repo (CLAUDE.md points at it)
 ```
 
 ## Working on it

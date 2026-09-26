@@ -166,13 +166,15 @@ done < <(macarchy_repo_files "$REPO")
 
 # 3. Prune links to files that no longer exist in the repo
 pruned=0
+link_dirs=()
+while IFS= read -r d; do link_dirs+=("$d"); done < <(macarchy_link_dirs)
 while IFS= read -r -d '' link; do
   macarchy_is_our_link "$link" "$REPO" || continue
   [ -e "$link" ] && continue
   rm "$link"
   echo "  - ${link/#$HOME/~}"
   pruned=$((pruned + 1))
-done < <(find "$HOME/.config" "$HOME/.local/bin" -maxdepth 6 -type l -print0 2>/dev/null)
+done < <(find "${link_dirs[@]}" -maxdepth 6 -type l -print0 2>/dev/null)
 echo "  $linked linked, $pruned pruned"
 
 # 4. Reload what changed
