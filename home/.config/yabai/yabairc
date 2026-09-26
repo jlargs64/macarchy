@@ -21,9 +21,14 @@ yabai -m config auto_balance                off
 yabai -m config split_ratio                 0.50
 
 # ----- gaps and padding -----------------------------------------------------
-# yabai already excludes the 32pt menu-bar/notch strip at the top of the display
-# (even with the menu bar auto-hidden), and SketchyBar lives entirely inside that
-# strip. So top_padding is just the gap under the bar, same as every other gap.
+# SketchyBar is a 32pt strip at the top of every display (sketchybarrc). On a
+# MacBook that is exactly the notch strip, which yabai excludes on its own. An
+# external display has no notch and (with the menu bar auto-hidden) no excluded
+# strip at all, so windows would cover the bar. external_bar reserves 32pt on
+# every display; on the notch display yabai merges it with the notch height
+# instead of stacking the two, so nothing moves there. top_padding stays the
+# gap under the bar, same as every other gap.
+yabai -m config external_bar                all:32:0
 yabai -m config top_padding                 8
 yabai -m config bottom_padding              8
 yabai -m config left_padding                8
@@ -54,6 +59,17 @@ yabai -m signal --add event=window_created   action="sketchybar --trigger yabai_
 yabai -m signal --add event=window_destroyed action="sketchybar --trigger yabai_window_change"
 yabai -m signal --add event=window_focused   action="sketchybar --trigger yabai_window_change"
 yabai -m signal --add event=space_changed    action="sketchybar --trigger yabai_window_change"
+
+# ----- centered column on wide displays -------------------------------------
+# macarchy-center pads the sides of a Space so a lone window (or one zoomed
+# with alt - c) sits in a centered column instead of spanning an ultrawide.
+# Re-evaluated whenever the set of visible tiles can change. Width and on/off
+# are MACARCHY_CENTER_WIDTH / MACARCHY_CENTER_SINGLE in ~/.config/macarchy/config.
+for ev in window_created window_destroyed window_minimized window_deminimized \
+  application_hidden application_visible space_changed display_changed \
+  display_added display_removed display_resized; do
+  yabai -m signal --add event=$ev label="center-$ev" action="$HOME/.local/bin/macarchy-center apply"
+done
 
 # ----- rules: apps that should never be tiled -------------------------------
 # These app rules, including 1Password and Steam below, are opinionated

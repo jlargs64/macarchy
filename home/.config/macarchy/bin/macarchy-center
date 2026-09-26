@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+# macarchy-center -- keep one window centered on a wide display, with gutters.
+#
+# Two jobs, both done by padding the Space's left and right sides so yabai
+# lays the tile tree out in a centered column instead of edge to edge:
+#
+#   apply    Called by yabai signals (see yabairc). For every visible Space,
+#            set the side padding to a gutter when the Space shows a single
+#            tile (one window, or a stack), or when a window in it was
+#            centered with `toggle`; otherwise put the normal padding back.
+#            Nothing changes on a display no wider than MACARCHY_CENTER_WIDTH.
+#
+#   toggle   Hotkey (alt - c). Zoom the focused window to the centered column
+#            and remember it; press again and it drops back into its tile.
+#            The window never leaves the tile tree -- this is yabai's
+#            zoom-fullscreen with side padding -- so its old position is
+#            exactly where it returns to. No scripting addition needed.
+#
+#   status   Print what apply would do, without doing it.
+#
+# Config (~/.config/macarchy/config):
+#   MACARCHY_CENTER_WIDTH   width of the centered column: an aspect ratio
+#                           ("16:10", relative to the display height) or a
+#                           pixel count ("2200"). Displays narrower than this
+#                           get no gutters, so 16:10 leaves a 16:9 monitor or
+#                           the MacBook screen alone. Default 16:10.
+#   MACARCHY_CENTER_SINGLE  true: a Space showing one tile is centered
+#                           automatically. false: only `toggle` centers.
+#
+# State: window ids centered by `toggle` live in
+# ~/.cache/macarchy/centered, one per line, pruned whenever they stop being
+# zoomed (closed, un-zoomed with alt - f, ...).
+
+set -euo pipefail
+
+# shellcheck disable=SC1091
+[ -f "$HOME/.config/macarchy/lib.sh" ] && . "$HOME/.config/macarchy/lib.sh"
+MACARCHY_CENTER_WIDTH="${MACARCHY_CENTER_WIDTH:-16:10}"
+MACARCHY_CENTER_SINGLE="${MACARCHY_CENTER_SINGLE:-true}"
+
+STATE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/macarchy"
+STATE="$STATE_DIR/centered"
+
+usage() {
+  sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'
+  exit "${1:-0}"
+}
+
+need() {
+  command -v "$1" >/dev/null 2>&1 || {
+    echo "macarchy-center: $1 not found" >&2
+    exit 1
+  }
+}
+
+# centered_ids -> the ids in the state file as a JSON array
+centered_ids() {
+  if [ -s "$STATE" ]; then
+    jq -cs . "$STATE"
+  else
+    echo '[]'
+  fi
+}
+
+# column_width <display height> -> pixel width of the centered column
+column_width() {
+  case "$MACARCHY_CENTER_WIDTH" in
+    *:*)
+      local a="${MACARCHY_CENTER_WIDTH%%:*}" b="${MACARCHY_CENTER_WIDTH#*:}"
+      echo $(($1 * a / b))
+      ;;
+    *) echo "$MACARCHY_CENTER_WIDTH" ;;
+  esac
+}
+
+# plan -> one line per visible Space: "<index> <padding> <reason>"
+# Also prints "prune <json array of still-zoomed centered ids>" last.
+plan() {
+  local base displays spaces windows ids
+  base="$(yabai -m config left_padding)"
+  displays="$(yabai -m query --displays)"
+  spaces="$(yabai -m query --spaces)"
+  windows="$(yabai -m query --windows)"
+  ids="$(centered_ids)"
+
+  # Per visible Space: display size, number of tiles, whether a centered
+  # window is still zoomed in it.
+  jq -rn \
+    --argjson displays "$displays" --argjson spaces "$spaces" \
+    --argjson windows "$windows" --argjson ids "$ids" \
+    --arg single "$MACARCHY_CENTER_SINGLE" '
+    def tiled: map(select(.["is-floating"] | not)
+                 | select(.["is-minimized"] | not)
+                 | select(.["is-hidden"] | not));
+    ($windows | map(select((.["has-fullscreen-zoom"]) and (.id as $i | $ids | index($i) != null)) | .id)) as $live
+    | ($spaces[] | select(.["is-visible"])) as $s
+    | ($displays[] | select(.index == $s.display)) as $d
+    | ($windows | map(select(.space == $s.index)) | tiled) as $t
+    | (if $s.type == "stack" and ($t | length) > 0 then 1 else ($t | length) end) as $n
+    | ($t | any(.id as $i | $live | index($i) != null)) as $zoomed
+    | (if $zoomed then "toggled"
+       elif ($single == "true" and $n == 1) then "single"
+       else "" end) as $why
+    | "\($s.index) \($d.frame.w | floor) \($d.frame.h | floor) \($why)"
+    ' | while read -r idx dw dh why; do
+    local want="$base"
+    if [ -n "$why" ]; then
+      local col gutter
+      col="$(column_width "$dh")"
+      gutter=$(((dw - col) / 2))
+      if [ "$gutter" -gt "$base" ]; then
+        want="$gutter"
+      else
+        why="too-narrow"
+      fi
+    fi
+    echo "$idx $want ${why:-normal}"
+  done
+
+  jq -cn --argjson windows "$windows" --argjson ids "$ids" \
+    '[$windows[] | select(.["has-fullscreen-zoom"]) | .id | select(. as $i | $ids | index($i) != null)]' |
+    sed 's/^/prune /'
+}
+
+apply() {
+  local dry="${1:-}" idx want why cur
+  while read -r idx want why; do
+    if [ "$idx" = prune ]; then
+      [ -n "$dry" ] && continue
+      mkdir -p "$STATE_DIR"
+      echo "$want" | jq -r '.[]' >"$STATE.tmp" && mv "$STATE.tmp" "$STATE"
+      continue
+    fi
+    cur="$(yabai -m config --space "$idx" left_padding)"
+    if [ -n "$dry" ]; then
+      echo "space $idx: padding $cur -> $want ($why)"
+      continue
+    fi
+    [ "$cur" = "$want" ] && continue
+    yabai -m config --space "$idx" left_padding "$want"
+    yabai -m config --space "$idx" right_padding "$want"
+  done < <(plan)
+}
+
+toggle() {
+  local win id floating
+  win="$(yabai -m query --windows --window)" || {
+    echo "macarchy-center: no focused window" >&2
+    exit 1
+  }
+  id="$(echo "$win" | jq -r .id)"
+  floating="$(echo "$win" | jq -r '.["is-floating"]')"
+  if [ "$floating" = true ]; then
+    echo "macarchy-center: window $id is floating; alt - g puts it back in the tree first" >&2
+    exit 1
+  fi
+  yabai -m window --toggle zoom-fullscreen
+  mkdir -p "$STATE_DIR"
+  touch "$STATE"
+  if [ "$(yabai -m query --windows --window "$id" | jq -r '.["has-fullscreen-zoom"]')" = true ]; then
+    grep -qx "$id" "$STATE" || echo "$id" >>"$STATE"
+  else
+    grep -vx "$id" "$STATE" >"$STATE.tmp" || true
+    mv "$STATE.tmp" "$STATE"
+  fi
+  apply
+}
+
+need yabai
+need jq
+
+case "${1:-apply}" in
+  apply) apply ;;
+  toggle) toggle ;;
+  status) apply dry ;;
+  -h | --help | help) usage ;;
+  *)
+    echo "macarchy-center: unknown command '$1'" >&2
+    usage 1
+    ;;
+esac

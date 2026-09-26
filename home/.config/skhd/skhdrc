@@ -31,8 +31,9 @@ ctrl + alt - k : yabai -m window --resize top:0:-40   || yabai -m window --resiz
 # ----- layout ---------------------------------------------------------------
 alt - 0x18       : yabai -m space --balance                            # alt - =   balance space
 alt - r          : yabai -m space --rotate 90                          # rotate layout 90°
-alt - g          : yabai -m window --toggle float --grid 4:4:1:1:2:2   # toggle float window
-alt - f          : yabai -m window --toggle zoom-fullscreen            # toggle zoom fullscreen
+alt - g          : yabai -m window --toggle float --grid 4:4:1:1:2:2; ~/.local/bin/macarchy-center apply   # toggle float window
+alt - f          : yabai -m window --toggle zoom-fullscreen; ~/.local/bin/macarchy-center apply             # toggle zoom fullscreen
+alt - c          : ~/.local/bin/macarchy-center toggle               # center window in a column, again to put it back
 shift + alt - f  : yabai -m window --toggle native-fullscreen          # toggle native fullscreen
 alt - v          : yabai -m window --toggle split                     # flip split orientation
 

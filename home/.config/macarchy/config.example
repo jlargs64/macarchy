@@ -55,6 +55,16 @@ MACARCHY_UPDATE_AT_LOGIN=true
 # exist (e.g. no Ghostty installed) is skipped silently.
 MACARCHY_KEYS_SOURCES="skhd ghostty zellij"
 
+# --- centered column on wide displays (macarchy-center, alt - c) ---
+# Width of the column a lone or alt - c window is centered in, as an aspect
+# ratio relative to the display height ("16:10" -> 2304px on a 3440x1440
+# ultrawide) or a pixel count ("2200"). Displays narrower than this get no
+# gutters, so the default leaves a 16:9 monitor and the MacBook screen alone.
+MACARCHY_CENTER_WIDTH="16:10"
+# true: a Space showing a single tile is centered automatically.
+# false: only alt - c centers.
+MACARCHY_CENTER_SINGLE=true
+
 # --- workspace agent (ws) ---
 MACARCHY_AGENT_MODEL="$HOME/.local/share/macarchy/models/workspace-agent.cact"   # fine-tuned Needle 3
 MACARCHY_AGENT_EXECUTE=false      # true: `ws` and `ws --voice` act instead of printing what they would do
