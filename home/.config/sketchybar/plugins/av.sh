@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Mic and camera activity, like the orange and green dots in the native menu bar.
-# One plugin drives two items ($NAME is `mic` or `cam`). The state comes from
+# One plugin drives four items ($NAME is `mic` or `cam`, or their `.c` twins
+# that sketchybarrc centers on displays without a notch). The state comes from
 # macarchy-avstate (CoreAudio / CoreMediaIO "is running somewhere"), so any app
 # counts, not only ws. While `ws --voice` owns the mic the glyph is red and a
 # click is the same as pressing alt - w again. Hidden means idle.
@@ -17,7 +18,7 @@ PIDF="${XDG_CACHE_HOME:-$HOME/.cache}/macarchy/ws-rec.pid"
 ws_listening() { [ -f "$PIDF" ] && kill -0 "$(cut -d' ' -f1 "$PIDF")" 2>/dev/null; }
 
 if [ "$SENDER" = "mouse.clicked" ]; then
-  [ "$NAME" = mic ] && ws_listening && nohup ws --voice >/dev/null 2>&1 &
+  [ "${NAME%.c}" = mic ] && ws_listening && nohup ws --voice >/dev/null 2>&1 &
   exit 0
 fi
 
@@ -27,7 +28,7 @@ fi
 } # not built: see ~/.config/macarchy/swift/build
 STATE="$("$AV" 2>/dev/null)"
 
-case "$NAME" in
+case "${NAME%.c}" in
   mic)
     ON="${STATE#*mic=}"
     ON="${ON:0:1}"

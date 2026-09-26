@@ -7,8 +7,14 @@
 # Layout, mirroring Omarchy's waybar:
 #   left    Space numbers 1-N (MACARCHY_SPACES; focused = bright, occupied = dim, empty = faint)
 #   q       clock, immediately left of the notch (a true center would be under it)
-#   e       now-playing, immediately right of the notch, hidden when idle
+#   e       mic / camera in use, then now-playing, right of the notch, hidden when idle
 #   right   caffeine · wifi · volume · cpu+mem · battery — icons only, hover shows the value
+#
+# On a display without a notch, q and e hug the exact midpoint instead, which
+# would leave the clock ending at the center rather than sitting on it. So the
+# q / e items exist twice: the copies below suffixed ".c" live at `center`.
+# plugins/notch.sh shows the q / e set only on displays with a notch and the
+# ".c" set everywhere else, at load and whenever displays change.
 #
 # BAR_HEIGHT matches the menu-bar/notch strip yabai already excludes, so yabai
 # needs no extra top_padding for the bar (see yabairc).
@@ -73,14 +79,18 @@ for sid in $(seq 1 "$MACARCHY_SPACES"); do
     script="$PLUGIN_DIR/space.sh $sid"
 done
 
-##### Clock (left of the notch) #####
-sketchybar --add item clock q \
-  --set clock \
-  icon.drawing=off \
-  label.padding_left=7 \
-  update_freq=10 \
-  script="$PLUGIN_DIR/clock.sh" \
-  click_script="$CONFIG_DIR/helpers/open_centered com.apple.iCal ''"
+##### Clock (left of the notch; centered on displays without one) #####
+for item in "clock q" "clock.c center"; do
+  # shellcheck disable=SC2086
+  set -- $item
+  sketchybar --add item "$1" "$2" \
+    --set "$1" \
+    icon.drawing=off \
+    label.padding_left=7 \
+    update_freq=10 \
+    script="$PLUGIN_DIR/clock.sh" \
+    click_script="$CONFIG_DIR/helpers/open_centered com.apple.iCal ''"
+done
 
 ##### Mic and camera in use (right of the notch, like the native menu bar's dots) #####
 # plugins/av.sh polls macarchy-avstate (built by ~/.config/macarchy/swift/build) every
@@ -88,21 +98,39 @@ sketchybar --add item clock q \
 # owns the mic the glyph turns red and clicking it is the same as pressing alt - w again.
 sketchybar --add event ws_listen
 for av in mic cam; do
-  sketchybar --add item $av e \
-    --set $av \
-    drawing=off \
-    label.drawing=off \
-    update_freq=2 \
-    script="$PLUGIN_DIR/av.sh" \
-    --subscribe $av ws_listen mouse.clicked mouse.entered mouse.exited
+  for item in "$av e" "$av.c center"; do
+    # shellcheck disable=SC2086
+    set -- $item
+    sketchybar --add item "$1" "$2" \
+      --set "$1" \
+      drawing=off \
+      label.drawing=off \
+      update_freq=2 \
+      script="$PLUGIN_DIR/av.sh" \
+      --subscribe "$1" ws_listen mouse.clicked mouse.entered mouse.exited
+  done
 done
 
 ##### Now playing (right of the notch) #####
-sketchybar --add item media e \
-  --set media \
-  update_freq=5 \
-  script="$PLUGIN_DIR/media.sh" \
-  click_script="osascript -e 'tell application \"Spotify\" to playpause' 2>/dev/null || osascript -e 'tell application \"Music\" to playpause' 2>/dev/null"
+for item in "media e" "media.c center"; do
+  # shellcheck disable=SC2086
+  set -- $item
+  sketchybar --add item "$1" "$2" \
+    --set "$1" \
+    update_freq=5 \
+    script="$PLUGIN_DIR/media.sh" \
+    click_script="osascript -e 'tell application \"Spotify\" to playpause' 2>/dev/null || osascript -e 'tell application \"Music\" to playpause' 2>/dev/null"
+done
+
+##### Which displays have a notch #####
+# Invisible item whose script sorts the q / e items and their ".c" twins onto
+# the right displays (see the layout note at the top). Re-run on Space and
+# display changes so plugging a monitor in or out is picked up.
+sketchybar --add item notch left \
+  --set notch \
+  drawing=off \
+  script="$PLUGIN_DIR/notch.sh" \
+  --subscribe notch space_change display_change system_woke
 
 ##### System status (right, icons only; hover reveals the label) #####
 # Right items stack right-to-left in add order, so battery is the rightmost.

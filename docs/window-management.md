@@ -101,6 +101,7 @@ and re-add it.
 | `alt - r` | rotate layout 90° |
 | `alt - g` | toggle float, centered on a 4×4 grid |
 | `alt - f` | zoom to fullscreen (within the tile tree) |
+| `alt - c` | center the window in a column with gutters on both sides; again to put it back (see [Wide displays](#wide-and-external-displays)) |
 | `shift + alt - f` | native macOS fullscreen |
 | `alt - v` | toggle split direction |
 | `alt - <letter>` | free for your app launchers (except `w`, `space` -- see below), see skhdrc |
@@ -169,6 +170,51 @@ Ghostty or Zellij binding can't be run from outside those programs, so Enter
 on one of those rows copies its key to the clipboard and prints it instead of
 executing anything.
 
+## Wide and external displays
+
+Three things change on a monitor that is not the MacBook screen. All of them
+happen without the scripting addition.
+
+**The bar strip.** yabai excludes the 32px notch strip on the built-in display
+by itself, but an external display has no notch and, with the menu bar
+auto-hidden, nothing excluded at all, so windows would cover the bar.
+`yabairc` sets `external_bar all:32:0`, which reserves the strip on every
+display; on the notch display yabai merges the two heights instead of stacking
+them, so nothing moves there.
+
+**The clock sits on the midpoint.** SketchyBar's `q` and `e` positions hug the
+notch, and on a display without one they hug the exact center, which leaves a
+`q` clock ending at the midpoint. The clock and the mic / camera / now-playing
+items therefore exist twice, the second copy at `center`, and
+`plugins/notch.sh` shows each set only on its own displays. It re-runs on Space
+and display changes, so plugging a monitor in or out is picked up.
+
+**A lone window is centered in a column.** Two windows side by side on an
+ultrawide is a lot of neck travel, and one window across all 3440px is worse.
+`macarchy-center` pads the sides of a Space so the tile tree lays out in a
+centered column with wallpaper gutters:
+
+- automatically, whenever a Space shows a single tile (one window, or a stack)
+- on demand, with `alt - c`, for the focused window on a busier Space. It
+  zooms to the column; `alt - c` again drops it back into its tile. The window
+  never leaves the tree (it is `zoom-fullscreen` with side padding), so it
+  returns exactly where it was.
+
+Both are driven by yabai signals in `yabairc`, plus a re-check after `alt - f`
+and `alt - g`. Two settings in `~/.config/macarchy/config`:
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `MACARCHY_CENTER_WIDTH` | `16:10` | Column width, as an aspect ratio relative to the display height (2304px on a 3440x1440 ultrawide) or a pixel count (`2200`). A display narrower than the column gets no gutters, so the default leaves a 16:9 monitor and the MacBook screen alone. |
+| `MACARCHY_CENTER_SINGLE` | `true` | `false` turns off the automatic centering; `alt - c` still works. |
+
+`macarchy-center status` prints what it would do for each visible Space.
+
+**Moving a window to another display.** Drag it there, with or without `alt`
+held; yabai re-tiles it on the display it lands on. Between Spaces it is the
+native mechanisms below, since that is the part yabai cannot do without the
+scripting addition.
+
 ## Moving windows between Spaces
 
 yabai cannot do this without the scripting addition. Both commands *look* like
@@ -199,9 +245,10 @@ Mission Control.
 `~/.config/yabai/yabairc`, in full:
 
 - **bsp** layout, new windows open as `second_child`, no auto-balance
-- 8px gaps and padding on every side, including the top. yabai already
-  excludes the 32px menu-bar/notch strip, and the 32px SketchyBar sits
-  entirely inside it, so no extra top padding is needed to clear the bar
+- 8px gaps and padding on every side, including the top. `external_bar
+  all:32:0` reserves the 32px SketchyBar strip on every display (yabai only
+  excludes it by itself on the notch display), so no extra top padding is
+  needed to clear the bar
 - focus does not follow the mouse, in either direction
 - `window_border off` — JankyBorders draws the border instead
 - never tiled: System Settings, System Information, Activity Monitor,
