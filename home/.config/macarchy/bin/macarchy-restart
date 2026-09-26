@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+# macarchy-restart -- restart the desktop services, each step on its own.
+#
+# Usage:
+#   macarchy-restart                    restart everything, in order
+#   macarchy-restart --yabai            only yabai (then re-center the Spaces)
+#   macarchy-restart --borders          only JankyBorders
+#   macarchy-restart --bar              only SketchyBar (reload)
+#   macarchy-restart --skhd             only skhd (reload, or restart if that fails)
+#   macarchy-restart --throttle         add ThrottleInterval 10 to yabai's LaunchAgent
+#
+# Bound to shift + alt - r. The order matters: yabai first, because the
+# others read its state; then a wait until it answers queries, then
+# macarchy-center (a lone window would otherwise span the display), then
+# borders (JankyBorders goes stale after yabai restarts), then the bar, and
+# skhd last because restarting it from inside one of its own hotkeys ends
+# this script's parent. Every step runs whether or not the one before it
+# worked; a failure is printed and the exit status is 1 at the end.
+#
+# --throttle: after `brew upgrade yabai` macOS drops yabai's Accessibility
+# grant, yabai exits at once and launchd respawns it in a tight loop (the
+# plist has KeepAlive). ThrottleInterval 10 turns that into one try every
+# ten seconds. install.sh adds it too; this is for a plist written later.
+#
+# MACARCHY_RESTART_WAIT (default 5): seconds to wait for yabai to answer.
+
+set -uo pipefail
+
+BIN="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && pwd)"
+# shellcheck disable=SC1091
+. "$BIN/../lib.sh"
+WAIT="${MACARCHY_RESTART_WAIT:-5}"
+
+DO_YABAI=0 DO_BORDERS=0 DO_BAR=0 DO_SKHD=0 DO_THROTTLE=0 ANY=0
+for a in "$@"; do
+  case "$a" in
+    --yabai) DO_YABAI=1 ANY=1 ;;
+    --borders) DO_BORDERS=1 ANY=1 ;;
+    --bar) DO_BAR=1 ANY=1 ;;
+    --skhd) DO_SKHD=1 ANY=1 ;;
+    --throttle) DO_THROTTLE=1 ANY=1 ;;
+    -h | --help)
+      sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *)
+      echo "macarchy-restart: unknown argument: $a" >&2
+      exit 2
+      ;;
+  esac
+done
+[ "$ANY" = 1 ] || DO_YABAI=1 DO_BORDERS=1 DO_BAR=1 DO_SKHD=1
+
+FAILED=0
+have() { command -v "$1" >/dev/null 2>&1; }
+# step <name> <message>  /  failed <name> <message>
+step() { printf '%-8s %s\n' "$1" "$2"; }
+failed() {
+  FAILED=1
+  printf '%-8s FAILED: %s\n' "$1" "$2"
+}
+
+throttle() {
+  local plist
+  plist="$(macarchy_yabai_plist)" || {
+    failed throttle "no yabai LaunchAgent under ~/Library/LaunchAgents (run yabai --start-service first)"
+    return
+  }
+  if /usr/libexec/PlistBuddy -c 'Print :ThrottleInterval' "$plist" >/dev/null 2>&1; then
+    step throttle "ThrottleInterval already set in ${plist/#$HOME/~}"
+  elif /usr/libexec/PlistBuddy -c 'Add :ThrottleInterval integer 10' "$plist" >/dev/null 2>&1; then
+    step throttle "ThrottleInterval 10 added to ${plist/#$HOME/~}; takes effect at the next yabai --restart-service"
+  else
+    failed throttle "PlistBuddy could not edit ${plist/#$HOME/~}"
+  fi
+}
+
+restart_yabai() {
+  have yabai || {
+    failed yabai "not installed"
+    return
+  }
+  yabai --restart-service >/dev/null 2>&1 || {
+    failed yabai "yabai --restart-service exited $? (see /tmp/yabai_$(id -un).err.log)"
+    return
+  }
+  # launchd brings it back asynchronously; the other steps need it answering
+  local tries=$((WAIT * 2)) i=0
+  while [ "$i" -lt "$tries" ]; do
+    if yabai -m query --displays >/dev/null 2>&1; then
+      step yabai "restarted, answering after $((i / 2))s"
+      if "$BIN/macarchy-center" apply >/dev/null 2>&1; then
+        step center "spaces re-centered"
+      else
+        failed center "macarchy-center apply exited $?"
+      fi
+      return
+    fi
+    sleep 0.5
+    i=$((i + 1))
+  done
+  failed yabai "restarted but not answering after ${WAIT}s; macarchy-doctor says why (Accessibility?)"
+}
+
+restart_borders() {
+  have borders || {
+    failed borders "not installed"
+    return
+  }
+  # `brew services list` shows every service brew knows; a status other than
+  # `none` means brew's LaunchAgent (KeepAlive) owns the process.
+  if have brew && brew services list 2>/dev/null | grep -Eq '^borders[[:space:]]+(started|error|scheduled)'; then
+    if brew services restart borders >/dev/null 2>&1; then
+      step borders "restarted (brew services)"
+    else
+      failed borders "brew services restart borders exited $?"
+    fi
+    return
+  fi
+  pkill -x borders 2>/dev/null
+  local rc="$HOME/.config/borders/bordersrc"
+  if [ -x "$rc" ]; then
+    nohup "$rc" >/dev/null 2>&1 &
+    step borders "relaunched from ${rc/#$HOME/~} (not managed by brew services)"
+  else
+    failed borders "${rc/#$HOME/~} not found or not executable"
+  fi
+}
+
+restart_bar() {
+  have sketchybar || {
+    failed bar "sketchybar not installed"
+    return
+  }
+  if sketchybar --reload >/dev/null 2>&1; then
+    step bar "SketchyBar reloaded"
+  else
+    failed bar "sketchybar --reload exited $?"
+  fi
+}
+
+restart_skhd() {
+  have skhd || {
+    failed skhd "not installed"
+    return
+  }
+  if skhd --reload >/dev/null 2>&1; then
+    step skhd "reloaded"
+  elif skhd --restart-service >/dev/null 2>&1; then
+    step skhd "restarted (reload failed, so the service was restarted)"
+  else
+    failed skhd "neither skhd --reload nor skhd --restart-service worked (secure keyboard entry on? macarchy-doctor names the app)"
+  fi
+}
+
+[ "$DO_THROTTLE" = 1 ] && throttle
+[ "$DO_YABAI" = 1 ] && restart_yabai
+[ "$DO_BORDERS" = 1 ] && restart_borders
+[ "$DO_BAR" = 1 ] && restart_bar
+[ "$DO_SKHD" = 1 ] && restart_skhd
+exit "$FAILED"

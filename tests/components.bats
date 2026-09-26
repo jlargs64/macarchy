@@ -15,6 +15,8 @@ setup() {
   [ "$(macarchy_component_of .config/yabai/yabairc)" = wm ]
   [ "$(macarchy_component_of .config/theme/bin/hotkey-check)" = wm ]
   [ "$(macarchy_component_of .local/bin/macarchy-center)" = wm ]
+  [ "$(macarchy_component_of .local/bin/macarchy-restart)" = wm ]
+  [ "$(macarchy_component_of .config/macarchy/bin/macarchy-rescue)" = wm ]
   [ "$(macarchy_component_of .config/sketchybar/sketchybarrc)" = bar ]
   [ "$(macarchy_component_of .config/borders/bordersrc)" = borders ]
   [ "$(macarchy_component_of .local/bin/macarchy-keys)" = keys ]
