@@ -29,7 +29,10 @@
 #
 # State: window ids centered by `toggle` live in
 # ~/.cache/macarchy/centered, one per line, pruned whenever they stop being
-# zoomed (closed, un-zoomed with alt - f, ...).
+# zoomed (closed, un-zoomed with alt - f, ...). yabai fires several signals
+# for one event (window_created + window_focused + ...), so a few `apply`
+# runs overlap; each rewrites the file through its own temp name and an
+# atomic mv, and the last one wins with the same live view of yabai.
 
 set -euo pipefail
 
@@ -40,6 +43,8 @@ MACARCHY_CENTER_SINGLE="${MACARCHY_CENTER_SINGLE:-true}"
 
 STATE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/macarchy"
 STATE="$STATE_DIR/centered"
+TMP="$STATE.tmp.$$"
+trap 'rm -f "$TMP"' EXIT
 
 usage() {
   sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'
@@ -128,7 +133,7 @@ apply() {
     if [ "$idx" = prune ]; then
       [ -n "$dry" ] && continue
       mkdir -p "$STATE_DIR"
-      echo "$want" | jq -r '.[]' >"$STATE.tmp" && mv "$STATE.tmp" "$STATE"
+      echo "$want" | jq -r '.[]' >"$TMP" && mv "$TMP" "$STATE"
       continue
     fi
     cur="$(yabai -m config --space "$idx" left_padding)"
@@ -160,8 +165,8 @@ toggle() {
   if [ "$(yabai -m query --windows --window "$id" | jq -r '.["has-fullscreen-zoom"]')" = true ]; then
     grep -qx "$id" "$STATE" || echo "$id" >>"$STATE"
   else
-    grep -vx "$id" "$STATE" >"$STATE.tmp" || true
-    mv "$STATE.tmp" "$STATE"
+    grep -vx "$id" "$STATE" >"$TMP" || true
+    mv "$TMP" "$STATE"
   fi
   apply
 }
