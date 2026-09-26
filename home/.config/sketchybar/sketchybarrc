@@ -4,6 +4,15 @@
 # is exactly as tall as the MacBook notch (32pt), so the notch reads as part of
 # the bar instead of hanging below it.
 #
+# The bar covers the native macOS menu bar. With the menu bar auto-hidden, it
+# reveals whenever the pointer reaches the top edge, which is exactly where
+# this bar lives, and macOS has no setting for that reveal. So the bar is drawn
+# one window level above the menu bar (topmost=on, below) and the menu bar
+# slides in underneath it. To reach the native menu bar and its status items:
+#   shift + alt - m   hide / show this bar (skhdrc)
+#   ctrl - F2         macOS "Move focus to menu bar" (ctrl + fn + F2 on the
+#                     laptop keyboard); its menus open above the bar
+#
 # Layout, mirroring Omarchy's waybar:
 #   left    Space numbers 1-N (MACARCHY_SPACES; focused = bright, occupied = dim, empty = faint)
 #   q       clock, immediately left of the notch (a true center would be under it)
@@ -32,6 +41,17 @@ source "$CONFIG_DIR/colors.sh"
 BAR_HEIGHT="${MACARCHY_BAR_HEIGHT:-32}" # notch height on 14"/16" MacBook Pro; yabairc reserves the same strip
 
 ##### Bar #####
+# topmost=on puts the bar at window level 25 (kCGStatusWindowLevel), one above
+# the menu bar's 24, so the auto-hidden menu bar reveals underneath an opaque
+# bar instead of sliding over it. Drop-down menus open at level 101 and still
+# render above the bar. (off is level -20, window is 3: both below the menu bar.)
+#
+# notch_display_height applies to the notch display only. Its revealed menu
+# bar is 33pt tall (measured on a 14" MacBook Pro), 1pt more than the 32pt
+# notch, so at 32 a 1pt sliver of the native bar would show under this one.
+# External displays have a 30pt menu bar, fully covered at the normal height.
+# The extra 1pt overlaps yabai's 32pt reserve, inside the top window padding.
+NOTCH_BAR_HEIGHT=$((BAR_HEIGHT > 33 ? BAR_HEIGHT : 33))
 sketchybar --bar \
   position=top \
   height=$BAR_HEIGHT \
@@ -42,6 +62,8 @@ sketchybar --bar \
   corner_radius=0 \
   padding_left=6 \
   padding_right=6 \
+  topmost=on \
+  notch_display_height=$NOTCH_BAR_HEIGHT \
   display=all
 
 ##### Defaults #####

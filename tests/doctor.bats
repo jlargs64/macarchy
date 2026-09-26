@@ -125,3 +125,21 @@ healthy_themes() {
   doctor
   [ "$(find "$HOME" | LC_ALL=C sort | shasum)" = "$before" ]
 }
+
+@test "bar: topmost on is ok" {
+  install_links "themes bar"
+  stub pgrep 'exit 0'
+  stub sketchybar '[ "$*" = "--query bar" ] && printf "{\n\t\"position\": \"top\",\n\t\"topmost\": \"on\"\n}\n"; exit 0'
+  doctor
+  [[ $output == *"ok    bar drawn above the native menu bar"* ]]
+  [[ $output != *"bar is not topmost"* ]]
+}
+
+@test "bar: topmost off warns with sketchybar --reload" {
+  install_links "themes bar"
+  stub pgrep 'exit 0'
+  stub sketchybar '[ "$*" = "--query bar" ] && printf "{\n\t\"position\": \"top\",\n\t\"topmost\": \"off\"\n}\n"; exit 0'
+  doctor
+  [[ $output == *"warn  bar is not topmost"* ]]
+  [[ $output == *"fix: sketchybar --reload"* ]]
+}

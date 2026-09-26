@@ -85,6 +85,11 @@ shift + alt - b : ~/.local/bin/theme-bg next
 alt - b : ~/.local/bin/theme-bg-pick --popup   # pick a background, with pictures
 shift + alt - 0x2C : ~/.local/bin/theme-pick --popup   # shift + alt - /   pick a theme
 
+# ----- bar ------------------------------------------------------------------
+# The bar covers the auto-hidden native menu bar. Hide it to reach the native
+# menu bar and its status items, press again to bring it back.
+shift + alt - m : sketchybar --bar hidden=toggle   # toggle the bar (reveals the native menu bar)
+
 # ----- restart services -----------------------------------------------------
 shift + alt - r : yabai --restart-service && sketchybar --reload   # restart yabai + sketchybar
 

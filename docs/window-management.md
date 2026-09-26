@@ -122,6 +122,7 @@ and re-add it.
 | `alt - b` | pop up `theme-bg-pick` — the current theme's backgrounds, with pictures |
 | `shift + alt - /` | pop up `theme-pick` — fzf theme picker with swatch previews |
 | `shift + alt - r` | restart yabai and reload SketchyBar |
+| `shift + alt - m` | hide / show the bar, to reach the native menu bar (see [The native menu bar](#the-native-menu-bar)) |
 | `alt - /` | pop up `macarchy-keys` — a searchable list of every skhd binding |
 | `ctrl - <number>` | switch Space (**native macOS**, see below) |
 | `alt - w` | `ws --voice` — the workspace agent, see [docs/agent.md](agent.md) |
@@ -279,6 +280,43 @@ yabai -m rule --add app="^App Name$" manage=off   # try it live
 # it -- with stow, ~/.config/yabai/yabairc IS that file, so editing either one
 # edits both
 ```
+
+## The status bar
+
+SketchyBar draws one flat strip across the top of every display, 32pt tall
+(`MACARCHY_BAR_HEIGHT`): Space numbers on the left, the clock beside the notch
+(or on the midpoint of a display without one), and status icons on the right.
+
+### The native menu bar
+
+The bar covers the macOS menu bar. With the menu bar set to hide
+automatically, macOS reveals it whenever the pointer reaches the top edge of
+the screen, which is exactly where the bar sits, and clicking a bar item
+triggers it too. macOS has no setting for the reveal delay or the hot zone, so
+instead the bar is drawn one window level above the menu bar (`topmost=on` in
+`sketchybarrc`, level 25 against the menu bar's 24). The native menu bar still
+slides in on hover, but underneath the bar, so you never see it. Drop-down
+menus open far above both and are unaffected.
+
+On the notch display the revealed menu bar is 33pt, 1pt taller than the notch,
+so the bar is drawn 33pt tall there (`notch_display_height`) to hide the
+sliver. macarchy never changes the menu bar's own auto-hide setting.
+
+When you do need the native menu bar, the app menus or a status item that the
+bar has no equivalent for:
+
+| How | What it does |
+|---|---|
+| `shift + alt - m` | hides the bar on every display, so the native menu bar reveals on hover as usual. Press again to bring the bar back. yabai keeps reserving the strip, so no window moves. |
+| `ctrl - F2` (`ctrl + fn + F2` on the laptop keyboard) | macOS "Move focus to menu bar". The menu titles stay under the bar, but the menus themselves open above it; arrow keys move between them. Change it in System Settings > Keyboard > Keyboard Shortcuts > Keyboard. |
+| Raycast "Search Menu Items" | fuzzy-searches every menu item of the front app |
+
+The system items most people reach for are already in the bar: clicking Wi-Fi
+opens the Wi-Fi settings pane, battery opens Battery settings, the clock opens
+Calendar, and volume toggles mute.
+
+`macarchy-doctor` warns if the bar is not topmost (for example after a manual
+`sketchybar --bar topmost=off`); `sketchybar --reload` fixes it.
 
 ## Space indicators in the bar
 
