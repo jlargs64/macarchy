@@ -11,6 +11,8 @@ set -euo pipefail
 THEME_ROOT="$HOME/.config/theme"
 CURRENT="$THEME_ROOT/current"
 FIXED="$THEME_ROOT/wallpaper-current.jpg"
+# shellcheck source=../lib/wallpaper.sh
+. "$THEME_ROOT/lib/wallpaper.sh"
 
 [ -L "$CURRENT" ] || {
   echo "no theme selected; run theme-set first" >&2
@@ -30,9 +32,7 @@ bgs=()
 while IFS= read -r f; do bgs+=("$f"); done < <(list)
 n=${#bgs[@]}
 
-cur=""
-[ -f "$DIR/.bg" ] && cur="$(cat "$DIR/.bg" 2>/dev/null || true)"
-[ -f "$cur" ] || cur="${bgs[0]}"
+cur="$(theme_wallpaper_for "$DIR")"
 
 idx=0
 for i in "${!bgs[@]}"; do [ "${bgs[$i]}" = "$cur" ] && idx=$i && break; done
@@ -40,8 +40,7 @@ for i in "${!bgs[@]}"; do [ "${bgs[$i]}" = "$cur" ] && idx=$i && break; done
 apply() {
   echo "$1" >"$DIR/.bg"
   cp -f "$1" "$FIXED"
-  osascript -e "tell application \"System Events\" to tell every desktop to set picture to \"$FIXED\"" >/dev/null 2>&1 || true
-  killall WallpaperAgent >/dev/null 2>&1 || true
+  theme_wallpaper_push "$FIXED"
   echo "background: $(basename "$1")"
 }
 

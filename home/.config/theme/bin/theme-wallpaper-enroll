@@ -21,6 +21,8 @@ set -euo pipefail
 
 THEME_ROOT="$HOME/.config/theme"
 FIXED="$THEME_ROOT/wallpaper-current.jpg"
+# shellcheck source=../lib/wallpaper.sh
+. "$THEME_ROOT/lib/wallpaper.sh"
 
 [ -L "$THEME_ROOT/current" ] || {
   echo "no theme selected; run theme-set first" >&2
@@ -41,7 +43,13 @@ EOS
   exit 0
 fi
 
-cp -f "$THEME_ROOT/current/wallpaper.jpg" "$FIXED"
+# Seed the shared file with what the theme shows now (the background chosen
+# with theme-bg, not the gradient), so enrolling never resets that choice.
+src="$(theme_wallpaper_for "$THEME_ROOT/current")" || {
+  echo "the current theme has no wallpaper yet; run theme-set first" >&2
+  exit 1
+}
+cp -f "$src" "$FIXED"
 
 if ! command -v yabai >/dev/null 2>&1; then
   echo "theme-wallpaper-enroll: needs yabai to enumerate Spaces" >&2
@@ -77,7 +85,7 @@ while [ "$i" -le "$count" ]; do
 done
 
 [ -n "$start" ] && goto "$start"
-killall WallpaperAgent >/dev/null 2>&1 || true
+theme_wallpaper_push "$FIXED" # Spaces that already pointed at the file only repaint on restart
 echo "done. every Space now follows theme-set."
 echo "note: ctrl+<number> must be enabled in System Settings > Keyboard >"
 echo "      Keyboard Shortcuts > Mission Control for this to work."
