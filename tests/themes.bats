@@ -83,3 +83,24 @@ palette() {
   HOME="$BATS_TEST_TMPDIR" . "$REPO/home/.config/macarchy/lib.sh"
   [ -d "$THEMES/$MACARCHY_DEFAULT_THEME" ]
 }
+
+@test "theme-wallpaper-enroll --here sets only the visible desktops, without switching" {
+  common_setup
+  mkdir -p "$HOME/.config/theme/themes/nord"
+  ln -s "$HOME/.config/theme/themes/nord" "$HOME/.config/theme/current"
+  touch "$HOME/.config/theme/wallpaper-current.jpg"
+  run "$REPO/home/.config/theme/bin/theme-wallpaper-enroll" --here
+  [ "$status" -eq 0 ]
+  grep -q '^osascript' "$STUB_LOG"
+  run ! grep -q 'key code' "$STUB_LOG"
+  run ! grep -q '^killall' "$STUB_LOG"
+}
+
+@test "theme-wallpaper-enroll --here is a no-op before the first enrolment" {
+  common_setup
+  mkdir -p "$HOME/.config/theme/themes/nord"
+  ln -s "$HOME/.config/theme/themes/nord" "$HOME/.config/theme/current"
+  run "$REPO/home/.config/theme/bin/theme-wallpaper-enroll" --here
+  [ "$status" -eq 0 ]
+  run ! grep -q '^osascript' "$STUB_LOG"
+}

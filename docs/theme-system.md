@@ -237,8 +237,12 @@ while it runs. That shortcut must be enabled in System Settings > Keyboard >
 Keyboard Shortcuts > Mission Control.
 
 You only need this once. After enrolment, `theme-set` and `theme-bg` repaint
-all Spaces together. Run it again only if you add a Space, since a new one
-starts with whatever wallpaper macOS gives it.
+all Spaces together. A Space you add later (or a new display's Spaces) starts
+with whatever wallpaper macOS gives it, so `yabairc` runs
+`theme-wallpaper-enroll --here` on every Space switch: it points only the
+desktops on screen at the file, without switching anything, and does nothing
+when they already are. The first time you land on a new Space it picks up the
+theme. Without yabai, run `theme-wallpaper-enroll` again by hand instead.
 
 ## The themes
 

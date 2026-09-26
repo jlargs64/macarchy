@@ -245,7 +245,8 @@ Mission Control.
 `~/.config/yabai/yabairc`, in full:
 
 - **bsp** layout, new windows open as `second_child`, no auto-balance
-- 8px gaps and padding on every side, including the top. `external_bar
+- 8px gaps and padding on every side except the bottom, which is 20px so the
+  6px JankyBorders border does not sit on the screen edge. `external_bar
   all:32:0` reserves the 32px SketchyBar strip on every display (yabai only
   excludes it by itself on the notch display), so no extra top padding is
   needed to clear the bar

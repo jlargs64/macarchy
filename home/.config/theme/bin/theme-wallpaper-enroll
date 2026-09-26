@@ -7,11 +7,16 @@
 # without the scripting addition, which this setup does not use.
 #
 # So this walks the Spaces using the native ctrl+<number> shortcut, sets the
-# wallpaper on each, and returns to where you started. Run it ONCE. After that
-# every Space points at ~/.config/theme/wallpaper-current.jpg and `theme-set`
-# only has to rewrite that file.
+# wallpaper on each, and returns to where you started. After that every Space
+# points at ~/.config/theme/wallpaper-current.jpg and `theme-set` only has to
+# rewrite that file. Your screen will visibly flick through each Space.
 #
-# Your screen will visibly flick through each Space. That is expected.
+#   theme-wallpaper-enroll          walk every Space now (needs ctrl+<number>)
+#   theme-wallpaper-enroll --here   enroll only the Spaces on screen right now,
+#                                   quietly and without switching. yabairc runs
+#                                   this on every Space switch, so a Space you
+#                                   added (or a new display) picks up the theme
+#                                   the first time you land on it.
 set -euo pipefail
 
 THEME_ROOT="$HOME/.config/theme"
@@ -21,6 +26,21 @@ FIXED="$THEME_ROOT/wallpaper-current.jpg"
   echo "no theme selected; run theme-set first" >&2
   exit 1
 }
+
+if [ "${1:-}" = --here ]; then
+  # The file already holds the current wallpaper (theme-set and theme-bg keep
+  # it fresh); only point the visible desktops at it if they aren't already.
+  [ -f "$FIXED" ] || exit 0
+  osascript >/dev/null 2>&1 <<EOS || true
+tell application "System Events"
+  repeat with d in desktops
+    if picture of d is not "$FIXED" then set picture of d to "$FIXED"
+  end repeat
+end tell
+EOS
+  exit 0
+fi
+
 cp -f "$THEME_ROOT/current/wallpaper.jpg" "$FIXED"
 
 if ! command -v yabai >/dev/null 2>&1; then
