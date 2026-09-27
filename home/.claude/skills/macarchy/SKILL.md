@@ -91,7 +91,7 @@ for layout values.
 | `MACARCHY_TERMINAL` | `ghostty` | terminal the popups open in: ghostty kitty alacritty iterm2 wezterm |
 | `MACARCHY_COMPONENTS` | all | `themes wm bar borders keys agent`, written by `install.sh` |
 | `MACARCHY_FONT` | `Hack Nerd Font` | bar font |
-| `MACARCHY_SPACES` | `5` | Space indicators the bar draws (1-9) |
+| `MACARCHY_SPACES` | `9` | highest Space number the bar draws (1-9); numbers are global, so a second display's Spaces continue from the first's |
 | `MACARCHY_WIFI_IFACE` | `en0` | interface the wifi item reads |
 | `MACARCHY_KEYS_SOURCES` | `skhd ghostty zellij` | what `macarchy-keys` lists |
 | `MACARCHY_UPDATE_AT_LOGIN` | `true` | `macarchy-update` LaunchAgent at login |

@@ -14,7 +14,7 @@
 #                     laptop keyboard); its menus open above the bar
 #
 # Layout, mirroring Omarchy's waybar:
-#   left    Space numbers 1-N (MACARCHY_SPACES; focused = bright, occupied = dim, empty = faint)
+#   left    Space numbers, each on the display it belongs to (current = bright, occupied = dim, empty = faint)
 #   q       clock, immediately left of the notch (a true center would be under it)
 #   e       mic / camera in use, then now-playing, right of the notch, hidden when idle
 #   right   MACARCHY_BAR_RIGHT, by default updates · caffeine · wifi · bluetooth · volume · cpu+mem · battery · tray;
@@ -87,11 +87,17 @@ sketchybar --default "${default[@]}"
 # yabai emits `yabai_window_change` from the signals defined in ~/.config/yabai/yabairc.
 # `space_change` is SketchyBar's own built-in event for native Space switches, and
 # is what keeps the bar correct when yabai is not running.
+#
+# Numbers are macOS's own, global across displays (ctrl+<number> counts the
+# same way): with three Spaces on the main display the laptop's start at 4.
+# An item per possible Space is added up front; SketchyBar draws each only on
+# the display its Space is on and skips Spaces that do not exist, so adding a
+# Space or plugging in a display needs no reload. MACARCHY_SPACES caps it.
 sketchybar --add event yabai_window_change
 
 for sid in $(seq 1 "$MACARCHY_SPACES"); do
   sketchybar --add space space.$sid left \
-    --subscribe space.$sid yabai_window_change space_change \
+    --subscribe space.$sid yabai_window_change space_change display_change \
     --set space.$sid \
     associated_space=$sid \
     icon="$sid" \

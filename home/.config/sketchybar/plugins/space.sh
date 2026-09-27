@@ -2,17 +2,24 @@
 # Renders one native macOS Space indicator: its number, at one of three
 # brightnesses.
 #
-#   focused    full foreground, bold
+#   current    full foreground, bold (the Space its display is showing)
 #   occupied   dim   (has at least one non-minimized window, per yabai)
 #   empty      faint
 #
-# Focus detection order:
+# "Current" is per display: with two displays, each bar highlights the Space
+# that display shows, so both stay lit whichever display has focus. Asking
+# for the one focused Space instead left the other display's bar with nothing
+# highlighted, and flipping between lit and unlit depending on which event
+# drew it last (SketchyBar's $SELECTED is per display, yabai's has-focus is
+# not).
+#
+# Detection order:
 #   1. on `space_change`: $SELECTED, which SketchyBar sets from the macOS
 #      notification itself (fastest; yabai lags it on swipes)
-#   2. otherwise: yabai's own view of which space has focus
+#   2. otherwise: yabai's is-visible for this Space
 #   3. yabai missing: $SELECTED again
 # so the bar still highlights correctly if yabai is stopped or lacks
-# Accessibility permission. Without yabai every unfocused Space renders as
+# Accessibility permission. Without yabai every other Space renders as
 # occupied, since there is no way to ask what is on it.
 
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:$PATH"
@@ -24,27 +31,23 @@ source "$HOME/.config/macarchy/lib.sh" 2>/dev/null || true
 
 SID="$1"
 
-# ----- which space has focus? ----------------------------------------------
+# ----- is this space the one its display shows? ----------------------------
 # On SketchyBar's native `space_change` event trust $SELECTED: it arrives with
-# the macOS notification, while yabai's own view of the focused space can lag
-# it by a few hundred ms. Asking yabai here made the bar render the OLD space
-# first and only correct itself when yabai's `space_changed` signal fired,
-# which showed up as a ~500ms delay on every swipe. Every other event (and the
-# initial draw) still asks yabai, which is authoritative once settled.
-FOCUSED=""
+# the macOS notification, while yabai's own view can lag it by a few hundred
+# ms. Asking yabai here made the bar render the OLD space first and only
+# correct itself when yabai's `space_changed` signal fired, which showed up as
+# a ~500ms delay on every swipe. Every other event (and the initial draw)
+# still asks yabai, which is authoritative once settled.
+VISIBLE=""
 if [ "${SENDER:-}" = "space_change" ] && [ -n "${SELECTED:-}" ]; then
-  [ "$SELECTED" = "true" ] && FOCUSED="$SID" || FOCUSED="not-$SID"
+  VISIBLE="$SELECTED"
 elif command -v yabai >/dev/null 2>&1; then
-  FOCUSED="$(yabai -m query --spaces 2>/dev/null |
-    jq -r 'map(select(."has-focus" == true)) | .[0].index // empty' 2>/dev/null)"
+  VISIBLE="$(yabai -m query --spaces --space "$SID" 2>/dev/null |
+    jq -r '."is-visible" // empty' 2>/dev/null)"
 fi
-
-if [ -n "$FOCUSED" ]; then
-  [ "$SID" = "$FOCUSED" ] && IS_FOCUSED=1 || IS_FOCUSED=0
-else
-  # yabai unavailable: trust SketchyBar's own space component
-  [ "${SELECTED:-false}" = "true" ] && IS_FOCUSED=1 || IS_FOCUSED=0
-fi
+# yabai unavailable: trust SketchyBar's own space component
+[ -n "$VISIBLE" ] || VISIBLE="${SELECTED:-false}"
+[ "$VISIBLE" = "true" ] && IS_CURRENT=1 || IS_CURRENT=0
 
 # ----- does this space have windows? ---------------------------------------
 WINDOWS=""
@@ -54,7 +57,7 @@ if command -v yabai >/dev/null 2>&1; then
 fi
 
 # ----- render ---------------------------------------------------------------
-if [ "$IS_FOCUSED" -eq 1 ]; then
+if [ "$IS_CURRENT" -eq 1 ]; then
   COLOR="$FG_FULL"
   FONT="$MACARCHY_FONT:Bold:13.0"
 elif [ "${WINDOWS:-1}" -gt 0 ]; then

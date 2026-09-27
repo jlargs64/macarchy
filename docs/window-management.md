@@ -403,9 +403,12 @@ windows that sit off every display.
 
 ## Space indicators in the bar
 
-The bar shows Spaces 1–5 as plain numbers, Omarchy-style. Brightness carries
-the state: the focused Space is full foreground and bold, Spaces with windows
-are dim, empty Spaces are faint.
+The bar shows Spaces as plain numbers, Omarchy-style, each on the display it
+belongs to. Numbers are macOS's own and global across displays, matching
+`ctrl + <number>`: with three Spaces on the main display, the laptop's bar
+reads 4 5 6 7. `MACARCHY_SPACES` (default 9) is the highest number drawn.
+Brightness carries the state: the Space each display is showing is full
+foreground and bold, Spaces with windows are dim, empty Spaces are faint.
 
 Two event sources keep it current:
 
@@ -413,10 +416,10 @@ Two event sources keep it current:
   `yabairc` on window create / destroy / focus and on space change.
 - `space_change` — SketchyBar's own built-in event for native Space switches.
 
-`plugins/space.sh` asks yabai which Space has focus, and falls back to
+`plugins/space.sh` asks yabai whether its Space is visible, and falls back to
 SketchyBar's `$SELECTED` when yabai is not running. So the bar stays correct even
 with yabai stopped or lacking permission — it just cannot tell occupied Spaces
-from empty ones, so every unfocused Space renders as occupied.
+from empty ones, so every other Space renders as occupied.
 
 Clicking a Space runs `plugins/space_click.sh`, which tries
 `yabai -m space --focus` (fails without the scripting addition) and falls back to

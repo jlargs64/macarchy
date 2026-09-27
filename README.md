@@ -281,7 +281,7 @@ by `install.sh` if it does not already exist):
 ```sh
 MACARCHY_DEFAULT_THEME=retro-82   # theme.set with no argument, and the seed on first install
 MACARCHY_FONT="Hack Nerd Font"    # SketchyBar icon/label font
-MACARCHY_SPACES=5                 # how many Space indicators the bar renders (1-9)
+MACARCHY_SPACES=9                 # highest Space number the bar draws (1-9, global across displays)
 MACARCHY_RAYCAST_AUTHOR=""        # @raycast.author line; blank omits it
 MACARCHY_WIFI_IFACE=en0           # interface the wifi bar plugin reads
 MACARCHY_UPDATE_AT_LOGIN=true     # install.sh sets up macarchy-update to run at login
