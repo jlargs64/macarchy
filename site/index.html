@@ -84,7 +84,7 @@
         <p>If your terminal is Kitty or your editor is VS Code, nothing here restyles it today. A theme directory has no file for those apps, so a switch leaves them alone. The mechanism is <a href="https://omarchy.org">Omarchy</a>’s and could drive more apps; that is the plan below. Your Ghostty, Zellij and Neovim configs stay yours, since macarchy hooks in with one line each.</p>
       </div>
       <dl class="facts">
-        <div><dt>Theming</dt><dd>23 themes, 5 of them light. <code>theme-set</code>, <code>theme-pick</code>, <code>theme-next</code>, <code>theme-bg</code>, <code>theme-port</code>. <a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">docs/theme-system.md</a></dd></div>
+        <div><dt>Theming</dt><dd>23 themes, 5 of them light. <code>theme-set</code>, <code>theme-pick</code>, <code>theme-next</code>, <code>theme-bg</code>, <code>theme-port</code>, <code>theme-new</code>. <a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">docs/theme-system.md</a></dd></div>
         <div><dt>Windows</dt><dd>yabai + skhd + SketchyBar + JankyBorders over native Spaces. No scripting addition, no <code>csrutil</code>. <a href="https://github.com/jlargs64/macarchy/blob/main/docs/window-management.md">docs/window-management.md</a></dd></div>
         <div><dt>Hotkey discovery</dt><dd><code>macarchy-keys</code>: a which-key style popup on <kbd>alt</kbd>+<kbd>/</kbd>. Descriptions come from the <code># comments</code> in skhdrc.</dd></div>
         <div><dt>Raycast</dt><dd>A generated “Set Theme” script command. <code>theme-raycast-sync</code> regenerates it.</dd></div>
@@ -306,7 +306,7 @@
         <figure class="code">
           <figcaption class="code__bar"><span>~/.config/theme</span></figcaption>
 <pre><code><span class="ln">bin/</span>
-<span class="ln">  theme-set  theme-pick  theme-list  theme-next  theme-bg  theme-port  theme-maintain</span>
+<span class="ln">  theme-set  theme-pick  theme-list  theme-next  theme-bg  theme-port  theme-new  theme-maintain</span>
 <span class="ln">current -> themes/<span data-theme-name>retro-82</span>     <span class="c"># THE symlink. Everything reads through it.</span></span>
 <span class="ln">themes/&lt;name&gt;/</span>
 <span class="ln">  colors.sh      <span class="c"># the palette, as shell exports</span></span>
@@ -392,6 +392,19 @@
 <span class="ln">export ACCENT2=......  export MUTED=......</span>
 <span class="ln">export RED=......     export GREEN=......   export YELLOW=......</span>
 <span class="ln">export BLUE=......    export MAGENTA=......  export CYAN=......</span></code></pre>
+            </figure>
+          </dd>
+        </div>
+        <div>
+          <dt>Make your own</dt>
+          <dd>
+            <p><code>theme-new &lt;name&gt;</code> copies the active theme’s <code>colors.sh</code> under a new name and generates everything else from it, Neovim included. Edit the 11 colours, rebuild, switch.</p>
+            <figure class="code">
+              <figcaption class="code__bar"><span>sh</span><button class="btn btn--sm" type="button" data-copy><span class="btn__label">Copy</span></button></figcaption>
+<pre><code><span class="ln"><span class="p">$ </span>theme-new mine</span>
+<span class="ln"><span class="p">$ </span>$EDITOR ~/.config/theme/themes/mine/colors.sh</span>
+<span class="ln"><span class="p">$ </span>theme-new --regen mine</span>
+<span class="ln"><span class="p">$ </span>theme-set mine</span></code></pre>
             </figure>
           </dd>
         </div>

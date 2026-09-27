@@ -21,7 +21,7 @@ into `$HOME` only when its component is in `MACARCHY_COMPONENTS`.
 | Component | Owns | Notes |
 |---|---|---|
 | `core` | `home/.config/macarchy/{lib.sh,components.sh,config.example}`, `bin/macarchy-{update,doctor,uninstall,popup}`, `home/.claude/**`, anything not matched below | always installed |
-| `themes` | `home/.config/theme/**` (bin/, hooks/, lib/, themes/), `home/.config/raycast/**`, `home/.local/bin/theme-*` | `theme-set`, `theme-pick`, `theme-bg*`, `theme-port`, `theme-wallpaper*` |
+| `themes` | `home/.config/theme/**` (bin/, hooks/, lib/, themes/), `home/.config/raycast/**`, `home/.local/bin/theme-*` | `theme-set`, `theme-pick`, `theme-bg*`, `theme-port`, `theme-new`, `theme-wallpaper*` |
 | `wm` | `home/.config/yabai/yabairc`, `home/.config/skhd/skhdrc`, `bin/macarchy-center`, `theme/bin/hotkey-check` | yabai + skhd, no scripting addition |
 | `bar` | `home/.config/sketchybar/**` | needs `themes` |
 | `borders` | `home/.config/borders/bordersrc` | needs `themes` |
@@ -90,6 +90,7 @@ environment override for `theme-img`, not a config line.
 | `theme-bg-fetch` / `theme-wallpaper <dir>` / `theme-maintain` | fetch backgrounds, render fallback gradients, do all housekeeping |
 | `theme-wallpaper-enroll [--here]` | point every Space (or only the visible ones, quietly) at the shared wallpaper file |
 | `theme-port <name> [--src DIR] [--allow-light] --out DIR` | port an Omarchy theme into `home/.config/theme/themes/` |
+| `theme-new <name> [--from THEME] [--out DIR]` / `theme-new --regen <name>` | a theme from one `colors.sh`: generates ghostty, zellij.kdl, borders and a `mini.base16` Neovim colorscheme; defaults to `~/.config/theme/themes` |
 | `theme-render <app> [dir]` / `theme-raycast-sync` | generate an app's config from the palette; regenerate the Raycast command |
 | `macarchy-keys [--list\|--markdown\|--popup\|--source X]` | which-key hotkey list from `skhdrc` (plus Ghostty and Zellij); `alt - /` |
 | `hotkey-check` | collisions between skhd, macOS, Raycast and Handy hotkeys |
@@ -159,6 +160,7 @@ inside this; `docs/window-management.md` lists what still works.
 - **New scripts.** Add the file under `home/.config/<area>/bin/`, a relative
   symlink in `home/.local/bin/`, a `macarchy_component_of` case if it should
   not be `core`, a header comment with usage, and a bats test.
-- **Themes.** New themes go through `theme-port` into
+- **Themes.** New themes go through `theme-port` (Omarchy) or `theme-new`
+  (custom), with `--out`, into
   `home/.config/theme/themes/`, never into the live `~/.config/theme/themes`.
   Backgrounds and `wallpaper.jpg` are not committed.
