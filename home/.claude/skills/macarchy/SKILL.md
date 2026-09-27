@@ -102,6 +102,8 @@ for layout values.
 | `MACARCHY_AGENT_EXECUTE`, `MACARCHY_MIC`, `MACARCHY_HANDY`, `MACARCHY_AGENT_MODEL` | see file | the `ws` agent |
 
 Themes live in `~/.config/theme/themes/<name>/`; 22 ship (17 dark, 5 light).
+To make their own theme: `theme-new <name>`, edit its `colors.sh`,
+`theme-new --regen <name>`, `theme-set <name>`.
 The user's own theme hooks go in `~/.config/macarchy/hooks.d/`.
 
 ## When it breaks

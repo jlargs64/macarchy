@@ -35,7 +35,9 @@ their upstream palettes; the rest are Omarchy themes brought over with
 `theme-port <name>`, which works for any theme in Omarchy's catalogue. See
 [docs/omarchy-port.md](docs/omarchy-port.md). Light themes need
 `--allow-light` and a manual check afterwards, because the SketchyBar and
-border colour derivations assume a dark background. 5 of the 23 are light:
+border colour derivations assume a dark background. To make your own, run
+`theme-new <name>`, edit its `colors.sh`, then `theme-new --regen <name>`.
+5 of the 23 are light:
 
 - **Dark (18):** catppuccin-mocha, ethereal, everforest, gruvbox, hackerman,
   hollow, kanagawa-wave, last-horizon, lumon, matte-black, miasma, nord, osaka-jade,
@@ -385,6 +387,8 @@ export RED=......     export GREEN=......   export YELLOW=......
 export BLUE=......    export MAGENTA=......  export CYAN=......
 ```
 
+`theme-new <name>` writes all of this from one `colors.sh`; see
+[Making your own theme](docs/theme-system.md#making-your-own-theme).
 Full mechanism, adding a theme, and per-app wiring in
 [docs/theme-system.md](docs/theme-system.md).
 
