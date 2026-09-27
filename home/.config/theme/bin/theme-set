@@ -23,7 +23,17 @@ case "$name" in
     ;;
 esac
 
-if [ ! -d "$THEMES_DIR/$name" ]; then
+# Old names from before these themes took Omarchy's own. macarchy-update
+# re-runs theme-set with the current theme's name, which moves anyone still
+# on an old name over.
+case "$name" in
+  kanagawa-wave) name=kanagawa ;;
+  catppuccin-mocha) name=catppuccin ;;
+esac
+
+# A renamed theme leaves its old directory behind holding only runtime files
+# (backgrounds/, wallpaper.jpg), so a theme is a directory with a colors.sh.
+if [ ! -f "$THEMES_DIR/$name/colors.sh" ]; then
   echo "theme-set: no such theme: $name" >&2
   echo "themes:" >&2
   "$THEME_ROOT/bin/theme-list" | sed 's/^/  /' >&2

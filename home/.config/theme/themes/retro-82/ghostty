@@ -1,25 +1,26 @@
-# retro-82 — 1982 arcade CRT (custom, derived from the 16-slot base16 palette)
-background = 0b0a0f
-foreground = f2c66d
-cursor-color = 3ef1ff
-cursor-text = 0b0a0f
-selection-background = 3a3148
-selection-foreground = fff0c0
+# retro-82 -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 05182e
+foreground = f6dcac
+cursor-color = faa968
+cursor-text = 05182e
+selection-background = 2a6b78
+selection-foreground = f6dcac
 
-# 0-7 dim (canonical slots darkened 15%), 8-15 bright (canonical slots verbatim)
-palette = 0=#0b0a0f
-palette = 1=#d9435d
-palette = 2=#68d968
-palette = 3=#cea85d
-palette = 4=#438fd9
-palette = 5=#d94ccc
-palette = 6=#35cdd9
-palette = 7=#fff0c0
-palette = 8=#3a3148
-palette = 9=#ff4f6d
-palette = 10=#7bff7b
-palette = 11=#f2c66d
-palette = 12=#4fa8ff
-palette = 13=#ff59f0
-palette = 14=#3ef1ff
-palette = 15=#ffffff
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#05182e
+palette = 1=#d3481f
+palette = 2=#026f7b
+palette = 3=#c66933
+palette = 4=#367a75
+palette = 5=#367a75
+palette = 6=#77a29c
+palette = 7=#d1bb92
+palette = 8=#2a6b78
+palette = 9=#f85525
+palette = 10=#028391
+palette = 11=#e97b3c
+palette = 12=#3f8f8a
+palette = 13=#3f8f8a
+palette = 14=#8cbfb8
+palette = 15=#f6dcac

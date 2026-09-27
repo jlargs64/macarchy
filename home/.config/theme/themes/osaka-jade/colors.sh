@@ -1,7 +1,7 @@
 # osaka-jade palette (0x/# free hex) -- ported from Omarchy
-# github.com/omacom/omarchy (quattro) themes/osaka-jade/colors.toml @ 947e2fc (via local --src checkout, not curl)
+# github.com/omacom/omarchy (quattro) themes/osaka-jade/colors.toml @ 387fcf5
 export THEME_NAME=osaka-jade
-export NVIM_COLORSCHEME=bamboo-multiplex
+export NVIM_COLORSCHEME=bamboo
 export BG=111c18
 export FG=C1C497
 export ACCENT=509475

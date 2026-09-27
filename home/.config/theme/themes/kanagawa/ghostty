@@ -1,0 +1,26 @@
+# kanagawa -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 1f1f28
+foreground = dcd7ba
+cursor-color = dcd7ba
+cursor-text = 1f1f28
+selection-background = 54546D
+selection-foreground = dcd7ba
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#1f1f28
+palette = 1=#a63639
+palette = 2=#647e5a
+palette = 3=#a38b5e
+palette = 4=#6b85b8
+palette = 5=#7f6c9c
+palette = 6=#5a7f74
+palette = 7=#bbb79e
+palette = 8=#54546D
+palette = 9=#c34043
+palette = 10=#76946a
+palette = 11=#c0a36e
+palette = 12=#7e9cd8
+palette = 13=#957fb8
+palette = 14=#6a9589
+palette = 15=#dcd7ba

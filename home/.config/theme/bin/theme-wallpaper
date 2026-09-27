@@ -12,16 +12,16 @@ source "$dir/colors.sh"
 
 case "$THEME_NAME" in
   retro-82)
-    TOP=0b0a0f
-    BOT=221c2e
+    TOP="$BG"
+    BOT="$MUTED"
     SCAN=1
     ;;
-  kanagawa-wave)
+  kanagawa)
     TOP=1f1f28
     BOT=2a2a3c
     SCAN=0
     ;;
-  catppuccin-mocha)
+  catppuccin)
     TOP=1e1e2e
     BOT=302d45
     SCAN=0

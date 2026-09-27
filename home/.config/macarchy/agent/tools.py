@@ -46,11 +46,11 @@ APP_ALIASES = {
     "vs code": "Code",
     "the editor": "Code",
 }
-THEMES = ["catppuccin-mocha", "kanagawa-wave", "retro-82"]
+THEMES = ["catppuccin", "kanagawa", "retro-82"]
 THEME_ALIASES = {
-    "catppuccin": "catppuccin-mocha",
-    "mocha": "catppuccin-mocha",
-    "kanagawa": "kanagawa-wave",
+    "catppuccin-mocha": "catppuccin",
+    "mocha": "catppuccin",
+    "kanagawa-wave": "kanagawa",
     "retro": "retro-82",
     "the 82 one": "retro-82",
 }
@@ -59,7 +59,7 @@ BG_ALIASES = {"previous": "prev", "last": "prev", "the next one": "next", "anoth
 DIRECTIONS = ["west", "east", "north", "south"]
 DIR_ALIASES = {"left": "west", "right": "east", "up": "north", "down": "south"}
 
-Theme = Literal["catppuccin-mocha", "kanagawa-wave", "retro-82"]
+Theme = Literal["catppuccin", "kanagawa", "retro-82"]
 Direction = Literal["west", "east", "north", "south"]
 Layout = Literal["bsp", "stack", "float"]
 WindowState = Literal["float", "fullscreen", "zoom", "split"]

@@ -1,12 +1,9 @@
--- retro-82 (custom, local plugin driving mini.base16)
+-- retro-82 -- ported from Omarchy github.com/omacom/omarchy (quattro) themes/retro-82/neovim.lua @ 387fcf5
 return {
-  { "nvim-mini/mini.base16", version = false, lazy = false, priority = 1001 },
   {
-    dir = vim.fn.expand("~/.config/theme/themes/retro-82/nvim-retro82"),
-    name = "retro82",
+    "OldJobobo/retro-82.nvim",
     lazy = false,
     priority = 1000,
-    dependencies = { "nvim-mini/mini.base16" },
   },
-  { "LazyVim/LazyVim", opts = { colorscheme = "retro82" } },
+  { "LazyVim/LazyVim", opts = { colorscheme = "retro-82" } },
 }

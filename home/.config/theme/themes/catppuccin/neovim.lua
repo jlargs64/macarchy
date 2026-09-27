@@ -1,11 +1,9 @@
--- catppuccin-mocha (upstream)
+-- catppuccin -- ported from Omarchy github.com/omacom/omarchy (quattro) themes/catppuccin/neovim.lua @ 387fcf5
 return {
   {
     "catppuccin/nvim",
-    name = "catppuccin",
     lazy = false,
     priority = 1000,
-    opts = { flavour = "mocha" },
   },
   { "LazyVim/LazyVim", opts = { colorscheme = "catppuccin-mocha" } },
 }

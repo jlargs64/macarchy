@@ -5,9 +5,9 @@
 # Usage: theme-port <omarchy-theme-name> [--out DIR] [--rev SHA] [--src DIR] [--allow-light]
 #
 # Downloads themes/<name>/{colors.toml,neovim.lua} from omacom/omarchy at a
-# pinned rev (947e2fc, on the quattro branch), parses the flat TOML with
+# pinned rev (387fcf5, on the quattro branch), parses the flat TOML with
 # sed/awk (no toml library, no python), and emits the 5 files in the same shape
-# as the existing themes (kanagawa-wave, catppuccin-mocha, retro-82). Pass
+# as the other themes. Pass
 # --src DIR to read themes/<name>/{colors.toml,neovim.lua} from a local clone
 # of omarchy instead of curling GitHub (useful offline or against a checkout
 # that's already pinned to the rev you want). See REPORT.md next to this
@@ -17,7 +17,7 @@
 # Written for bash 3.2 (macOS system bash): no mapfile, no associative arrays.
 set -euo pipefail
 
-OMARCHY_REV_DEFAULT="947e2fc002d6831c7888b29b5761d59d29e69727"
+OMARCHY_REV_DEFAULT="387fcf599a9d4afb403462e5a45b9f38ead0abd3"
 OMARCHY_OWNER="omacom"
 OMARCHY_REPO="omarchy"
 OMARCHY_BRANCH_FALLBACK="quattro"
@@ -220,8 +220,8 @@ darken15() {
 # values for the comparison, then emitting that channel's *bright* value.
 # This is a heuristic, not something Omarchy's palette encodes directly --
 # the aim is an accent-adjacent-but-distinct second accent, same intent as
-# ACCENT2 in the hand-authored themes (e.g. kanagawa-wave: ACCENT=blue-ish,
-# ACCENT2=purple-ish).
+# ACCENT2 in the hand-authored themes (e.g. hollow: ACCENT=pumpkin orange,
+# ACCENT2=witch violet).
 D_BLUE="$(hexdist "$ACCENT" "$BLUE")"
 D_CYAN="$(hexdist "$ACCENT" "$CYAN")"
 D_MAGENTA="$(hexdist "$ACCENT" "$MAGENTA")"
@@ -351,9 +351,9 @@ palette = 15=#$FG
 EOF
 
 # --- zellij.kdl ----------------------------------------------------------
-# Simple fg/bg/named-color theme (same shape retro-82 uses), not the verbose
-# upstream-Zellij-repo format kanagawa-wave/catppuccin-mocha use, since these
-# ported palettes aren't in zellij's own theme collection.
+# Simple fg/bg/named-color theme (same shape hollow uses), not the verbose
+# upstream-Zellij-repo format, since most ported palettes aren't in zellij's
+# own theme collection.
 cat >"$DEST/zellij.kdl" <<EOF
 themes {
     current {

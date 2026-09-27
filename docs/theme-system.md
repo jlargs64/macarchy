@@ -66,7 +66,7 @@ theme-set mine
 from those 11 colours: `ghostty` (the same darken-for-dim rule as
 `theme-port`), `zellij.kdl`, `borders`, and a Neovim colorscheme at
 `nvim-<name>/colors/<name>.lua` that drives `mini.base16`, the pattern
-retro-82 and hollow use. kitty, Alacritty, iTerm2, Zed and the wallpaper
+hollow uses. kitty, Alacritty, iTerm2, Zed and the wallpaper
 already come from `colors.sh`. The base16 ramp (`base01`, `02`, `04`, `06`,
 `07`) is mixed from `BG`, `MUTED` and `FG`; `base09` is `ACCENT`.
 
@@ -113,7 +113,7 @@ Manual path, or to finish a `theme-port` output with a `TODO` placeholder:
 2. Copy the six files from an existing theme and edit them. `colors.sh` must
    export `BG FG ACCENT ACCENT2 MUTED RED GREEN YELLOW BLUE MAGENTA CYAN`
    as bare hex (no `#`, no `0x`), plus `THEME_NAME` and `NVIM_COLORSCHEME`.
-   If the theme has no upstream Neovim plugin, follow retro-82's pattern:
+   If the theme has no upstream Neovim plugin, follow hollow's pattern:
    drive `nvim-mini/mini.base16` directly from the palette instead of a
    `TODO` plugin entry (several of the 16 quattro-branch themes ported this
    way have no upstream `nvim` plugin at all and use this local
@@ -200,25 +200,12 @@ Terminals are never killed.
 ## Wallpapers
 
 Each theme has a `backgrounds/` directory of real images, pulled from upstream
-[Omarchy](https://github.com/basecamp/omarchy) by `theme-bg-fetch`. Omarchy
+[Omarchy](https://github.com/omacom/omarchy) by `theme-bg-fetch`. Omarchy
 ships them at 5120x2880 already.
 
-| Theme | Backgrounds | Default |
-|---|---|---|
-| retro-82 | 9 | `01-quattro.jpg` |
-| kanagawa-wave | 1 | `01-great-wave.jpg` |
-| catppuccin-mocha | 3 | `01-waves.jpg` |
-
-Two of those defaults come from a different upstream theme than you would
-expect, on purpose:
-
-- **retro-82 → quattro**, which is Omarchy's *tokyo-night* background. Omarchy
-  has its own `retro-82` theme, but its backgrounds are teal and orange, and
-  this retro-82 uses the magenta / cyan / amber palette from the spec. Quattro's
-  synthwave magenta and amber match it; Omarchy's own set does not. Its 8
-  images are still included, as entries 02–09.
-- **kanagawa-wave → The Great Wave**, Hokusai's print off Kanagawa. The theme
-  is named after it.
+Each theme gets exactly the images Omarchy ships for it, in Omarchy's order,
+minus the Omarchy-logo `omarchy.webp` every theme carries. The first one is
+the default.
 
 ### Choosing one
 
@@ -291,37 +278,13 @@ theme. Without yabai, run `theme-wallpaper-enroll` again by hand instead.
 
 ## The themes
 
-### catppuccin-mocha, kanagawa-wave
+### Omarchy's themes
 
-Upstream everywhere — Ghostty's built-in palette (inlined into the `ghostty`
-file so the other terminals can read it), the official Zellij theme copied
-from zellij's repo, the upstream Neovim plugin. Nothing hand-rolled.
-
-### retro-82
-
-Custom. 1982 arcade CRT: near-black phosphor background, amber primary, hot
-magenta and electric cyan accents, desaturated enough to read for eight hours.
-
-16-slot base16 palette:
-
-```
-00 0b0a0f  01 15121c  02 221c2e  03 3a3148
-04 6b5a80  05 f2c66d  06 fff0c0  07 ffffff
-08 ff4f6d  09 ff9f43  0A f2c66d  0B 7bff7b
-0C 3ef1ff  0D 4fa8ff  0E ff59f0  0F c98cff
-```
-
-Everything is derived from those 16 values:
-
-- **Ghostty** — ANSI 8..15 are the canonical slots verbatim; ANSI 0..7 are the
-  same hues darkened 15% so bold text separates from normal text.
-- **Zellij** — the simple `fg`/`bg`/named-color theme format.
-- **Neovim** — `mini.base16` fed the palette directly. Because `mini.base16`
-  does not register a colorscheme name, the setup call lives in a tiny local
-  plugin, `themes/retro-82/nvim-retro82/colors/retro82.lua`, which sets
-  `vim.g.colors_name = "retro82"` afterwards so `:colorscheme retro82` works.
-- **Wallpaper** — a `0b0a0f → 221c2e` gradient with every 4th row darkened 35%,
-  for faint scanlines.
+Every theme except hollow is Omarchy's, ported by `theme-port` from
+`themes/<name>/colors.toml` at the pinned `quattro` commit, under Omarchy's own
+name, with Omarchy's own backgrounds. That includes retro-82 (teal, orange and
+cream), kanagawa and catppuccin (Mocha). `theme-set kanagawa-wave` and
+`theme-set catppuccin-mocha`, the names these two had before, still work.
 
 ### hollow
 
@@ -336,8 +299,11 @@ blue, witch violet and ghost sage.
 0C 82a898  0D 6d8ca3  0E a878c2  0F 8a4b2a
 ```
 
-Ghostty, Zellij and Neovim are derived the same way as retro-82 (Neovim via
-`nvim-hollow/colors/hollow.lua` on `mini.base16`). The wallpaper is
+Ghostty uses the canonical slots for ANSI 8..15 and the same hues darkened 15%
+for 0..7, Zellij the simple `fg`/`bg`/named-color format, and Neovim
+`mini.base16` fed the palette through a tiny local plugin,
+`nvim-hollow/colors/hollow.lua`, which sets `vim.g.colors_name = "hollow"`
+so `:colorscheme hollow` works. The wallpaper is
 `themes/hollow/wallpaper.py`: a harvest moon behind thin cloud, bats, bare
 trees on a fogged ridge, a lit jack-o'-lantern and falling leaves. It is
 seeded, so every machine renders the same picture, and the moon, trees and
@@ -462,15 +428,15 @@ Requires `fzf`, already installed by `install.sh`.
 with a "not found" dialog; the real name is `Catppuccin Mocha`. Check with
 `ghostty +list-themes`.
 
-**`g:colors_name` does not always match `NVIM_COLORSCHEME`.** kanagawa.nvim
-reports `kanagawa` even when loaded as `kanagawa-wave`. The colors are correct;
-only the reported name differs.
+**`g:colors_name` does not always match the theme name.** catppuccin loads
+`catppuccin-mocha`, and a theme's `NVIM_COLORSCHEME` is whatever its plugin
+registers, not the macarchy theme name.
 
 | Theme | `NVIM_COLORSCHEME` | reported `g:colors_name` |
 |---|---|---|
-| catppuccin-mocha | `catppuccin-mocha` | `catppuccin-mocha` |
-| kanagawa-wave | `kanagawa-wave` | `kanagawa` |
-| retro-82 | `retro82` | `retro82` |
+| catppuccin | `catppuccin-mocha` | `catppuccin-mocha` |
+| kanagawa | `kanagawa` | `kanagawa` |
+| retro-82 | `retro-82` | `retro-82` |
 | hollow | `hollow` | `hollow` |
 
 **Neovim's server socket is not in `/tmp` on macOS.** It is under `$TMPDIR`
