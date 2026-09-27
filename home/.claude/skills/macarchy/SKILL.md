@@ -71,7 +71,7 @@ this list live, from `skhdrc`.
 | `hotkey-check` | hotkey collisions with macOS, Raycast and Handy |
 | `ws "..."` / `ws -x "..."` / `ws --voice` | plain-English desktop control; dry-run unless `-x` or `MACARCHY_AGENT_EXECUTE=true` |
 | `macarchy-restart` | restart yabai, borders, SketchyBar and skhd, each on its own (what `shift + alt - r` runs); `--yabai`, `--borders`, `--bar`, `--skhd` for one |
-| `macarchy-rescue` | move off-screen windows back on screen; restarts nothing (yabairc runs it after display changes and wake) |
+| `macarchy-rescue` | move off-screen windows back on screen; restarts nothing (yabairc runs it after display changes and wake). `--relaunch` also quits and reopens an app whose window will not move |
 
 Popups open in `MACARCHY_TERMINAL` as a floating window; yabai floats them
 by title.
@@ -117,6 +117,7 @@ failure (missing package, service not running, Accessibility not granted,
 | Wallpaper wrong on one Space | switch to that Space once (yabai enrolls it on arrival), or run `theme-wallpaper-enroll` to walk every Space (the screen flicks through them; needs `ctrl + <number>` enabled) |
 | Wallpaper wrong everywhere | `theme-bg apply`, then `theme-set $(basename "$(readlink ~/.config/theme/current)")` |
 | A window is off screen or lost | `macarchy-rescue`; failing that `alt - g` to float it, `alt - =` to rebalance, or drag it from Mission Control |
+| An app shows no window when opened (after unplugging or waking), or a `macarchy` notification says yabai cannot move one of its windows | yabai lists the window but cannot act on it (`yabai -m window <id> --focus` says `could not locate`), and the app keeps it as its only window. `macarchy-rescue --relaunch`, or quit and reopen that app. Ask first: quitting a terminal ends shells outside Zellij/tmux |
 | Hotkeys dead | `macarchy-doctor`: is skhd running and granted Accessibility? If it is clean, check Secure Keyboard Entry: an app holding it (Terminal.app, iTerm2, a password manager, a browser or macOS password field) makes skhd log `secure keyboard entry is enabled by (<pid>) '<app>'! abort..` in `/tmp/skhd_$USER.err.log` and quit. Leave the password field or turn it off in that app, then run `macarchy-restart --skhd` **from a terminal**: `shift + alt - r` is itself an skhd hotkey and does nothing while skhd is down |
 | `could not access accessibility features! abort..` in `/tmp/yabai_$USER.err.log` or the skhd log, often after `brew upgrade yabai` or `skhd` | the grant was invalidated: System Settings > Privacy & Security > Accessibility, remove and re-add `/opt/homebrew/bin/yabai` and `/opt/homebrew/bin/skhd`, then `yabai --restart-service; skhd --restart-service` |
 | Space numbers drift or the bar shows the wrong Space | `defaults write com.apple.dock mru-spaces -bool false && killall Dock` (doctor checks this) |

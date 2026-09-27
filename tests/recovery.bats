@@ -193,6 +193,53 @@ fake_plist() { # fake_plist <label> [with-throttle]
   [[ $output == *"yabai did not answer"* ]]
 }
 
+# a yabai whose --display fails for window 2, the way it does for a window
+# it lists but can no longer act on
+stuck_yabai() {
+  fake_yabai
+  mv "$STUBS/yabai" "$STUBS/yabai-ok"
+  stub yabai '[ "$*" = "-m window 2 --display 1" ] && exit 1; exec "$STUBS/yabai-ok" "$@"'
+}
+
+@test "rescue names a window it cannot move and posts a notification" {
+  stuck_yabai
+  windows "$(win 2 1724 -1400 1708 1380 pid=99999)" "$(win 3 5000 0 800 600 pid=99998)"
+  rescue
+  echo "$output"
+  [ "$status" -eq 0 ]
+  [[ $output == *"could not move 2 App2"* ]]
+  [[ $output == *"App2 will not come back; relaunch with: macarchy-rescue --relaunch"* ]]
+  [[ $output == *'moved 3 App3'* ]]
+  grep -q 'osascript -e display notification "yabai cannot move a window of App2. Run: macarchy-rescue --relaunch" with title "macarchy"' "$STUB_LOG"
+  run ! grep -q "quit" "$STUB_LOG" # never relaunches on its own
+  run ! grep -q "^open " "$STUB_LOG"
+}
+
+@test "rescue --relaunch quits and reopens only the app with the stuck window" {
+  stuck_yabai
+  stub ps 'echo /Applications/Ghostty.app/Contents/MacOS/ghostty'
+  windows "$(win 2 1724 -1400 1708 1380 pid=99999)" "$(win 3 5000 0 800 600 pid=99998)"
+  rescue --relaunch
+  echo "$output"
+  [ "$status" -eq 0 ]
+  [[ $output == *"relaunched App2"* ]]
+  grep -q "ps -o comm= -p 99999" "$STUB_LOG"
+  run ! grep -q "ps -o comm= -p 99998" "$STUB_LOG"
+  stub_order 'osascript -e tell application "/Applications/Ghostty.app" to quit' "open /Applications/Ghostty.app"
+  run ! grep -q "display notification" "$STUB_LOG"
+}
+
+@test "rescue --relaunch leaves a process that is not an app bundle alone" {
+  stuck_yabai
+  stub ps 'echo /usr/local/bin/something'
+  windows "$(win 2 1724 -1400 1708 1380 pid=99999)"
+  rescue --relaunch
+  [ "$status" -eq 0 ]
+  [[ $output == *"no app bundle for App2 (pid 99999); quit and reopen it by hand"* ]]
+  run ! grep -q "quit" "$STUB_LOG"
+  run ! grep -q "^open " "$STUB_LOG"
+}
+
 # ----- macarchy-doctor -----------------------------------------------------
 
 @test "doctor: secure keyboard entry names the app holding it" {

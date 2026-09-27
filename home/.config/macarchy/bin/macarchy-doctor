@@ -240,7 +240,7 @@ if macarchy_has wm; then
     if [ "$n_lost" = 0 ]; then
       ok "every window is on a display"
     else
-      warn "$n_lost window(s) sit off every display" "macarchy-rescue"
+      warn "$n_lost window(s) sit off every display" "macarchy-rescue (if one will not move: macarchy-rescue --relaunch)"
     fi
   fi
   need_running skhd skhd "skhd --start-service (and enable it under Privacy & Security > Accessibility)"

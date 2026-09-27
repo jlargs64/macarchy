@@ -419,6 +419,7 @@
           <li><strong>Hotkeys stopped landing.</strong> skhd stops receiving hotkeys while an app has secure keyboard entry on, which a password field turns on and some terminals keep on. <code>macarchy-doctor</code> reports which app has it.</li>
           <li><strong>Something is stuck.</strong> <kbd>shift</kbd>+<kbd>alt</kbd>+<kbd>r</kbd> runs <code>macarchy-restart</code>: yabai, then borders, then the bar, then skhd, in that order.</li>
           <li><strong>A window ended up off every display.</strong> <code>macarchy-rescue</code> pulls it back onto the focused one.</li>
+          <li><strong>An app opens but shows no window</strong> after a monitor comes back or the Mac wakes. yabai kept a window it can no longer move, and the app keeps showing it. A notification names the app; <code>macarchy-rescue --relaunch</code> quits and reopens it.</li>
           <li><strong>Ghostty shows a “Configuration Errors” dialog after a switch.</strong> The theme’s <code>ghostty</code> fragment names a theme Ghostty does not have. Names are exact: <code>Catppuccin Mocha</code>, not <code>catppuccin-mocha</code>. Check with <code>ghostty +list-themes</code>.</li>
           <li><strong>Space indicators look wrong after a reboot.</strong> <code>mru-spaces</code> must stay off; the installer sets it. yabai and the bar both assume Space N stays Space N.</li>
           <li><strong>Switching Spaces feels floaty.</strong> The installer already halves the slide to 0.1s. The stronger option is System Settings › Accessibility › Display › Reduce Motion, left off by default because it flattens animations system-wide.</li>
@@ -430,6 +431,7 @@
 <pre><code><span class="ln"><span class="p">$ </span>macarchy-doctor                             <span class="c"># every component, a fix line per failure</span></span>
 <span class="ln"><span class="p">$ </span>macarchy-restart                            <span class="c"># yabai, borders, the bar, skhd</span></span>
 <span class="ln"><span class="p">$ </span>macarchy-rescue                             <span class="c"># off-display windows, back onto this one</span></span>
+<span class="ln"><span class="p">$ </span>macarchy-rescue --relaunch                  <span class="c"># and reopen an app whose window will not move</span></span>
 <span class="ln"><span class="p">$ </span>readlink ~/.config/theme/current            <span class="c"># which theme is active</span></span>
 <span class="ln"><span class="p">$ </span>ghostty +show-config 2&gt;&amp;1 &gt;/dev/null        <span class="c"># theme-name errors show here</span></span>
 <span class="ln"><span class="p">$ </span>nvim --headless -c 'lua print(vim.g.colors_name) vim.cmd("qa!")'</span>
