@@ -4,6 +4,8 @@
 # Usage:
 #   macarchy-rescue              move each off-screen window to the focused display
 #   macarchy-rescue --dry-run    only print what it would move
+#   macarchy-rescue --relaunch   also quit and reopen each app whose window
+#                                will not move
 #
 # On macOS 26 and later yabai can miss a display parameter change (a monitor
 # unplugged, a resolution switch, wake from sleep), and windows keep frames
@@ -12,16 +14,25 @@
 # `yabai -m window <id> --display <focused>`, which needs no scripting
 # addition. Minimized and hidden windows are left alone. yabairc runs this
 # after display_added, display_removed and system_woke, and macarchy-doctor
-# reports the count. Always exits 0, so a signal chain never stops here.
+# reports the count.
+#
+# Sometimes the window is past saving: yabai still lists it but every command
+# on it fails, and the app keeps that dead window as its only one, so opening
+# the app again shows nothing. A plain run names those apps and posts a
+# notification (a signal-run rescue has nowhere else to say it); --relaunch
+# quits and reopens them, which is the only fix. It never relaunches on its
+# own, since quitting a terminal ends its shells. Always exits 0, so a signal
+# chain never stops here.
 
 set -uo pipefail
 
-DRY=0
+DRY=0 RELAUNCH=0
 for a in "$@"; do
   case "$a" in
     -n | --dry-run) DRY=1 ;;
+    --relaunch) RELAUNCH=1 ;;
     -h | --help)
-      sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -54,7 +65,7 @@ if [ -z "$focused" ]; then
   exit 0
 fi
 
-# One line per lost window: id, app, title, frame. Intersection of two frames
+# One line per lost window: id, pid, app, title, frame. Intersection of two frames
 # is (overlap in x) * (overlap in y), zero when they do not touch.
 lost="$(jq -r --argjson displays "$displays" '
   def inter($a; $b):
@@ -67,7 +78,7 @@ lost="$(jq -r --argjson displays "$displays" '
   | . as $win
   | ([$displays[] | inter($win.frame; .frame)] | max) as $seen
   | select($seen < $win.frame.w * $win.frame.h / 10)
-  | "\(.id)\t\(.app)\t\(.title)\t\(.frame.x | floor),\(.frame.y | floor) \(.frame.w | floor)x\(.frame.h | floor)"
+  | "\(.id)\t\(.pid)\t\(.app)\t\(.title)\t\(.frame.x | floor),\(.frame.y | floor) \(.frame.w | floor)x\(.frame.h | floor)"
 ' <<<"$windows" 2>/dev/null)"
 
 if [ -z "$lost" ]; then
@@ -75,7 +86,36 @@ if [ -z "$lost" ]; then
   exit 0
 fi
 
-while IFS=$'\t' read -r id app title frame; do
+# relaunch <pid> <app> -- quit the app politely, wait for it, open it again.
+# Found by pid, not name: yabai's app name need not match the bundle's.
+relaunch() {
+  local pid=$1 app=$2 bin bundle i=0
+  bin="$(ps -o comm= -p "$pid" 2>/dev/null)"
+  case "$bin" in
+    *.app/*) bundle="${bin%%.app/*}.app" ;;
+    *)
+      echo "macarchy-rescue: no app bundle for $app (pid $pid); quit and reopen it by hand" >&2
+      return
+      ;;
+  esac
+  osascript -e "tell application \"$bundle\" to quit" >/dev/null 2>&1
+  while kill -0 "$pid" 2>/dev/null && [ "$i" -lt 20 ]; do
+    sleep 0.5
+    i=$((i + 1))
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    echo "macarchy-rescue: $app is still running (waiting on a quit dialog?); open it again once it quits" >&2
+    return
+  fi
+  if open "$bundle" >/dev/null 2>&1; then
+    echo "relaunched $app"
+  else
+    echo "macarchy-rescue: $app quit but did not reopen: open \"$bundle\"" >&2
+  fi
+}
+
+stuck="" # "pid<TAB>app" for each window yabai would not move
+while IFS=$'\t' read -r id pid app title frame; do
   [ -n "$id" ] || continue
   if [ "$DRY" = 1 ]; then
     echo "would move $id $app \"$title\" at $frame to display $focused"
@@ -83,6 +123,23 @@ while IFS=$'\t' read -r id app title frame; do
     echo "moved $id $app \"$title\" from $frame to display $focused"
   else
     echo "could not move $id $app \"$title\" (yabai -m window $id --display $focused failed)" >&2
+    stuck="$stuck$pid"$'\t'"$app"$'\n'
   fi
 done <<<"$lost"
+
+stuck="$(printf '%s' "$stuck" | sort -u)"
+[ -n "$stuck" ] || exit 0
+
+if [ "$RELAUNCH" = 1 ]; then
+  while IFS=$'\t' read -r pid app; do
+    relaunch "$pid" "$app"
+  done <<<"$stuck"
+  exit 0
+fi
+
+names="$(cut -f2 <<<"$stuck" | paste -sd, - | sed 's/,/, /g')"
+echo "macarchy-rescue: $names will not come back; relaunch with: macarchy-rescue --relaunch" >&2
+# AppleScript string: drop the characters that would end it
+msg="$(printf '%s' "yabai cannot move a window of $names. Run: macarchy-rescue --relaunch" | tr -d '"\\')"
+osascript -e "display notification \"$msg\" with title \"macarchy\"" >/dev/null 2>&1
 exit 0
