@@ -6,28 +6,42 @@ CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 source "$CONFIG_DIR/colors.sh" 2>/dev/null
 source "$CONFIG_DIR/plugins/hover.sh"
 
-if [ "$SENDER" = "volume_change" ]; then
+# One call for both values. An output macOS cannot drive (HDMI or DisplayPort
+# to a monitor, some USB DACs) reports "missing value" for volume and mute.
+SETTINGS=$(osascript -e "get volume settings" 2>/dev/null)
+VOLUME=$(printf '%s' "$SETTINGS" | sed -n 's/^output volume:\([^,]*\),.*/\1/p')
+IS_MUTED=$(printf '%s' "$SETTINGS" | sed -n 's/.*output muted:\([^,]*\).*/\1/p')
+if [ "$SENDER" = "volume_change" ] && [ -n "$INFO" ]; then
   VOLUME="$INFO"
-else
-  VOLUME=$(osascript -e "output volume of (get volume settings)" 2>/dev/null)
 fi
 
-IS_MUTED=$(osascript -e "output muted of (get volume settings)" 2>/dev/null)
-
 COLOR="$WHITE"
-if [ "$IS_MUTED" = "true" ] || [ "${VOLUME:-0}" -eq 0 ]; then
+case "$VOLUME" in
+  '' | *[!0-9]*)
+    # No software volume: the device's own buttons set the level.
+    ICON="󰓃"
+    COLOR="$FG_DIM"
+    VOLUME=""
+    ;;
+esac
+
+if [ -z "$VOLUME" ]; then
+  LABEL="Fixed"
+elif [ "$IS_MUTED" = "true" ] || [ "$VOLUME" -eq 0 ]; then
   ICON="󰝟"
   COLOR="$FG_DIM"
+  LABEL="${VOLUME}%"
 else
   case "$VOLUME" in
-    [6-9][0-9] | 100) ICON="" ;;
-    [3-5][0-9]) ICON="" ;;
-    *) ICON="" ;;
+    [6-9][0-9] | 100) ICON="" ;;
+    [3-5][0-9]) ICON="" ;;
+    *) ICON="" ;;
   esac
+  LABEL="${VOLUME}%"
 fi
 
 sketchybar --set "$NAME" \
   icon="$ICON" \
   icon.color="$COLOR" \
-  label="${VOLUME}%" \
+  label="$LABEL" \
   label.color="$WHITE"
