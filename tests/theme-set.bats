@@ -95,3 +95,22 @@ theme_set() { run "$REPO/home/.config/theme/bin/theme-set" "$@"; }
   [ "$status" -eq 2 ]
   [[ $output == *"usage: theme-set"* ]]
 }
+
+@test "the old names kanagawa-wave and catppuccin-mocha still work" {
+  for n in kanagawa catppuccin; do ln -s "$REPO/home/.config/theme/themes/$n" "$T/themes/$n"; done
+  theme_set kanagawa-wave
+  [ "$status" -eq 0 ]
+  [ "$(readlink "$T/current")" = "$T/themes/kanagawa" ]
+  theme_set catppuccin-mocha
+  [ "$(readlink "$T/current")" = "$T/themes/catppuccin" ]
+}
+
+@test "a directory without colors.sh is not a theme" {
+  mkdir -p "$T/themes/kanagawa-wave/backgrounds"
+  run "$T/bin/theme-list"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$(printf 'gruvbox\nnord')" ]
+  theme_set kanagawa-wave
+  [ "$status" -eq 1 ]
+  [[ $output == *"no such theme: kanagawa"* ]]
+}

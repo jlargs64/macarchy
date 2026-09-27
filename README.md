@@ -28,19 +28,19 @@ VS Code (and Cursor, VSCodium, Windsurf), Zed, Zellij and Neovim; see
 | Workspace agent | `ws`: plain-English (or voice, `alt - w`) control of windows, Spaces, theme, wallpaper and terminal tabs via an on-device 14 MB model. [docs/agent.md](docs/agent.md) |
 | Speech-to-text | [Handy](https://handy.computer) (offline, open-source; brew cask `handy`, installed by `install.sh`) transcribes for `ws --voice`. Its own hotkey, `alt - space` (hold to talk, tap to toggle), is configured inside Handy, not skhd. |
 
-Themes live under `home/.config/theme/themes/`. 23 themes ship. `retro-82` is
-custom (a 1982 arcade CRT look), and so is `hollow` (Sleepy Hollow in
-October: pumpkin, candle flame and a harvest-moon wallpaper); `kanagawa-wave` and `catppuccin-mocha` follow
-their upstream palettes; the rest are Omarchy themes brought over with
-`theme-port <name>`, which works for any theme in Omarchy's catalogue. See
+Themes live under `home/.config/theme/themes/`. 23 themes ship: all 22 of
+[Omarchy's](https://github.com/omacom/omarchy/tree/quattro/themes), under the
+same names and with the same backgrounds, brought over with
+`theme-port <name>`, plus `hollow`, which is custom (Sleepy Hollow in
+October: pumpkin, candle flame and a harvest-moon wallpaper). See
 [docs/omarchy-port.md](docs/omarchy-port.md). Light themes need
 `--allow-light` and a manual check afterwards, because the SketchyBar and
 border colour derivations assume a dark background. To make your own, run
 `theme-new <name>`, edit its `colors.sh`, then `theme-new --regen <name>`.
 5 of the 23 are light:
 
-- **Dark (18):** catppuccin-mocha, ethereal, everforest, gruvbox, hackerman,
-  hollow, kanagawa-wave, last-horizon, lumon, matte-black, miasma, nord, osaka-jade,
+- **Dark (18):** catppuccin, ethereal, everforest, gruvbox, hackerman,
+  hollow, kanagawa, last-horizon, lumon, matte-black, miasma, nord, osaka-jade,
   retro-82, ristretto, solitude, tokyo-night, vantablack
 - **Light (5):** catppuccin-latte, flexoki-light, lupine, rose-pine, white
 
@@ -68,8 +68,8 @@ What it does not do:
 - Theme WezTerm's colours, Terminal.app, JetBrains IDEs or browsers. A hook
   for any of them is one short script; see
   [docs/theme-system.md](docs/theme-system.md#adding-an-app).
-- Theme VS Code for the 8 themes that have no matching marketplace theme
-  (retro-82, hollow, ethereal, lupine, miasma, ristretto, vantablack, white). A
+- Theme VS Code for the 7 themes that have no matching marketplace theme
+  (hollow, ethereal, lupine, miasma, ristretto, vantablack, white). A
   switch to one of those leaves VS Code on its previous theme.
 - Manage your terminal, editor or multiplexer configs. It adds one include
   line to each and the configs stay yours; see

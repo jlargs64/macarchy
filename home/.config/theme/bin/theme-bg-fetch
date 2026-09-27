@@ -6,9 +6,8 @@
 # fetched on demand, by `install.sh` and by `theme-maintain`. Re-running is
 # cheap: a file that already exists is skipped.
 #
-# Sources are Omarchy's own theme backgrounds, except retro-82, which uses
-# tokyo-night's `quattro` first -- Omarchy's retro-82 set is teal/orange and
-# does not match the magenta/cyan/amber palette this retro-82 uses.
+# Every theme gets exactly Omarchy's own backgrounds, in Omarchy's order,
+# minus the Omarchy-logo `omarchy.webp` each one carries.
 set -euo pipefail
 
 THEMES="$HOME/.config/theme/themes"
@@ -21,7 +20,7 @@ THEMES="$HOME/.config/theme/themes"
 # (branch `quattro`); this pin was verified against a local clone of that
 # branch at this exact commit.
 OMARCHY_OWNER="omacom/omarchy"
-OMARCHY_REV="947e2fc002d6831c7888b29b5761d59d29e69727"
+OMARCHY_REV="387fcf599a9d4afb403462e5a45b9f38ead0abd3"
 OMARCHY_FALLBACK_REF="quattro"
 RAW="https://raw.githubusercontent.com/$OMARCHY_OWNER/$OMARCHY_REV/themes"
 RAW_FALLBACK="https://raw.githubusercontent.com/$OMARCHY_OWNER/$OMARCHY_FALLBACK_REF/themes"
@@ -33,19 +32,18 @@ command -v magick >/dev/null 2>&1 || {
 
 # "<local theme>|<n>|<upstream theme>/<file>|<local name>"
 MAP="
-retro-82|01|tokyo-night/1-quattro.webp|quattro
-retro-82|02|retro-82/1-in-the-groove.webp|in-the-groove
-retro-82|03|retro-82/2-dusk-guardian.webp|dusk-guardian
-retro-82|04|retro-82/3-glassy-lines.webp|glassy-lines
-retro-82|05|retro-82/4-gateway.webp|gateway
-retro-82|06|retro-82/5-zen-boat.webp|zen-boat
-retro-82|07|retro-82/6-abstract-pyramids.webp|abstract-pyramids
-retro-82|08|retro-82/7-the-journey.webp|the-journey
-retro-82|09|retro-82/8-glitter-glass.webp|glitter-glass
-kanagawa-wave|01|kanagawa/1-kanagawa.jpg|great-wave
-catppuccin-mocha|01|catppuccin/2-waves.webp|waves
-catppuccin-mocha|02|catppuccin/1-totoro.webp|totoro
-catppuccin-mocha|03|catppuccin/3-blue-eye.webp|blue-eye
+retro-82|01|retro-82/1-in-the-groove.webp|in-the-groove
+retro-82|02|retro-82/2-dusk-guardian.webp|dusk-guardian
+retro-82|03|retro-82/3-glassy-lines.webp|glassy-lines
+retro-82|04|retro-82/4-gateway.webp|gateway
+retro-82|05|retro-82/5-zen-boat.webp|zen-boat
+retro-82|06|retro-82/6-abstract-pyramids.webp|abstract-pyramids
+retro-82|07|retro-82/7-the-journey.webp|the-journey
+retro-82|08|retro-82/8-glitter-glass.webp|glitter-glass
+kanagawa|01|kanagawa/1-kanagawa.jpg|kanagawa
+catppuccin|01|catppuccin/1-totoro.webp|totoro
+catppuccin|02|catppuccin/2-waves.webp|waves
+catppuccin|03|catppuccin/3-blue-eye.webp|blue-eye
 catppuccin-latte|01|catppuccin-latte/1-color-fade.webp|color-fade
 ethereal|01|ethereal/1-cosmic.webp|cosmic
 ethereal|02|ethereal/2-meadow.webp|meadow
@@ -107,6 +105,13 @@ white|01|white/1-white.webp|white
 white|02|white/2-white.webp|white
 white|03|white/3-white.webp|white
 "
+
+# retro-82 used to lead with tokyo-night's quattro, which pushed its own set to
+# 02-09. Remove those names so an upgrade does not show every image twice.
+for f in 01-quattro 02-in-the-groove 03-dusk-guardian 04-glassy-lines 05-gateway \
+  06-zen-boat 07-abstract-pyramids 08-the-journey 09-glitter-glass; do
+  rm -f "$THEMES/retro-82/backgrounds/$f.jpg"
+done
 
 # One private scratch dir for every download; mktemp owns the name, we own
 # the files inside it, and the trap removes all of it on any exit.

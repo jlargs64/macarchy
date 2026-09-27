@@ -6,4 +6,8 @@ THEMES_DIR="$HOME/.config/theme/themes"
   echo "no themes dir: $THEMES_DIR" >&2
   exit 1
 }
-find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | LC_ALL=C sort
+# Only directories with a colors.sh: a renamed theme's old directory keeps its
+# runtime files (backgrounds/, wallpaper.jpg) but is no longer a theme.
+for d in "$THEMES_DIR"/*/; do
+  if [ -f "$d/colors.sh" ]; then basename "$d"; fi
+done | LC_ALL=C sort

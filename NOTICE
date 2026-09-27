@@ -8,7 +8,7 @@ is modelled on and where its themes come from.
 ## Omarchy
 
 The theme palettes under `home/.config/theme/themes/` (all except
-`retro-82`, `kanagawa-wave` and `catppuccin-mocha`) are ported from the
+`hollow`) are ported from the
 `themes/<name>/colors.toml` files in Omarchy,
 https://github.com/omacom/omarchy, by `theme-port`. Theme wallpapers are not
 redistributed in this repository; `theme-bg-fetch` downloads them from the

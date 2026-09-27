@@ -9,8 +9,8 @@
 # the active theme), renamed. Every other file is generated from that one
 # palette: ghostty (16-slot ANSI, same darken-for-dim rule as theme-port),
 # zellij.kdl, borders, and a Neovim colorscheme that drives mini.base16
-# (neovim.lua plus nvim-<name>/colors/<name>.lua, the pattern retro-82 and
-# hollow use). kitty, Alacritty, iTerm2, Zed and the wallpaper already come
+# (neovim.lua plus nvim-<name>/colors/<name>.lua, the pattern hollow
+# uses). kitty, Alacritty, iTerm2, Zed and the wallpaper already come
 # from colors.sh via theme-render and theme-wallpaper.
 #
 # The loop: theme-new mine; edit colors.sh; theme-new --regen mine;

@@ -1,0 +1,26 @@
+# catppuccin -- ported from Omarchy (custom; 16-slot ANSI derived from colors.sh, see theme-port)
+background = 1e1e2e
+foreground = cdd6f4
+cursor-color = 89b4fa
+cursor-text = 1e1e2e
+selection-background = 585b70
+selection-foreground = cdd6f4
+
+# 0-7 dim (RED/GREEN/YELLOW/BLUE/MAGENTA/CYAN/FG darkened 15%, BG verbatim),
+# 8-15 bright (MUTED, then canonical RED..CYAN, then FG)
+palette = 0=#1e1e2e
+palette = 1=#cf768f
+palette = 2=#8dc189
+palette = 3=#d4c095
+palette = 4=#7499d5
+palette = 5=#d0a5c4
+palette = 6=#7ec0b5
+palette = 7=#aeb6cf
+palette = 8=#585b70
+palette = 9=#f38ba8
+palette = 10=#a6e3a1
+palette = 11=#f9e2af
+palette = 12=#89b4fa
+palette = 13=#f5c2e7
+palette = 14=#94e2d5
+palette = 15=#cdd6f4

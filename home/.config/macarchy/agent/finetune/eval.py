@@ -21,7 +21,7 @@ HARD = [
         "put ghostty on space 3 and switch to the kanagawa theme",
         [
             {"name": "send_to_space", "arguments": {"space": 3, "app": "ghostty"}},
-            {"name": "set_theme", "arguments": {"name": "kanagawa-wave"}},
+            {"name": "set_theme", "arguments": {"name": "kanagawa"}},
         ],
     ),
     ("focus chrome", [{"name": "focus_window", "arguments": {"app": "chrome"}}]),
