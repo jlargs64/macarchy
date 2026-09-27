@@ -77,3 +77,52 @@ ITEM
   [ "$(cat "$STUB_LOG")" = "sketchybar --set tray label.drawing=on
 sketchybar --set tray label.drawing=off" ]
 }
+
+# space.sh against a yabai stand-in with two displays: Spaces 1-3 on the main
+# one (1 focused), 4-7 on the laptop (4 visible, not focused).
+space_ind() { # space_ind <sid> [VAR=value ...] -- run space.sh, print its --set line
+  local sid="$1"
+  shift
+  cp "$REPO/home/.config/sketchybar/plugins/space.sh" "$CONFIG_DIR/plugins/"
+  yabai() {
+    case "$*" in
+      "-m query --spaces --space "*)
+        local s="${*##* }" vis=false
+        case "$s" in 1 | 4) vis=true ;; esac
+        echo "{\"index\":$s,\"is-visible\":$vis,\"has-focus\":$([ "$s" = 1 ] && echo true || echo false)}"
+        ;;
+      "-m query --windows --space 5") echo '[{"is-minimized":false}]' ;;
+      "-m query --windows --space "*) echo '[]' ;;
+    esac
+  }
+  export -f yabai
+  : >"$STUB_LOG"
+  env NAME="space.$sid" "$@" bash "$CONFIG_DIR/plugins/space.sh" "$sid"
+  grep "^sketchybar --set space.$sid" "$STUB_LOG"
+}
+
+@test "space: each display's visible Space is lit, not only the focused one" {
+  run space_ind 1
+  [[ $output == *"icon=1 "*":Bold:"* ]]
+  run space_ind 4
+  [[ $output == *"icon=4 "*":Bold:"* ]]
+  run space_ind 5 # occupied, not visible
+  [[ $output == *"icon.color=0x99"*":Regular:"* ]]
+  run space_ind 6 # empty
+  [[ $output == *":Regular:"* && $output != *"icon.color=0x99"* && $output != *"icon.color=0xff"* ]]
+}
+
+@test "space: on space_change \$SELECTED wins over yabai's lagging view" {
+  run space_ind 4 SENDER=space_change SELECTED=false
+  [[ $output == *":Regular:"* ]]
+  run space_ind 6 SENDER=space_change SELECTED=true
+  [[ $output == *":Bold:"* ]]
+}
+
+@test "the bar adds an indicator for every Space up to 9 by default" {
+  bar_rc
+  [ "$status" -eq 0 ]
+  grep -q '^sketchybar --add space space.9 left' "$STUB_LOG"
+  run ! grep -q '^sketchybar --add space space.10 ' "$STUB_LOG"
+  grep -q '^sketchybar --add space space.4 left --subscribe space.4 .*display_change' "$STUB_LOG"
+}

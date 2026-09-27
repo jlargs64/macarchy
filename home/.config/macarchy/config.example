@@ -30,9 +30,11 @@ MACARCHY_TERMINAL=ghostty
 # resolvable by SketchyBar as "<font>:<style>:<size>".
 MACARCHY_FONT="Hack Nerd Font"
 
-# Number of Spaces sketchybarrc renders indicators for (1-9; macOS control-N
-# switching and the sketchybar-app-font key-code table only cover up to 9).
-MACARCHY_SPACES=5
+# Highest Space number the bar draws an indicator for (1-9; macOS control-N
+# switching only covers up to 9). Numbers are global across displays, so
+# with 3 Spaces on one display and 4 on another the bar needs 7. Spaces
+# that do not exist are never drawn, so 9 shows every Space you have.
+MACARCHY_SPACES=9
 
 # Author line emitted in generated Raycast script commands
 # (@raycast.author). Left blank, no author line is emitted at all.
