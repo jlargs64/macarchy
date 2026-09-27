@@ -94,11 +94,9 @@ environment override for `theme-img`, not a config line.
 | `macarchy-keys [--list\|--markdown\|--popup\|--source X]` | which-key hotkey list from `skhdrc` (plus Ghostty and Zellij); `alt - /` |
 | `hotkey-check` | collisions between skhd, macOS, Raycast and Handy hotkeys |
 | `ws [-x] "..."` / `ws --voice` | the on-device workspace agent; dry-run unless `MACARCHY_AGENT_EXECUTE=true` |
+| `macarchy-restart [--yabai\|--borders\|--bar\|--skhd\|--throttle]` | restart each service on its own; `shift + alt - r` |
+| `macarchy-rescue [--dry-run\|--relaunch]` | move windows off every display back; run by yabairc after display changes and wake. A failed move posts a notification; `--relaunch` quits and reopens that app |
 | `macarchy-uninstall [--dry-run ...]` | remove the links, restore `.pre-macarchy` files |
-
-Landing in a parallel PR (do not document as present until it merges):
-`macarchy-restart` (what `shift + alt - r` will run: restart yabai, reload
-the bar) and `macarchy-rescue` (moves off-screen windows back on screen).
 
 ## Theme system in one paragraph
 
