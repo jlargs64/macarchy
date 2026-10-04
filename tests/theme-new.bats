@@ -68,7 +68,7 @@ get() { bash -c ". '$OUT/mine/colors.sh'; printf %s \"\$$1\""; }
   [ "$status" -eq 0 ]
   grep -q '^background = 101820$' "$OUT/mine/ghostty"
   grep -q 'base00 = "#101820"' "$OUT/mine/nvim-mine/colors/mine.lua"
-  grep -q 'bg "#101820"' "$OUT/mine/zellij.kdl"
+  grep -q 'black "#101820"' "$OUT/mine/zellij.kdl"
 }
 
 @test "--regen keeps a file without the theme-new header" {

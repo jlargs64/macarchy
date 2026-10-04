@@ -364,7 +364,7 @@ Every theme is a directory under `home/.config/theme/themes/<name>/`:
 |---|---|
 | `colors.sh` | the palette, as shell exports |
 | `ghostty` | Ghostty config fragment |
-| `zellij.kdl` | a `themes { current { ... } }` block |
+| `zellij.kdl` | a `themes { current { ... } }` block; `bg` is the selection colour, `black` the pane background |
 | `neovim.lua` | a LazyVim plugin spec |
 | `borders` | JankyBorders settings |
 | `vscode.json` | optional: `{"name", "extension"}` of the matching VS Code theme |
