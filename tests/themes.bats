@@ -198,3 +198,18 @@ stub_one_space() { stub yabai 'case "$*" in *--spaces*) echo "[{\"index\":1,\"ha
   grep -q '^osascript' "$STUB_LOG"
   grep -q '^killall WallpaperAgent' "$STUB_LOG"
 }
+
+@test "zellij.kdl bg (the selection colour) differs from black (the pane background)" {
+  # Zellij paints a mouse selection with the flat format's `bg` and the pane
+  # with `black`; when they match, selected text looks unselected.
+  bad=""
+  while IFS= read -r d; do
+    bg=$(sed -n 's/^ *bg "#\([0-9A-Fa-f]*\)".*/\1/p' "$d/zellij.kdl" | tr 'A-F' 'a-f')
+    black=$(sed -n 's/^ *black "#\([0-9A-Fa-f]*\)".*/\1/p' "$d/zellij.kdl" | tr 'A-F' 'a-f')
+    [ -n "$bg" ] && [ -n "$black" ] && [ "$bg" != "$black" ] || bad="$bad ${d##*/}"
+  done < <(each_theme)
+  [ -z "$bad" ] || {
+    echo "selection colour equals pane background in:$bad"
+    return 1
+  }
+}

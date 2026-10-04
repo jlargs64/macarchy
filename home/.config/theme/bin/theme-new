@@ -236,7 +236,8 @@ write zellij.kdl <<EOF
 themes {
     current {
         fg "#$FG"
-        bg "#$BG"
+        // bg is Zellij's mouse-selection background (black is the pane background)
+        bg "#$B02"
         black "#$BG"
         red "#$RED"
         green "#$GREEN"

@@ -300,7 +300,9 @@ blue, witch violet and ghost sage.
 ```
 
 Ghostty uses the canonical slots for ANSI 8..15 and the same hues darkened 15%
-for 0..7, Zellij the simple `fg`/`bg`/named-color format, and Neovim
+for 0..7, Zellij the simple `fg`/`bg`/named-color format (where `black` is the
+pane background and `bg` is the mouse-selection background, so `bg` takes the
+selection colour, not the pane colour), and Neovim
 `mini.base16` fed the palette through a tiny local plugin,
 `nvim-hollow/colors/hollow.lua`, which sets `vim.g.colors_name = "hollow"`
 so `:colorscheme hollow` works. The wallpaper is
@@ -326,6 +328,10 @@ were commented out and prefixed `# [theme-system] was:`.
 
 **Zellij** — `config.kdl` sets `theme "current"`, and
 `~/.config/zellij/themes/current.kdl` is a symlink into the theme directory.
+In Zellij's flat theme format `black` is the pane background and `bg` only
+colours mouse selections (and selected rows in its own UI), so every
+`zellij.kdl` sets `bg` to the theme's selection colour. Setting it to the pane
+colour makes a selection invisible.
 
 **Neovim** — `~/.config/nvim/lua/plugins/theme.lua` is a symlink to
 `current/neovim.lua`. The previous `colorscheme.lua` (catppuccin-frappe) was

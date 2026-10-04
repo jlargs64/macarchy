@@ -1,7 +1,8 @@
 themes {
     current {
         fg "#d4be98"
-        bg "#282828"
+        // bg is Zellij's mouse-selection background (black is the pane background)
+        bg "#665c54"
         black "#282828"
         red "#ea6962"
         green "#a9b665"

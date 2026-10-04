@@ -353,12 +353,14 @@ EOF
 # --- zellij.kdl ----------------------------------------------------------
 # Simple fg/bg/named-color theme (same shape hollow uses), not the verbose
 # upstream-Zellij-repo format, since most ported palettes aren't in zellij's
-# own theme collection.
+# own theme collection. In that format `black` is the pane background and
+# `bg` only paints mouse selections, so `bg` gets the selection colour.
 cat >"$DEST/zellij.kdl" <<EOF
 themes {
     current {
         fg "#$FG"
-        bg "#$BG"
+        // bg is Zellij's mouse-selection background (black is the pane background)
+        bg "#$MUTED"
         black "#$BG"
         red "#$RED"
         green "#$GREEN"
