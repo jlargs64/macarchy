@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>macarchy</title>
-<meta name="description" content="Omarchy for the Mac. Hyprland-style tiling and one-command theming across Ghostty, Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper, on Apple silicon with the battery, the apps and SIP left on.">
+<meta name="description" content="Omarchy for the Mac. Hyprland-style tiling and one-command theming across your terminal (Ghostty, kitty, Alacritty, iTerm2), editor (VS Code, Zed, Neovim), Zellij, SketchyBar, JankyBorders and the wallpaper, on Apple silicon with the battery, the apps and SIP left on.">
 <meta name="color-scheme" content="dark light">
 <script>
   // Apply the saved theme before first paint. Silent if storage is unavailable.
@@ -80,8 +80,8 @@
     <div class="wrap about">
       <div class="prose">
         <h2 id="about-title">What macarchy is, and what it is not</h2>
-        <p style="margin-top: var(--space-lg)">macarchy is one Mac desktop config, published as is. It themes the apps in that setup and no others: Ghostty, Zellij, Neovim, SketchyBar, JankyBorders and the wallpaper. <code>theme-set &lt;name&gt;</code> repoints one symlink and pokes each of them to re-read its config, so they repaint together. yabai tiles windows inside each Space, skhd binds the keys, and <kbd>alt</kbd>+<kbd>/</kbd> pops up a searchable list of every binding.</p>
-        <p>If your terminal is Kitty or your editor is VS Code, nothing here restyles it today. A theme directory has no file for those apps, so a switch leaves them alone. The mechanism is <a href="https://omarchy.org">Omarchy</a>’s and could drive more apps; that is the plan below. Your Ghostty, Zellij and Neovim configs stay yours, since macarchy hooks in with one line each.</p>
+        <p style="margin-top: var(--space-lg)">macarchy is one Mac desktop config, published as is. It is built around the tools I use, but you do not have to take all of it: the installer asks which parts you want, just the themes, just the window manager, or any mix. <code>theme-set &lt;name&gt;</code> repoints one symlink and runs one hook script per app, so your terminal (Ghostty, kitty, Alacritty or iTerm2), editor (VS Code and its forks, Zed or Neovim), Zellij, SketchyBar, JankyBorders and the wallpaper repaint together. A hook for an app you don’t have exits without doing anything. yabai tiles windows inside each Space, skhd binds the keys, and <kbd>alt</kbd>+<kbd>/</kbd> pops up a searchable list of every binding.</p>
+        <p>It does not theme WezTerm’s colours, Terminal.app, JetBrains IDEs or browsers. A hook for any of them is one short script, and your own go in <code>~/.config/macarchy/hooks.d/</code>. Seven themes have no matching VS Code marketplace theme, so a switch to one of those leaves VS Code where it was. The mechanism is <a href="https://omarchy.org">Omarchy</a>’s and could drive more apps; that is the plan below. Your app configs stay yours, since macarchy hooks in with one line each.</p>
       </div>
       <dl class="facts">
         <div><dt>Theming</dt><dd>23 themes, 5 of them light. <code>theme-set</code>, <code>theme-pick</code>, <code>theme-next</code>, <code>theme-bg</code>, <code>theme-port</code>, <code>theme-new</code>. <a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">docs/theme-system.md</a></dd></div>
@@ -89,7 +89,7 @@
         <div><dt>Hotkey discovery</dt><dd><code>macarchy-keys</code>: a which-key style popup on <kbd>alt</kbd>+<kbd>/</kbd>. Descriptions come from the <code># comments</code> in skhdrc.</dd></div>
         <div><dt>Raycast</dt><dd>A generated “Set Theme” script command. <code>theme-raycast-sync</code> regenerates it.</dd></div>
         <div><dt>Workspace agent</dt><dd><code>ws</code>: plain English or voice control of windows, Spaces, theme and Zellij tabs, on device. <a href="#agent">Talk to your desktop</a>.</dd></div>
-        <div><dt>Planned</dt><dd>Theme files for other terminals (Alacritty, Kitty, WezTerm, iTerm2), editors (VS Code, Zed) and browsers, a pick-your-apps install, and light themes without hand fix-ups. None of it exists yet; the <a href="https://github.com/jlargs64/macarchy#plans">README</a> keeps the list.</dd></div>
+        <div><dt>Planned</dt><dd>Bar and border colours derived for light themes, so <code>theme-port --allow-light</code> stops needing hand edits afterwards. A generated VS Code theme for the seven with no marketplace match. Hooks for WezTerm colours, JetBrains IDEs and browsers. None of it exists yet; the <a href="https://github.com/jlargs64/macarchy#plans">README</a> keeps the list.</dd></div>
         <div><dt>Requirements</dt><dd>macOS with Homebrew. Scripts run on the bash 3.2 that ships with the system.</dd></div>
         <div><dt>Licence</dt><dd>MIT.</dd></div>
       </dl>
@@ -106,15 +106,18 @@
       <div class="install">
         <div class="install__col">
           <h3>Clone and run the installer</h3>
-          <p><code>install.sh</code> bootstraps Homebrew, installs the packages, sets a handful of macOS <code>defaults</code>, links <code>home/</code> into <code>$HOME</code> (with <code>stow</code> if it is on <code>PATH</code>, otherwise plain symlinks), seeds the default theme, generates wallpapers and writes <code>~/.config/macarchy/config</code> from the example. It is idempotent, so re-running is safe.</p>
+          <p><code>install.sh</code> bootstraps Homebrew, installs the packages, sets a handful of macOS <code>defaults</code>, links <code>home/</code> into <code>$HOME</code> one symlink per file (a real file already there is moved to <code>&lt;file&gt;.pre-macarchy</code>, never overwritten), seeds the default theme, generates wallpapers and writes <code>~/.config/macarchy/config</code> from the example. It is idempotent, so re-running is safe. Each part installs on its own: the installer asks on the first run which you want (<code>themes</code>, <code>wm</code>, <code>bar</code>, <code>borders</code>, <code>keys</code>, <code>agent</code>) and saves the answer in <code>~/.config/macarchy/config</code>.</p>
           <figure class="code">
             <figcaption class="code__bar"><span>sh</span><button class="btn btn--sm" type="button" data-copy><span class="btn__label">Copy</span></button></figcaption>
 <pre><code><span class="ln"><span class="p">$ </span>git clone https://github.com/jlargs64/macarchy ~/Projects/macarchy</span>
 <span class="ln"><span class="p">$ </span>cd ~/Projects/macarchy</span>
 <span class="ln"><span class="p">$ </span>./install.sh --dry-run   <span class="c"># prints every action, changes nothing</span></span>
-<span class="ln"><span class="p">$ </span>./install.sh</span></code></pre>
+<span class="ln"><span class="p">$ </span>./install.sh</span>
+<span class="ln"><span class="p">$ </span>./install.sh --list              <span class="c"># the components table</span></span>
+<span class="ln"><span class="p">$ </span>./install.sh --only themes       <span class="c"># just the themes</span></span>
+<span class="ln"><span class="p">$ </span>./install.sh --only wm,bar       <span class="c"># a tiling desktop, no theme hooks in your apps</span></span></code></pre>
           </figure>
-          <p class="muted">Only want the files linked, no packages or defaults? <code>stow -t "$HOME" home</code>.</p>
+          <p class="muted">Only want the files, no packages or defaults? Manage <code>home/</code> with chezmoi, below.</p>
           <h3>Or let an agent walk you through it</h3>
           <figure class="code">
             <figcaption class="code__bar"><span>sh</span><button class="btn btn--sm" type="button" data-copy><span class="btn__label">Copy</span></button></figcaption>
@@ -125,12 +128,12 @@
         </div>
         <div class="install__col">
           <h3>Or pull it into chezmoi</h3>
-          <p>If your dotfiles live in <a href="https://chezmoi.io">chezmoi</a>, add macarchy as a tagged archive external rather than a submodule. One entry per directory, eight in total; <code>stripComponents = 2</code> strips <code>macarchy-0.1.0/home/</code> off every path.</p>
+          <p>If your dotfiles live in <a href="https://chezmoi.io">chezmoi</a>, add macarchy as a tagged archive external rather than a submodule. One entry per directory, eight in total; <code>stripComponents = 2</code> strips <code>macarchy-0.8.1/home/</code> off every path.</p>
           <figure class="code">
             <figcaption class="code__bar"><span>.chezmoiexternal.toml · one of eight</span><button class="btn btn--sm" type="button" data-copy><span class="btn__label">Copy</span></button></figcaption>
 <pre><code><span class="ln">[".config/theme"]</span>
 <span class="ln">    type = "archive"</span>
-<span class="ln">    url = "https://github.com/jlargs64/macarchy/archive/refs/tags/v0.1.0.tar.gz"</span>
+<span class="ln">    url = "https://github.com/jlargs64/macarchy/archive/refs/tags/v0.8.1.tar.gz"</span>
 <span class="ln">    exact = true</span>
 <span class="ln">    stripComponents = 2</span>
 <span class="ln">    include = [".config/theme/**"]</span></code></pre>
@@ -161,12 +164,12 @@
         <!-- themes:start -->
         <li><button class="theme-card" type="button" data-set-theme="retro-82" data-mode="dark" aria-pressed="true"><span class="theme-card__swatch" data-pal="retro-82" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">retro-82</span><span class="theme-card__src">custom · 1982 arcade CRT</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="hollow" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="hollow" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">hollow</span><span class="theme-card__src">custom · Sleepy Hollow in October</span></span></button></li>
-        <li><button class="theme-card" type="button" data-set-theme="kanagawa-wave" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="kanagawa-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">kanagawa-wave</span><span class="theme-card__src">upstream</span></span></button></li>
-        <li><button class="theme-card" type="button" data-set-theme="catppuccin-mocha" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="catppuccin-mocha" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">catppuccin-mocha</span><span class="theme-card__src">upstream</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="catppuccin" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="catppuccin" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">catppuccin</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="ethereal" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="ethereal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">ethereal</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="everforest" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="everforest" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">everforest</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="gruvbox" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="gruvbox" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">gruvbox</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="hackerman" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="hackerman" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">hackerman</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
+        <li><button class="theme-card" type="button" data-set-theme="kanagawa" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="kanagawa" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">kanagawa</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="last-horizon" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="last-horizon" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">last-horizon</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="lumon" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="lumon" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">lumon</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
         <li><button class="theme-card" type="button" data-set-theme="matte-black" data-mode="dark" aria-pressed="false"><span class="theme-card__swatch" data-pal="matte-black" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="theme-card__row"><span class="theme-card__name">matte-black</span><span class="theme-card__src">ported from Omarchy</span></span></button></li>
@@ -297,6 +300,11 @@
         <h3 style="margin-top: var(--space-md)">Hook in your own configs</h3>
         <dl class="facts">
           <div><dt>Ghostty</dt><dd><code>config-file = ?~/.config/theme/current/ghostty</code> in <code>~/.config/ghostty/config</code>. The <code>?</code> makes the include optional.</dd></div>
+          <div><dt>kitty</dt><dd><code>include ~/.config/theme/generated/kitty.conf</code> in <code>kitty.conf</code>.</dd></div>
+          <div><dt>Alacritty</dt><dd><code>import = ["~/.config/theme/generated/alacritty.toml"]</code> under <code>[general]</code> in <code>alacritty.toml</code>.</dd></div>
+          <div><dt>iTerm2</dt><dd>Select the “macarchy” profile under Settings › Profiles and set it as default. It is a Dynamic Profile <code>theme-set</code> rewrites.</dd></div>
+          <div><dt>VS Code</dt><dd>Nothing. <code>theme-set</code> sets <code>workbench.colorTheme</code> and installs the theme’s extension if missing. Same for Cursor, VSCodium and Windsurf.</dd></div>
+          <div><dt>Zed</dt><dd><code>"theme": "Macarchy"</code> in <code>settings.json</code>.</dd></div>
           <div><dt>Zellij</dt><dd><code>theme "current"</code> in <code>config.kdl</code>.</dd></div>
           <div><dt>Neovim</dt><dd>Declare every shipped theme’s colorscheme plugin with <code>lazy = true</code>, so lazy.nvim knows them before a switch. Fifteen entries; the list is in <a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md#per-app-wiring">docs/theme-system.md</a>. Seven themes drive <code>mini.base16</code> from their own palette and need no plugin of their own.</dd></div>
         </dl>
@@ -313,6 +321,7 @@
 <span class="ln">  ghostty        <span class="c"># Ghostty config fragment</span></span>
 <span class="ln">  zellij.kdl     <span class="c"># a themes { current { … } } block</span></span>
 <span class="ln">  neovim.lua     <span class="c"># a LazyVim plugin spec</span></span>
+<span class="ln">  vscode.json    <span class="c"># the marketplace theme to switch to</span></span>
 <span class="ln">  borders        <span class="c"># JankyBorders settings</span></span>
 <span class="ln">  wallpaper.jpg  <span class="c"># generated, not tracked</span></span></code></pre>
         </figure>
@@ -460,6 +469,7 @@
   <div class="wrap">
     <p class="foot__mark"><span class="prompt" aria-hidden="true">&gt;</span>macarchy</p>
     <p class="foot__tag">Omarchy’s desktop, on a Mac. yabai, skhd, SketchyBar, JankyBorders and Omarchy itself are their authors’ work.</p>
+    <p class="foot__fine">macarchy is an independent project, not affiliated with or endorsed by Omarchy or the Omacom Foundation. Ported themes are used under Omarchy’s MIT licence.</p>
     <p class="foot__links"><a href="about.html">About</a><a href="https://github.com/jlargs64/macarchy">GitHub</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/theme-system.md">Theme system</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/window-management.md">Window management</a><a href="https://github.com/jlargs64/macarchy/blob/main/docs/omarchy-port.md">Porting themes</a><a href="https://omarchy.org">Omarchy</a></p>
     <p class="foot__fine">MIT licensed · Justin Largo, <span data-year>2026</span> · set in JetBrains Mono and Geist · coloured by <code data-theme-name>retro-82</code></p>
     <div class="stripe foot__stripe" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
