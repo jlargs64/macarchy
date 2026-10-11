@@ -430,10 +430,11 @@ synthesizing the native `ctrl + <number>` keystroke.
 
 The coffee-cup icon on the right toggles `caffeinate -dims`: display, system
 and disk stay awake and idle sleep is blocked until it is clicked again. Bright
-cup = awake, dim crossed-out cup = normal sleep. The icon reflects any
-`caffeinate` you are running, including one typed into a terminal. Clicking
-"off" kills the one the bar started (PID in `~/.cache/sketchybar/caffeinate.pid`,
-so it survives `sketchybar --reload`), or failing that all of yours.
+cup = awake, dim crossed-out cup = normal sleep. The icon reflects only the
+`caffeinate` the bar started (PID in `~/.cache/sketchybar/caffeinate.pid`, so it
+survives `sketchybar --reload`); one typed into a terminal, or the short
+`caffeinate -i -t 300` Claude Code runs while busy, leaves the cup dim. Clicking
+"off" kills the bar's process and nothing else.
 
 ## Desktop feel
 
