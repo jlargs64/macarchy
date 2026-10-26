@@ -63,12 +63,13 @@ symname() {
 
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT
-# 1. skhd
-if [ -f "$SKHDRC" ]; then
-  grep -E '^[a-z0-9 +]+ *- *[^:]+:' "$SKHDRC" | sed -E 's/ *:.*//' | while read -r b; do
-    printf '%s\tskhd\t%s\n' "$(norm "$b")" "$(grep -F -m1 "$b " "$SKHDRC" | grep -v "^ *#" | sed -E 's/^[^:]*: *//' | cut -c1-60)"
+# 1. skhd (plus the optional local.skhdrc that skhdrc `.load`s)
+for rc in "$SKHDRC" "${SKHDRC%/*}/local.skhdrc"; do
+  [ -f "$rc" ] || continue
+  grep -E '^[a-z0-9 +]+ *- *[^:]+:' "$rc" | sed -E 's/ *:.*//' | while read -r b; do
+    printf '%s\tskhd\t%s\n' "$(norm "$b")" "$(grep -F -m1 "$b " "$rc" | grep -v "^ *#" | sed -E 's/^[^:]*: *//' | cut -c1-60)"
   done >>"$tmp"
-fi
+done
 # 2. macOS symbolic hotkeys (enabled, with a key)
 if [ -f "$SYMHOT" ]; then
   plutil -convert json -o - "$SYMHOT" 2>/dev/null | /usr/bin/jq -r '.AppleSymbolicHotKeys | to_entries[] | select(.value.enabled==true and (.value.value.parameters|length)==3) | "\(.key) \(.value.value.parameters[1]) \(.value.value.parameters[2])"' |

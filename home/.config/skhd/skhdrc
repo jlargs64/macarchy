@@ -39,12 +39,16 @@ alt - v          : yabai -m window --toggle split                     # flip spl
 
 # ----- app launchers (yours to fill in) -------------------------------------
 # alt-<letter> is left free for app launchers so skhd can be the single source
-# of truth for hotkeys. Example:
+# of truth for hotkeys. Put them in ~/.config/skhd/local.skhdrc, which is yours
+# (macarchy never ships it, so updates and dotfile managers leave it alone).
+# skhd resolves the path next to this file and only warns if it is missing.
+# Example local.skhdrc:
 #   alt - t : open -a "Ghostty"
-#   alt - b : open -a "Safari"
+#   alt - b is taken (background picker) -- pick another letter
 # Run `hotkey-check` after editing to catch collisions with macOS or Raycast.
 # NOTE: alt - space and shift + alt - space are NOT free -- Handy (see below)
 # owns both as its own global listener.
+.load "local.skhdrc"
 
 # ----- stacking ---------------------------------------------------------------
 # A "stack" puts several windows in one tile, like browser tabs -- only the

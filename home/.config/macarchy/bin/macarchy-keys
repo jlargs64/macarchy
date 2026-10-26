@@ -562,7 +562,11 @@ gather_tsv() {
   local src
   for src in ${ACTIVE_SOURCES[@]+"${ACTIVE_SOURCES[@]}"}; do
     case "$src" in
-      skhd) parse_skhdrc "$SKHDRC" || exit 1 ;;
+      skhd)
+        parse_skhdrc "$SKHDRC" || exit 1
+        # optional personal bindings pulled in by skhdrc's `.load "local.skhdrc"`
+        [ -r "${SKHDRC%/*}/local.skhdrc" ] && parse_skhdrc "${SKHDRC%/*}/local.skhdrc"
+        ;;
       ghostty) parse_ghostty "$MACARCHY_KEYS_GHOSTTY" ;;
       zellij) parse_zellij "$MACARCHY_KEYS_ZELLIJ" ;;
     esac
