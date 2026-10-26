@@ -182,7 +182,10 @@ by itself, but an external display has no notch and, with the menu bar
 auto-hidden, nothing excluded at all, so windows would cover the bar.
 `yabairc` sets `external_bar all:32:0`, which reserves the strip on every
 display; on the notch display yabai merges the two heights instead of stacking
-them, so nothing moves there.
+them, so nothing moves there. With the menu bar always visible instead, macOS
+excludes the menu bar itself and yabai stacks the two, so `yabairc` reserves
+only the 2pt the bar hangs below a 30pt external menu bar (see
+[The native menu bar](#the-native-menu-bar)).
 
 **The clock sits on the midpoint.** SketchyBar's `q` and `e` positions hug the
 notch, and on a display without one they hug the exact center, which leaves a
@@ -302,6 +305,15 @@ menus open far above both and are unaffected.
 On the notch display the revealed menu bar is 33pt, 1pt taller than the notch,
 so the bar is drawn 33pt tall there (`notch_display_height`) to hide the
 sliver. macarchy never changes the menu bar's own auto-hide setting.
+
+The menu bar may also be left always visible (System Settings > Control Center
+> "Automatically hide and show the menu bar" > Never). The bar covers it just
+the same, and `shift + alt - m` then swaps between the two bars with no hover
+needed. `yabairc` reads the setting when yabai starts and reserves only the
+2pt the bar hangs below a 30pt external menu bar, since macOS already excludes
+the menu bar; without that, windows would sit 30pt too low on an external
+display and 33pt on the notch one. Restart yabai (`macarchy-restart --yabai`)
+after changing the setting.
 
 When you do need the native menu bar, the app menus or a status item that the
 bar has no equivalent for:
