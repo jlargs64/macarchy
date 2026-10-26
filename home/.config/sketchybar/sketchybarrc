@@ -8,7 +8,9 @@
 # reveals whenever the pointer reaches the top edge, which is exactly where
 # this bar lives, and macOS has no setting for that reveal. So the bar is drawn
 # one window level above the menu bar (topmost=on, below) and the menu bar
-# slides in underneath it. To reach the native menu bar and its status items:
+# slides in underneath it. A menu bar set to never hide is covered the same
+# way (yabairc then reserves only the bar's overhang below it). To reach the
+# native menu bar and its status items:
 #   shift + alt - m   hide / show this bar (skhdrc), or click the ⋯ tray item
 #   ctrl - F2         macOS "Move focus to menu bar" (ctrl + fn + F2 on the
 #                     laptop keyboard); its menus open above the bar

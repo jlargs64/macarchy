@@ -36,10 +36,24 @@ yabai -m config window_origin_display       focused
 # excluded strip at all, so windows would cover the bar. external_bar reserves
 # the strip on every display; on the notch display yabai merges it with the
 # notch height instead of stacking the two, so nothing moves there.
+#
+# With the menu bar always visible (System Settings > Control Center >
+# "Automatically hide and show the menu bar" = Never) macOS itself excludes
+# the menu bar on every display, 30pt on an external one and 33pt on the
+# notch display, and yabai stacks external_bar on top of that instead of
+# merging. The bar still draws over the menu bar (topmost, see sketchybarrc),
+# so only the part of it hanging below the menu bar needs reserving: the bar
+# height minus the 30pt external menu bar, 2pt at the default height. The
+# setting is read when yabai starts; restart yabai after changing it.
 # top_padding stays the gap under the bar, same as every other gap. The bottom
 # default is bigger because JankyBorders draws its border outside the window,
 # and an 8px gap left 2px of wallpaper under it.
-yabai -m config external_bar                "all:${MACARCHY_BAR_HEIGHT:-32}:0"
+bar_strip="${MACARCHY_BAR_HEIGHT:-32}"
+if [ "$(defaults read NSGlobalDomain _HIHideMenuBar 2>/dev/null)" != 1 ]; then
+  bar_strip=$((bar_strip - 30))
+  [ "$bar_strip" -lt 0 ] && bar_strip=0
+fi
+yabai -m config external_bar                "all:${bar_strip}:0"
 yabai -m config top_padding                 "${MACARCHY_PADDING_TOP:-8}"
 yabai -m config bottom_padding              "${MACARCHY_PADDING_BOTTOM:-20}"
 yabai -m config left_padding                "${MACARCHY_PADDING_LEFT:-8}"

@@ -42,7 +42,7 @@ this list live, from `skhdrc`.
 | `shift + alt - b` | cycle the wallpaper within the current theme |
 | `alt - b` | pop up `theme-bg-pick`, the current theme's backgrounds with pictures |
 | `shift + alt - /` | pop up `theme-pick`, fzf theme picker with swatches |
-| `shift + alt - m` | hide / show the bar, to reach the native menu bar; clicking the `⋯` tray item at the far right hides it too, and only this brings it back |
+| `shift + alt - m` | hide / show the bar, to reach the native menu bar; clicking the `⋯` tray item at the far right hides it too, and only this brings it back. With the menu bar set to never hide this swaps between the two bars |
 | `shift + alt - r` | `macarchy-restart`: yabai, borders, SketchyBar, then skhd |
 | `alt - /` | pop up `macarchy-keys`, a searchable list of every binding |
 | `ctrl - <number>` | switch Space (**native macOS**, enable under Keyboard Shortcuts > Mission Control) |
@@ -115,6 +115,7 @@ failure (missing package, service not running, Accessibility not granted,
 | Symptom | Do |
 |---|---|
 | Windows stopped tiling, bar stale, something generally off | `shift + alt - r`, or `macarchy-restart` from a terminal |
+| Native menu bar never appears, even with the bar hidden | it is set to auto-hide and the pointer is not at the top edge. To keep it always visible: `osascript -e 'tell application "System Events" to tell dock preferences to set autohide menu bar to false'` (System Settings > Control Center > "Automatically hide and show the menu bar" > Never), then `macarchy-restart --yabai` so yabai stops reserving a strip macOS now excludes. `shift + alt - m` then swaps between the bars |
 | Bar gone (the `⋯` tray item was clicked) | `shift + alt - m`, or `sketchybar --bar hidden=off`; `sketchybar --query bar` shows `"hidden": "on"` when this is it |
 | Wallpaper wrong on one Space | switch to that Space once (yabai enrolls it on arrival), or run `theme-wallpaper-enroll` to walk every Space (the screen flicks through them; needs `ctrl + <number>` enabled) |
 | Wallpaper wrong everywhere | `theme-bg apply`, then `theme-set $(basename "$(readlink ~/.config/theme/current)")` |
